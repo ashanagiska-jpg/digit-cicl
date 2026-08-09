@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="id" class="h-full">
 <head>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#1e3a5f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="DIGIT-CICL" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DIGIT-CICL - Sistem Litmas, Registrasi & Tracking Adjudikasi Anak Bapas Kelas II Lahat</title>
@@ -1730,6 +1736,15 @@ window.onload = function(){
   lucide.createIcons();
   initAuth();
 };
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then((reg) => console.log('PWA Service Worker aktif'))
+        .catch((err) => console.warn('SW gagal:', err));
+    });
+  }
 </script>
 </body>
 </html>
