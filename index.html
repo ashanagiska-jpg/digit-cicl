@@ -1,108 +1,31 @@
 <!doctype html>
 <html lang="id" class="h-full">
 <head>
-<link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#1e3a5f" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="DIGIT-CICL" />
-<link rel="apple-touch-icon" href="/icon-192.png" />
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DIGIT-CICL - Sistem Litmas, Registrasi & Tracking Adjudikasi Anak Bapas Kelas II Lahat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1e3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DIGIT-CICL">
+<meta name="description" content="Sistem Litmas, Registrasi & Tracking Adjudikasi Anak — Bapas Kelas II Lahat">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>DIGIT-CICL — Bapas Kelas II Lahat</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
 <script>
   tailwind.config = { darkMode: 'class', theme: { extend: {
-    colors: { brand: { navy:'#1e3a5f', navyDark:'#0f1a2e', gold:'#d4a843', goldHover:'#b88e32', cardDark:'#1a2940' } },
-    fontFamily: { sans: ['"Plus Jakarta Sans"','sans-serif'] }
+    colors: { brand: { navy:'#1e3a5f', navyDark:'#0a1628', gold:'#d4a843', goldHover:'#b88e32', cardDark:'#132338' } },
+    fontFamily: { sans: ['"Plus Jakarta Sans"','sans-serif'] },
+    boxShadow: { glass: '0 8px 32px rgba(0,0,0,.12)', 'glass-lg': '0 12px 48px rgba(0,0,0,.18)' }
   } } }
 </script>
-<style>
-  body{font-family:'Plus Jakarta Sans',sans-serif}
-  .sidebar-link{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s;color:#94a3b8;font-size:13px;font-weight:500}
-  .sidebar-link:hover,.sidebar-link.active{background:rgba(212,168,67,.15);color:#d4a843;font-weight:600}
-  .stat-card{border-radius:16px;padding:18px;position:relative;overflow:hidden}
-  .stat-card::after{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.08)}
-  .page{display:none}.page.active{display:block}
-  .table-wrap{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(148,163,184,.15)}
-  th{font-weight:700;white-space:nowrap;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
-  th.sortable{cursor:pointer;user-select:none}
-  th.sortable:hover{color:#d4a843}
-  th.sortable .sort-arrow{margin-left:4px;font-size:9px;color:#d4a843;display:inline-block;width:8px}
-  .btn{padding:8px 15px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-  .btn-primary{background:#1e3a5f;color:#fff}.btn-primary:hover{background:#2a4d7a}
-  .btn-gold{background:#d4a843;color:#1a1a1a}.btn-gold:hover{background:#c49a30}
-  .btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
-  .btn-ghost{background:#e2e8f0;color:#334155}.btn-ghost:hover{background:#cbd5e1}
-  .dark .btn-ghost{background:#243450;color:#cbd5e1}.dark .btn-ghost:hover{background:#2e415f}
-  .btn-ai{background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#d946ef 100%);color:#fff}
-  .btn-ai:hover{opacity:.95}
-  .btn-sm{padding:5px 11px;font-size:12px}
-  .form-input{width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;font-family:inherit;background:#fff;transition:.2s}
-  .form-input:focus{outline:none;border-color:#d4a843;box-shadow:0 0 0 3px rgba(212,168,67,.15)}
-  label.fl{font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block}
-  .dark label.fl{color:#94a3b8}
-  .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;color:#fff;font-size:13.5px;z-index:9999;animation:slideIn .3s cubic-bezier(.16,1,.3,1);box-shadow:0 10px 25px -5px rgba(0,0,0,.25)}
-  @keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
-  .dark body{background:#0f1a2e!important;color:#e2e8f0}
-  .dark .card-panel{background:#1a2940!important;border-color:#2a4060!important}
-  .dark .form-input{background:#1a2940;border-color:#2a4060;color:#e2e8f0}
-  .dark .sidebar{background:#0a1628!important}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;z-index:9998;overflow-y:auto;padding:30px 12px}
-  .modal-box{background:#fff;border-radius:16px;padding:22px;max-width:840px;width:100%;box-shadow:0 20px 25px -5px rgba(0,0,0,.3);margin:auto}
-  .dark .modal-box{background:#1a2940;color:#e2e8f0}
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
-  .badge-blue{background:#dbeafe;color:#1d4ed8}.dark .badge-blue{background:#1e3a5f;color:#60a5fa}
-  .badge-green{background:#dcfce7;color:#15803d}.dark .badge-green{background:#14532d;color:#4ade80}
-  .badge-amber{background:#fef3c7;color:#b45309}.dark .badge-amber{background:#451a03;color:#fbbf24}
-  .badge-indigo{background:#e0e7ff;color:#4338ca}.dark .badge-indigo{background:#312e81;color:#a5b4fc}
-  .badge-pink{background:#fce7f3;color:#be185d}.dark .badge-pink{background:#831843;color:#f9a8d4}
-  .badge-slate{background:#e2e8f0;color:#475569}.dark .badge-slate{background:#334155;color:#cbd5e1}
-  .tabbtn{padding:8px 16px;border-radius:8px 8px 0 0;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:3px solid transparent}
-  .tabbtn.active{color:#1e3a5f;border-color:#d4a843;background:rgba(212,168,67,.08)}
-  .dark .tabbtn.active{color:#d4a843}
-  .stepper-item{flex:1;text-align:center;position:relative;min-width:90px}
-  .stepper-item::after{content:'';position:absolute;top:16px;left:50%;width:100%;height:3px;background:#cbd5e1;z-index:1}
-  .stepper-item:last-child::after{display:none}
-  .stepper-item.completed::after{background:#10b981}
-  .stepper-circle{width:34px;height:34px;border-radius:50%;background:#e2e8f0;color:#64748b;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;position:relative;z-index:2;font-weight:700;font-size:12px}
-  .stepper-item.completed .stepper-circle{background:#10b981;color:#fff}
-  .stepper-item.active .stepper-circle{background:#d4a843;color:#fff}
-  .dark .stepper-item::after{background:#334155}
-  .dark .stepper-circle{background:#334155;color:#94a3b8}
-  .dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:26px;text-align:center;cursor:pointer;transition:.2s}
-  .dropzone:hover{border-color:#d4a843;background:rgba(212,168,67,.05)}
-  .dark .dropzone{border-color:#2a4060}
-  /* ===== RUNNING TEXT (info ticker) ===== */
-  .running-text-bar{background:#0f1a2e;overflow:hidden;white-space:nowrap;position:relative;border-bottom:1px solid rgba(212,168,67,.25);z-index:30}
-  .dark .running-text-bar{background:#0a1628}
-  .running-text-track{display:inline-flex;width:max-content;animation:runningTextScroll 42s linear infinite}
-  .running-text-track:hover{animation-play-state:paused}
-  .running-text-group{display:inline-flex;align-items:center;flex-shrink:0}
-  .running-text-item{display:inline-flex;align-items:center;gap:6px;padding:7px 28px;font-size:12px;font-weight:600;color:#d4a843;white-space:nowrap}
-  .running-text-item .rt-dot{width:4px;height:4px;border-radius:50%;background:#d4a843;opacity:.6}
-  @keyframes runningTextScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  /* ===== WATERMARK ===== */
-  .app-watermark{position:fixed;bottom:10px;right:14px;z-index:70;font-size:10.5px;font-weight:700;letter-spacing:.03em;color:rgba(100,116,139,.7);background:rgba(255,255,255,.65);border:1px solid rgba(148,163,184,.25);padding:4px 11px;border-radius:20px;backdrop-filter:blur(3px);pointer-events:none;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-  .dark .app-watermark{color:rgba(203,213,225,.55);background:rgba(15,26,46,.55);border-color:rgba(148,163,184,.15)}
-  @media (max-width:640px){.app-watermark{font-size:9px;padding:3px 8px;bottom:6px;right:6px}}
-  /* ===== LOGIN & ROLE ACCESS ===== */
-  #login-overlay{position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at top,#1e3a5f,#0f1a2e 65%);display:flex;align-items:center;justify-content:center;padding:16px}
-  .login-card{background:#fff;border-radius:20px;padding:34px 30px;max-width:380px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,.5);text-align:center}
-  .dark-login .login-card{background:#1a2940;color:#e2e8f0}
-  .role-btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;transition:.2s;text-align:left}
-  .role-btn:hover{border-color:#d4a843;background:rgba(212,168,67,.08);transform:translateY(-1px)}
-  .role-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  body.guest-mode .admin-only{display:none!important}
-  #logged-badge{font-size:11px}
-</style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-[#0f1a2e] dark:text-slate-100 min-h-full">
+<body class="text-slate-800 dark:text-slate-100 min-h-full">
 <div id="toast-container"></div>
 
 <!-- ==================== LOGIN OVERLAY ==================== -->
@@ -177,13 +100,13 @@
 </aside>
 
 <div class="md:ml-[260px] min-h-screen flex flex-col">
-  <header class="sticky top-0 z-40 bg-white/90 dark:bg-[#1a2940]/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center justify-between">
+  <header class="glass-header sticky top-0 z-40 px-5 py-3.5 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <button onclick="toggleSidebar()" class="md:hidden p-2 text-slate-600 dark:text-slate-200"><i data-lucide="menu" class="w-5 h-5"></i></button>
-      <h2 class="font-bold text-slate-800 dark:text-slate-100 text-base" id="nav-title">Dashboard Monitoring</h2>
+      <button onclick="toggleSidebar()" class="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5"><i data-lucide="menu" class="w-5 h-5"></i></button>
+      <h2 class="font-bold text-slate-800 dark:text-slate-100 text-base tracking-tight" id="nav-title">Dashboard Monitoring</h2>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800" title="Mode Gelap/Terang"><i data-lucide="moon" class="w-4 h-4"></i></button>
+      <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 transition" title="Mode Gelap/Terang"><i data-lucide="moon" class="w-4 h-4"></i></button>
     </div>
   </header>
 
@@ -203,14 +126,14 @@
       <div class="stat-card bg-[#2d5a3f] text-white shadow-lg"><p class="text-xs font-semibold text-slate-300 uppercase">Bimbingan Pasca</p><p class="text-3xl font-extrabold mt-2" id="k-pasca">0</p></div>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Distribusi Wilayah <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="ch-wil"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Jalur Adjudikasi (Diversi vs Persidangan) <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="ch-jalur"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Distribusi Wilayah <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="ch-wil"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jalur Adjudikasi (Diversi vs Persidangan) <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="ch-jalur"></canvas></div></div>
     </div>
   </section>
 
   <!-- ================= 1. PERMINTAAN LITMAS ================= -->
   <section class="page" id="page-permintaan">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+    <div class="card-panel p-5 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div><h3 class="font-bold text-base">Permintaan Litmas (Litmas Integrasi & Pendampingan ABH)</h3>
         <p class="text-xs text-slate-500">Input manual atau pindai berkas surat permintaan dengan AI Gemini.</p></div>
@@ -246,12 +169,13 @@
           <th class="text-center">Aksi</th>
         </tr></thead><tbody id="tb-permintaan"></tbody></table>
       </div>
+      <div class="pagination" id="pg-permintaan"></div>
     </div>
   </section>
 
   <!-- ================= 2. REGISTRASI ================= -->
   <section class="page" id="page-registrasi">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+    <div class="card-panel p-5 space-y-4">
       <div><h3 class="font-bold text-base">Registrasi Anak</h3>
       <p class="text-xs text-slate-500">Memberi nomor registrasi resmi pada anak yang telah diinput, format: 0001/AN/Bulan-Romawi/Tahun.</p></div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -272,6 +196,7 @@
           <th class="text-center">Aksi</th></tr></thead>
         <tbody id="tb-reg-belum"></tbody></table>
       </div>
+      <div class="pagination" id="pg-reg-belum"></div>
       <h4 class="font-semibold text-sm text-emerald-600 pt-2">Sudah Teregistrasi</h4>
       <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
         <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
@@ -285,12 +210,13 @@
           <th class="text-center">Aksi</th></tr></thead>
         <tbody id="tb-reg-sudah"></tbody></table>
       </div>
+      <div class="pagination" id="pg-reg-sudah"></div>
     </div>
   </section>
 
   <!-- ================= 3. ADJUDIKASI ================= -->
   <section class="page" id="page-adjudikasi">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+    <div class="card-panel p-5 space-y-4">
       <div><h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="scale" class="w-5 h-5 text-amber-500"></i>Tracking Adjudikasi</h3>
       <p class="text-xs text-slate-500">Diversi berjenjang (Kepolisian → Kejaksaan → Pengadilan, gagal berlanjut ke Persidangan) atau langsung Persidangan hingga putusan hakim.</p></div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -309,12 +235,13 @@
           <th class="text-center">Kelola</th></tr></thead>
         <tbody id="tb-adjudikasi"></tbody></table>
       </div>
+      <div class="pagination" id="pg-adjudikasi"></div>
     </div>
   </section>
 
   <!-- ================= 4. PASCA ADJUDIKASI ================= -->
   <section class="page" id="page-pasca">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+    <div class="card-panel p-5 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div><h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="heart-handshake" class="w-5 h-5 text-emerald-500"></i>Pasca Adjudikasi (Bimbingan)</h3>
         <p class="text-xs text-slate-500">Klien anak yang menjalani masa bimbingan Pembebasan Bersyarat (PB) atau Cuti Bersyarat (CB) dari LPKA.</p></div>
@@ -337,12 +264,13 @@
           <th class="text-center">Aksi</th></tr></thead>
         <tbody id="tb-pasca"></tbody></table>
       </div>
+      <div class="pagination" id="pg-pasca"></div>
     </div>
   </section>
 
   <!-- ================= 5. DATA PK ================= -->
   <section class="page" id="page-pk">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+    <div class="card-panel p-5">
       <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-base">Data Pembimbing Kemasyarakatan (PK)</h3>
       <button onclick="openPkModal()" class="btn btn-primary btn-sm admin-only"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah PK</button></div>
       <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
@@ -355,12 +283,13 @@
           <th class="text-center w-28">Aksi</th></tr></thead>
         <tbody id="tb-pk"></tbody></table>
       </div>
+      <div class="pagination" id="pg-pk"></div>
     </div>
   </section>
 
   <!-- ================= 6. WILAYAH ================= -->
   <section class="page" id="page-wilayah">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+    <div class="card-panel p-5">
       <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-base">Wilayah Kerja</h3>
       <button onclick="openWilayahModal()" class="btn btn-primary btn-sm admin-only"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah Wilayah</button></div>
       <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
@@ -371,12 +300,13 @@
           <th class="text-center w-28">Aksi</th></tr></thead>
         <tbody id="tb-wilayah"></tbody></table>
       </div>
+      <div class="pagination" id="pg-wilayah"></div>
     </div>
   </section>
 
   <!-- ================= 7. KEPOLISIAN ================= -->
   <section class="page" id="page-kepolisian">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+    <div class="card-panel p-5">
       <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-base">Data Kepolisian Mitra</h3>
       <button onclick="openKepolisianModal()" class="btn btn-primary btn-sm admin-only"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah Kepolisian</button></div>
       <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
@@ -388,12 +318,13 @@
           <th class="text-center w-28">Aksi</th></tr></thead>
         <tbody id="tb-kepolisian"></tbody></table>
       </div>
+      <div class="pagination" id="pg-kepolisian"></div>
     </div>
   </section>
 
   <!-- ================= 8. REKAP PK ================= -->
   <section class="page" id="page-rekap">
-    <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm overflow-x-auto">
+    <div class="card-panel p-5 overflow-x-auto">
       <h3 class="font-bold text-base mb-4">Rekapitulasi Litmas per PK</h3>
       <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
         <table id="tbl-rekap"><thead class="bg-slate-50 dark:bg-slate-800/60"><tr id="rekap-head"></tr></thead><tbody id="tb-rekap"></tbody></table>
@@ -405,14 +336,14 @@
   <!-- ================= 9. STATISTIK ================= -->
   <section class="page" id="page-statistik">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Beban Kerja PK per Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-pk"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Tren Bulanan per Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-trend"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-jenis"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Status Adjudikasi <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-adj"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Statistik Jenis Tindak Pidana <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-perkara"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Jumlah Sidang per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-sidang"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Jumlah Putusan per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-putusan"></canvas></div></div>
-      <div class="card-panel bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm"><h4 class="font-bold text-sm mb-3">Jumlah Diversi Berhasil per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-diversi-berhasil"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Beban Kerja PK per Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-pk"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Tren Bulanan per Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-trend"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-jenis"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Status Adjudikasi <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-adj"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Statistik Jenis Tindak Pidana <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-perkara"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jumlah Sidang per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-sidang"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jumlah Putusan per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-putusan"></canvas></div></div>
+      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jumlah Diversi Berhasil per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-diversi-berhasil"></canvas></div></div>
     </div>
   </section>
 
@@ -423,1328 +354,15 @@
 
 <div class="app-watermark" id="app-watermark">Built with AI Innovation by NAER</div>
 
-<script>
-// ==================== DATA MASTER ====================
-let WILAYAH = JSON.parse(localStorage.getItem('CICL_WILAYAH')||'null') || ['Kabupaten Lahat','Kabupaten Muara Enim','Kabupaten PALI','Kabupaten Empat Lawang','Kota Pagar Alam'];
-let KEPOLISIAN = JSON.parse(localStorage.getItem('CICL_POLISI')||'null') || {
-  'Kabupaten Lahat':['Polres Lahat','Polsek Kota Lahat','Polsek Merapi','Polsek Kikim Barat','Polsek Kikim Timur','Polsek Kikim Tengah','Polsek Kikim Selatan','Polsek Jarai','Polsek Pajar Bulan','Polsek Pulau Pinang','Polsek Tanjung Sakti','Polsek Mulak Ulu','Polsek Gumay Talang','Polsek Pseksu'],
-  'Kabupaten Muara Enim':['Polres Muara Enim','Polsek Lawang Kidul','Polsek Muara Enim','Polsek Gelumbang','Polsek Tanjung Agung','Polsek Rambang Dangku','Polsek Benakat','Polsek Lembak','Polsek Sungai Rotan','Polsek Semende','Polsek Rambang','Polsek Rambang Lubai','Polsek Gunung Megang'],
-  'Kabupaten PALI':['Polres PALI','Polsek Talang Ubi','Polsek Penukal Abab','Polsek Tanah Abang'],
-  'Kabupaten Empat Lawang':['Polres Empat Lawang','Polsek Tebing Tinggi','Polsek Pendopo','Polsek Ulu Musi','Polsek Pasemah Air Keruh','Polsek Saling'],
-  'Kota Pagar Alam':['Polres Pagar Alam','Polsek Pagar Alam Utara','Polsek Pagar Alam Selatan','Polsek Dempo Utara','Polsek Dempo Selatan']
-};
-let PK_LIST = JSON.parse(localStorage.getItem('CICL_PK')||'null') || ['Firman Syahri','Sarnudi','Merwandi','Rinto Harahap','Darwind Sepriyansyah','M. Habibur Rozak','M. Eryzal Qarnein','Revan Kurniadi','Marendi Pusaka','Armicho Roy Jaka Suma',
-'Henry Manumpak','Simamora','Arief Tri Hantoro','Choirul Muslimah','Pinesthi Laksa Ambawani'];
-
-let allData = JSON.parse(localStorage.getItem('CICL_DATA')||'[]');
-let gsheetUrl = localStorage.getItem('CICL_GAS_URL') || 'https://script.google.com/macros/s/AKfycbxtFxetSm7wc7poQF7bzxYRQ2wfl0buyAer3XvYqeahYhphkUZ7HqJzeN5SAJTSp5F1FA/exec';
-let geminiKey = localStorage.getItem('CICL_GEMINI_KEY') || '';
-const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
-
-// ID folder Google Drive tujuan unggahan berkas (dikelola lewat Code.gs / Apps Script).
-const GDRIVE_FOLDER_SURAT = '1FXq_GhLqSBtPraAJ79k7cAfRtJYEClbg';
-const GDRIVE_FOLDER_LITMAS_INTEGRASI = '1uKYValz8FE97rqPGpsP_iPxBRHw_-Zbn';
-const GDRIVE_FOLDER_LITMAS_DIVERSI = '1rpmRyr7UYTdkKXOHr8I8AHrz6JC8PuvB';
-const GDRIVE_FOLDER_LITMAS_SIDANG = '11hqqtoKxuu_42S9OrJFls3eiCtucevjc';
-
-// ==================== SORTIR TABEL (klik header) ====================
-let tableSort = {}; // { tableKey: {key, dir:'asc'|'desc'} }
-
-function compareValues(a, b){
-  const av = (a===undefined||a===null) ? '' : a;
-  const bv = (b===undefined||b===null) ? '' : b;
-  if(typeof av === 'number' && typeof bv === 'number') return av - bv;
-  const sa = String(av), sb = String(bv);
-  // Coba bandingkan sebagai tanggal (format YYYY-MM-DD atau yang bisa di-parse Date)
-  if(/^\d{4}-\d{2}-\d{2}/.test(sa) && /^\d{4}-\d{2}-\d{2}/.test(sb)){
-    const da = new Date(sa).getTime(), db = new Date(sb).getTime();
-    if(!isNaN(da) && !isNaN(db)) return da - db;
-  }
-  return sa.localeCompare(sb, 'id', {numeric:true, sensitivity:'base'});
-}
-function sortByTable(list, tableKey, getter){
-  const s = tableSort[tableKey];
-  if(!s || !s.key) return list;
-  const arr = list.slice();
-  arr.sort((a,b)=>{
-    const cmp = compareValues(getter(a,s.key), getter(b,s.key));
-    return s.dir==='desc' ? -cmp : cmp;
-  });
-  return arr;
-}
-function updateSortIndicators(){
-  document.querySelectorAll('th.sortable').forEach(th=>{
-    const table = th.dataset.table, key = th.dataset.key;
-    const s = tableSort[table];
-    const arrow = th.querySelector('.sort-arrow');
-    if(!arrow) return;
-    arrow.textContent = (s && s.key===key) ? (s.dir==='asc'?'▲':'▼') : '';
-  });
-}
-document.addEventListener('click', function(e){
-  const th = e.target.closest('th.sortable');
-  if(!th) return;
-  const table = th.dataset.table, key = th.dataset.key;
-  if(!table || !key) return;
-  const cur = tableSort[table];
-  tableSort[table] = { key, dir: (cur && cur.key===key && cur.dir==='asc') ? 'desc' : 'asc' };
-  renderAllViews();
-});
-
-// ==================== AUTENTIKASI (ADMIN / TAMU) ====================
-const ADMIN_USERNAME = 'Naer';
-const ADMIN_PASSWORD = 'adp1212';
-let currentRole = localStorage.getItem('CICL_ROLE') || null; // 'admin' | 'guest' | null
-let currentUserLabel = localStorage.getItem('CICL_USER_LABEL') || '';
-
-function isAdmin(){ return currentRole === 'admin'; }
-
-// Dipanggil di awal setiap fungsi yang mengubah data. Mengembalikan true jika akses ditolak.
-function guardWrite(){
-  if(!isAdmin()){
-    showToast('Mode Tamu: hanya dapat melihat data (view only)', 'error');
-    return true;
-  }
-  return false;
-}
-
-function showRoleStep(){
-  document.getElementById('login-step-admin').classList.add('hidden');
-  document.getElementById('login-step-role').classList.remove('hidden');
-  document.getElementById('login-error').classList.add('hidden');
-}
-function showAdminLoginForm(){
-  document.getElementById('login-step-role').classList.add('hidden');
-  document.getElementById('login-step-admin').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('login-username')?.focus(), 50);
-}
-function submitAdminLogin(){
-  const u = document.getElementById('login-username').value.trim();
-  const p = document.getElementById('login-password').value;
-  if(u === ADMIN_USERNAME && p === ADMIN_PASSWORD){
-    completeLogin('admin', u);
-  } else {
-    document.getElementById('login-error').classList.remove('hidden');
-  }
-}
-function loginAsGuest(){
-  completeLogin('guest', 'Tamu');
-}
-function completeLogin(role, label){
-  currentRole = role;
-  currentUserLabel = label;
-  localStorage.setItem('CICL_ROLE', role);
-  localStorage.setItem('CICL_USER_LABEL', label);
-  document.getElementById('login-overlay').style.display = 'none';
-  applyRoleUI();
-  showToast(role === 'admin' ? `Selamat datang, ${label}` : 'Masuk sebagai Tamu (view only)', 'success');
-}
-function logoutUser(){
-  if(!confirm('Keluar dari sesi ini?')) return;
-  currentRole = null; currentUserLabel = '';
-  localStorage.removeItem('CICL_ROLE');
-  localStorage.removeItem('CICL_USER_LABEL');
-  document.getElementById('login-overlay').style.display = 'flex';
-  showRoleStep();
-  document.getElementById('login-username').value=''; document.getElementById('login-password').value='';
-}
-function applyRoleUI(){
-  document.body.classList.toggle('guest-mode', currentRole !== 'admin');
-  const lbl = document.getElementById('logged-user-label');
-  if(lbl) lbl.textContent = currentRole === 'admin' ? `${currentUserLabel} (Admin)` : 'Tamu (View Only)';
-  renderAllViews();
-  lucide.createIcons();
-}
-function initAuth(){
-  const overlay = document.getElementById('login-overlay');
-  if(currentRole === 'admin' || currentRole === 'guest'){
-    overlay.style.display = 'none';
-    applyRoleUI();
-  } else {
-    overlay.style.display = 'flex';
-  }
-  lucide.createIcons();
-}
-
-function saveAll(){ localStorage.setItem('CICL_DATA', JSON.stringify(allData)); }
-function saveMaster(){
-  localStorage.setItem('CICL_WILAYAH', JSON.stringify(WILAYAH));
-  localStorage.setItem('CICL_POLISI', JSON.stringify(KEPOLISIAN));
-  localStorage.setItem('CICL_PK', JSON.stringify(PK_LIST));
-}
-
-function uid(){ return String(Date.now()) + Math.floor(Math.random()*1000); }
-
-function showToast(msg, type='info'){
-  const c = document.getElementById('toast-container'); if(!c) return;
-  const bg = type==='success'?'bg-emerald-600':type==='error'?'bg-red-600':'bg-blue-600';
-  const icon = type==='success'?'check-circle-2':type==='error'?'alert-circle':'info';
-  const t = document.createElement('div'); t.className = `toast ${bg} text-white font-medium flex items-center gap-2`;
-  t.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0"></i><span>${msg}</span>`;
-  c.appendChild(t); lucide.createIcons();
-  setTimeout(()=>t.remove(), type==='success'?3000:4000);
-}
-// Popup "Berhasil" yang lebih menonjol dipakai setiap kali proses simpan selesai di semua menu.
-function showSuccessPopup(msg){ showToast(msg, 'success'); }
-
-function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); renderAllCharts(); }
-
-// ==================== NAVIGATION ====================
-function navigateTo(pageId){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const t = document.getElementById('page-'+pageId); if(t) t.classList.add('active');
-  document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-page')===pageId));
-  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking Adjudikasi', pasca:'Pasca Adjudikasi (Bimbingan)', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
-  document.getElementById('nav-title').textContent = titles[pageId] || 'DIGIT-CICL';
-  closeSidebar();
-  renderAllViews();
-}
-function openSidebar(){ document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('sidebar-overlay').classList.remove('hidden'); }
-function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); }
-function toggleSidebar(){ document.getElementById('sidebar').classList.contains('-translate-x-full') ? openSidebar() : closeSidebar(); }
-
-function openModal(html){ document.getElementById('modal-box').innerHTML = html; document.getElementById('modal-overlay').style.display='flex'; lucide.createIcons(); }
-function closeModal(){ document.getElementById('modal-overlay').style.display='none'; }
-
-function initDropdowns(){
-  ['f-wilayah-p'].forEach(id=>{
-    const el = document.getElementById(id); if(!el) return;
-    el.innerHTML = '<option value="">Semua Wilayah</option>' + WILAYAH.map(w=>`<option>${w}</option>`).join('');
-  });
-}
-
-// ==================== SETTINGS MODAL ====================
-function openSettingsModal(){
-  if(!isAdmin()){ showToast('Pengaturan hanya untuk Admin','error'); return; }
-  openModal(`
-    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Pengaturan</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    <div class="space-y-4">
-      <div><label class="fl">Gemini API Key (untuk AI Scan)</label>
-        <input class="form-input" id="set-gemini" value="${geminiKey}" placeholder="AIza...">
-        <p class="text-[11px] text-slate-500 mt-1">Kunci disimpan hanya di browser Anda (localStorage), tidak dikirim ke server manapun selain Google Gemini.</p>
-        <button type="button" class="btn btn-ghost btn-sm mt-2" onclick="testGeminiKey()"><i data-lucide="plug-zap" class="w-3.5 h-3.5"></i>Tes Koneksi & Kuota</button>
-        <p id="gemini-test-result" class="text-xs mt-1"></p>
-      </div>
-      <div><label class="fl">URL Web App Google Apps Script (opsional, untuk sinkron Google Sheet)</label>
-        <input class="form-input" id="set-gas" value="${gsheetUrl}" placeholder="https://script.google.com/macros/s/.../exec">
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
-        <button class="btn btn-primary" onclick="saveSettings()">Simpan</button>
-      </div>
-    </div>
-  `);
-}
-async function testGeminiKey(){
-  const key = document.getElementById('set-gemini').value.trim();
-  const out = document.getElementById('gemini-test-result');
-  if(!key){ out.textContent = 'Isi API Key dulu.'; out.className='text-xs mt-1 text-red-500'; return; }
-  out.textContent = 'Menguji koneksi...'; out.className='text-xs mt-1 text-slate-500';
-  try{
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${key}`;
-    const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:'ping'}]}]})});
-    if(res.status===429){ out.textContent = '429 - Kuota/rate limit API key ini sudah terlampaui. Coba lagi nanti atau cek kuota di Google AI Studio.'; out.className='text-xs mt-1 text-amber-500 font-semibold'; return; }
-    if(res.status===400 || res.status===403){ out.textContent = 'API Key tidak valid / tidak punya akses ke model ini.'; out.className='text-xs mt-1 text-red-500 font-semibold'; return; }
-    if(!res.ok){ out.textContent = 'Gagal terhubung, HTTP '+res.status; out.className='text-xs mt-1 text-red-500'; return; }
-    out.textContent = 'Berhasil! API Key valid dan siap dipakai.'; out.className='text-xs mt-1 text-emerald-500 font-semibold';
-  }catch(e){ out.textContent = 'Gagal terhubung: '+e.message; out.className='text-xs mt-1 text-red-500'; }
-}
-function saveSettings(){
-  if(guardWrite())return;
-  geminiKey = document.getElementById('set-gemini').value.trim();
-  gsheetUrl = document.getElementById('set-gas').value.trim();
-  localStorage.setItem('CICL_GEMINI_KEY', geminiKey);
-  localStorage.setItem('CICL_GAS_URL', gsheetUrl);
-  showToast('Pengaturan disimpan','success');
-  closeModal();
-}
-
-// ==================== 1. PERMINTAAN LITMAS ====================
-function updatePolisiOptionsIn(prefix){
-  const wil = document.getElementById(prefix+'-wilayah').value;
-  const polSel = document.getElementById(prefix+'-polisi');
-  const list = KEPOLISIAN[wil] || [];
-  polSel.innerHTML = '<option value="">Pilih Kepolisian</option>' + list.map(p=>`<option>${p}</option>`).join('');
-}
-
-function openLitmasModal(id, useAI){
-  const item = id ? allData.find(d=>d.id===id) : null;
-  const wilOpts = WILAYAH.map(w=>`<option ${item&&item.wilayah_asal===w?'selected':''}>${w}</option>`).join('');
-  const pkOpts = PK_LIST.map(p=>`<option ${item&&item.nama_pk===p?'selected':''}>${p}</option>`).join('');
-  openModal(`
-    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${item?'Edit':'Input'} Permintaan Litmas</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    ${!item ? `
-    <div class="flex gap-1 mb-4 border-b border-slate-200 dark:border-slate-700">
-      <div class="tabbtn ${useAI?'':'active'}" id="tab-manual" onclick="switchLitmasTab(false)">Input Manual</div>
-      <div class="tabbtn ${useAI?'active':''}" id="tab-ai" onclick="switchLitmasTab(true)">AI Scan (Gemini)</div>
-    </div>
-    <div id="ai-scan-block" class="${useAI?'':'hidden'} mb-4">
-      <div class="dropzone" onclick="document.getElementById('ai-file-input').click()">
-        <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-slate-400 mb-2"></i>
-        <p class="text-sm font-semibold">Klik untuk unggah PDF / JPG / PNG</p>
-        <p class="text-xs text-slate-500 mt-1">AI akan mengekstrak data surat permintaan litmas secara otomatis.</p>
-      </div>
-      <input type="file" id="ai-file-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleAIFile(this.files[0])">
-      <div id="ai-scan-status" class="hidden mt-3 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs font-semibold flex items-center gap-2">
-        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span id="ai-scan-text">Memproses...</span>
-      </div>
-    </div>` : ''}
-    <form id="litmas-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3" onsubmit="event.preventDefault(); saveLitmas('${item?item.id:''}')">
-      <div><label class="fl">Nomor Surat</label><input class="form-input" id="fm-nosurat" value="${item?item.nomor_surat||'':''}" required></div>
-      <div><label class="fl">Jenis Litmas</label>
-        <select class="form-input" id="fm-jenislitmas" required onchange="updateLitmasFormExtras()">
-          <option value="">Pilih</option>
-          <option ${item&&item.jenis_litmas==='Litmas Integrasi'?'selected':''}>Litmas Integrasi</option>
-          <option ${item&&item.jenis_litmas==='Litmas Pendampingan ABH'?'selected':''}>Litmas Pendampingan ABH</option>
-        </select>
-      </div>
-      <div><label class="fl">Tanggal Surat</label><input type="date" class="form-input" id="fm-tglsurat" value="${item?item.tanggal_surat||'':''}" required></div>
-      <div><label class="fl">Tanggal Diterima</label><input type="date" class="form-input" id="fm-tglditerima" value="${item?item.tanggal_diterima||'':''}" required></div>
-      <div><label class="fl">Nama Anak</label><input class="form-input" id="fm-nama" value="${item?item.nama_anak||'':''}" required></div>
-      <div><label class="fl">Jenis Kelamin</label><select class="form-input" id="fm-jk"><option ${item&&item.jenis_kelamin==='Laki-laki'?'selected':''}>Laki-laki</option><option ${item&&item.jenis_kelamin==='Perempuan'?'selected':''}>Perempuan</option></select></div>
-      <div><label class="fl">Jenis Perkara</label><input class="form-input" id="fm-perkara" value="${item?item.jenis_perkara||'':''}"></div>
-      <div><label class="fl">Wilayah</label><select class="form-input" id="fm-wilayah" onchange="updatePolisiOptionsIn('fm')"><option value="">Pilih Wilayah</option>${wilOpts}</select></div>
-      <div><label class="fl">Instansi Pengirim (Kepolisian)</label><select class="form-input" id="fm-polisi"><option value="">Pilih Kepolisian</option></select></div>
-      <div><label class="fl">PK Pembimbing</label><select class="form-input" id="fm-pk"><option value="">Pilih PK</option>${pkOpts}</select></div>
-      <div><label class="fl">Status Litmas</label><select class="form-input" id="fm-status" onchange="updateLitmasFormExtras()"><option ${item&&item.status_jenis==='Proses'?'selected':''}>Proses</option><option ${item&&item.status_jenis==='Selesai'?'selected':''}>Selesai</option><option ${item&&item.status_jenis==='Pending'?'selected':''}>Pending</option></select></div>
-      <div class="sm:col-span-2"><label class="fl">Keterangan</label><textarea class="form-input" id="fm-ket" rows="2">${item?item.keterangan||'':''}</textarea></div>
-
-      <div class="sm:col-span-2 pt-1 border-t border-slate-200 dark:border-slate-700"></div>
-      <div class="sm:col-span-2">
-        <label class="fl">Berkas Surat Permintaan (JPG/PDF) ${item?'':'<span class="text-red-500">*</span>'}</label>
-        <input type="file" class="form-input" id="fm-surat-file" accept=".pdf,.jpg,.jpeg,.png">
-        <p class="text-[11px] text-slate-500 mt-1">Wajib diunggah saat menyimpan &mdash; akan disimpan otomatis ke Google Drive.</p>
-        ${item&&item.link_surat_permintaan ? `<a href="${item.link_surat_permintaan}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i>Lihat berkas surat yang tersimpan</a><p class="text-[11px] text-slate-500 mt-0.5">Kosongkan jika tidak ingin mengganti berkas.</p>` : ''}
-      </div>
-
-      <div class="sm:col-span-2 hidden" id="fm-berkas-block">
-        <label class="fl">Berkas Litmas (PDF) &mdash; wajib saat Status = Selesai <span class="text-red-500">*</span></label>
-        <input type="file" class="form-input" id="fm-berkas-file" accept=".pdf">
-        <div class="mt-2 hidden" id="fm-kategori-block">
-          <label class="fl">Kategori Berkas Litmas</label>
-          <select class="form-input" id="fm-kategori-berkas">
-            <option value="">Pilih Kategori</option>
-            <option value="Diversi" ${item&&item.kategori_berkas==='Diversi'?'selected':''}>Litmas Diversi</option>
-            <option value="Sidang" ${item&&item.kategori_berkas==='Sidang'?'selected':''}>Litmas Sidang</option>
-          </select>
-          <p class="text-[11px] text-slate-500 mt-1">Menentukan folder Google Drive tujuan berkas untuk Litmas Pendampingan ABH.</p>
-        </div>
-        ${item&&item.link_berkas_litmas ? `<a href="${item.link_berkas_litmas}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>Lihat berkas litmas yang tersimpan</a><p class="text-[11px] text-slate-500 mt-0.5">Kosongkan jika tidak ingin mengganti berkas.</p>` : ''}
-      </div>
-
-      <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
-        <button type="button" class="btn btn-ghost" onclick="closeModal()">Batal</button>
-        <button type="submit" class="btn btn-primary">Simpan</button>
-      </div>
-    </form>
-  `);
-  if(item && item.wilayah_asal){ document.getElementById('fm-wilayah').value = item.wilayah_asal; updatePolisiOptionsIn('fm'); document.getElementById('fm-polisi').value = item.kepolisian||''; }
-  updateLitmasFormExtras();
-}
-// Menampilkan/menyembunyikan blok unggah berkas litmas & pilihan kategori
-// sesuai Status Litmas dan Jenis Litmas yang dipilih.
-function updateLitmasFormExtras(){
-  const statusEl = document.getElementById('fm-status'); const jenisEl = document.getElementById('fm-jenislitmas');
-  const berkasBlock = document.getElementById('fm-berkas-block'); const kategoriBlock = document.getElementById('fm-kategori-block');
-  if(!statusEl || !berkasBlock) return;
-  const isSelesai = statusEl.value === 'Selesai';
-  berkasBlock.classList.toggle('hidden', !isSelesai);
-  const isPendampingan = jenisEl && jenisEl.value === 'Litmas Pendampingan ABH';
-  if(kategoriBlock) kategoriBlock.classList.toggle('hidden', !(isSelesai && isPendampingan));
-  lucide.createIcons();
-}
-function switchLitmasTab(ai){
-  document.getElementById('tab-manual').classList.toggle('active', !ai);
-  document.getElementById('tab-ai').classList.toggle('active', ai);
-  document.getElementById('ai-scan-block').classList.toggle('hidden', !ai);
-}
-
-// Kompres gambar di browser sebelum dikirim ke Gemini (mempercepat upload & analisis).
-// PDF tidak dikompres (dikirim apa adanya).
-function compressImageFile(file, maxDim=1600, quality=0.8){
-  return new Promise((resolve)=>{
-    if(!file.type.startsWith('image/')){ resolve(file); return; }
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = function(){
-      let {width,height} = img;
-      if(width>maxDim || height>maxDim){
-        const scale = maxDim/Math.max(width,height);
-        width = Math.round(width*scale); height = Math.round(height*scale);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img,0,0,width,height);
-      canvas.toBlob((blob)=>{
-        URL.revokeObjectURL(url);
-        resolve(blob ? new File([blob], file.name, {type:'image/jpeg'}) : file);
-      }, 'image/jpeg', quality);
-    };
-    img.onerror = function(){ URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
-  });
-}
-
-async function fetchWithTimeout(url, opts, ms){
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), ms);
-  try{ return await fetch(url, {...opts, signal: ctrl.signal}); }
-  finally{ clearTimeout(t); }
-}
-
-async function handleAIFile(file){
-  if(!file) return;
-  if(!geminiKey){ showToast('Isi Gemini API Key dulu di menu Pengaturan','error'); openSettingsModal(); return; }
-  const statusBox = document.getElementById('ai-scan-status'); const statusText = document.getElementById('ai-scan-text');
-  statusBox.classList.remove('hidden'); statusText.textContent = `Membaca berkas ${file.name}...`;
-  const workFile = await compressImageFile(file);
-  const reader = new FileReader();
-  reader.onload = async function(){
-    try{
-      const base64 = reader.result.split(',')[1];
-      const mimeType = workFile.type || (workFile.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
-      statusText.textContent = 'Menganalisis dengan AI Gemini...';
-      const prompt = `Anda asisten ekstraksi data untuk sistem Litmas Bapas. Analisis dokumen surat permintaan Litmas Integrasi/Pendampingan ABH ini dan kembalikan HANYA objek JSON tanpa markdown dengan struktur persis:
-{
- "nomor_surat":"", "tanggal_surat":"YYYY-MM-DD", "tanggal_diterima":"YYYY-MM-DD",
- "nama_anak":"", "jenis_kelamin":"Laki-laki atau Perempuan",
- "jenis_perkara":"", "wilayah_asal":"salah satu: ${WILAYAH.join(', ')}",
- "kepolisian":"nama instansi pengirim (Polres/Polsek/Kejaksaan/Pengadilan)",
- "nama_pk":"paling cocok dari daftar: ${PK_LIST.join(', ')}",
- "keterangan":"catatan singkat isi surat"
-}`;
-      // Urutan: model tercepat dulu, hanya 1x percobaan per model (retry singkat khusus utk 429),
-      // dan setiap request punya timeout supaya tidak menggantung lama.
-      const models = ['gemini-3.5-flash-lite','gemini-3.6-flash','gemini-2.5-pro'];
-      const body = JSON.stringify({
-        contents:[{role:'user',parts:[{text:prompt},{inlineData:{mimeType,data:base64}}]}],
-        generationConfig:{responseMimeType:'application/json'}
-      });
-      let result = null, lastErr = null;
-      for(let m=0; m<models.length && !result; m++){
-        try{
-          statusText.textContent = `Menganalisis dengan AI Gemini (${models[m]})...`;
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${models[m]}:generateContent?key=${geminiKey}`;
-          let res = await fetchWithTimeout(url,{method:'POST',headers:{'Content-Type':'application/json'},body}, 25000);
-          if(res.status===429){
-            statusText.textContent = `Kuota model ${models[m]} penuh, mencoba ulang sebentar...`;
-            await new Promise(r=>setTimeout(r,1500));
-            res = await fetchWithTimeout(url,{method:'POST',headers:{'Content-Type':'application/json'},body}, 25000);
-          }
-          if(res.status===429){ lastErr = new Error('429'); continue; }
-          if(!res.ok){ lastErr = new Error('HTTP '+res.status); continue; }
-          result = await res.json();
-        }catch(e){ lastErr = (e && e.name==='AbortError') ? new Error('Waktu tunggu habis (timeout)') : e; }
-      }
-      if(!result){
-        if(lastErr && lastErr.message==='429'){
-          throw new Error('Kuota Gemini API terlampaui (429). Ini bukan error aplikasi, tapi limit rate/kuota dari akun Google Anda. Coba: (1) tunggu 1-2 menit lalu ulangi, (2) cek kuota di Google AI Studio/Cloud Console, (3) aktifkan billing pada project API key Anda, atau (4) gunakan API key lain.');
-        }
-        throw (lastErr || new Error('Gagal menghubungi Gemini API'));
-      }
-      const raw = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if(!raw) throw new Error('AI tidak mengembalikan data (berkas mungkin tidak terbaca atau diblokir filter keamanan)');
-      const p = JSON.parse(raw);
-      if(p.nomor_surat) document.getElementById('fm-nosurat').value = p.nomor_surat;
-      if(p.tanggal_surat) document.getElementById('fm-tglsurat').value = p.tanggal_surat;
-      if(p.tanggal_diterima) document.getElementById('fm-tglditerima').value = p.tanggal_diterima;
-      if(p.nama_anak) document.getElementById('fm-nama').value = p.nama_anak;
-      if(p.jenis_kelamin) document.getElementById('fm-jk').value = p.jenis_kelamin;
-      if(p.jenis_perkara) document.getElementById('fm-perkara').value = p.jenis_perkara;
-      if(p.keterangan) document.getElementById('fm-ket').value = p.keterangan;
-      if(p.wilayah_asal && WILAYAH.includes(p.wilayah_asal)){
-        document.getElementById('fm-wilayah').value = p.wilayah_asal; updatePolisiOptionsIn('fm');
-        if(p.kepolisian){
-          const list = KEPOLISIAN[p.wilayah_asal]||[];
-          const match = list.find(x=>x.toLowerCase().includes(p.kepolisian.toLowerCase())||p.kepolisian.toLowerCase().includes(x.toLowerCase()));
-          if(match) document.getElementById('fm-polisi').value = match;
-        }
-      }
-      if(p.nama_pk){
-        const match = PK_LIST.find(x=>x.toLowerCase()===p.nama_pk.toLowerCase()) || PK_LIST.find(x=>x.toLowerCase().includes(p.nama_pk.toLowerCase())||p.nama_pk.toLowerCase().includes(x.toLowerCase()));
-        if(match) document.getElementById('fm-pk').value = match;
-      }
-      switchLitmasTab(false);
-      showToast('Data berhasil diekstrak AI, silakan periksa & simpan','success');
-      statusBox.classList.add('hidden');
-    }catch(err){
-      console.error(err);
-      showToast('Gagal memindai: '+err.message,'error');
-      statusBox.classList.add('hidden');
-    }
-  };
-  reader.readAsDataURL(workFile);
-}
-
-async function saveLitmas(id){
-  if(guardWrite())return;
-  const existingItem = id ? allData.find(d=>d.id===id) : null;
-  const jenisLitmas = val('fm-jenislitmas');
-  const status = val('fm-status');
-
-  const suratInput = document.getElementById('fm-surat-file');
-  const suratFile = suratInput && suratInput.files[0];
-  if(!suratFile && !(existingItem && existingItem.link_surat_permintaan)){
-    showToast('Berkas surat permintaan (JPG/PDF) wajib diunggah','error'); return;
-  }
-
-  let berkasFile = null, kategoriBerkas = '';
-  if(status === 'Selesai'){
-    const berkasInput = document.getElementById('fm-berkas-file');
-    berkasFile = berkasInput && berkasInput.files[0];
-    if(berkasFile && !/\.pdf$/i.test(berkasFile.name) && berkasFile.type !== 'application/pdf'){
-      showToast('Berkas litmas harus berformat PDF','error'); return;
-    }
-    if(jenisLitmas === 'Litmas Pendampingan ABH'){
-      kategoriBerkas = val('fm-kategori-berkas');
-      if(!kategoriBerkas){ showToast('Pilih kategori berkas litmas (Diversi/Sidang)','error'); return; }
-    }
-    if(!berkasFile && !(existingItem && existingItem.link_berkas_litmas)){
-      showToast('Berkas litmas (PDF) wajib diunggah saat Status Litmas = Selesai','error'); return;
-    }
-  }
-
-  const submitBtn = document.querySelector('#litmas-form button[type=submit]');
-  if(submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>Menyimpan...'; lucide.createIcons(); }
-
-  try{
-    let linkSurat = existingItem ? (existingItem.link_surat_permintaan||'') : '';
-    if(suratFile){
-      showToast('Mengunggah berkas surat permintaan ke Google Drive...','info');
-      const up = await uploadFileToDrive(suratFile, GDRIVE_FOLDER_SURAT);
-      linkSurat = up.url;
-    }
-    let linkBerkas = existingItem ? (existingItem.link_berkas_litmas||'') : '';
-    if(berkasFile){
-      let folderId = GDRIVE_FOLDER_LITMAS_INTEGRASI;
-      if(jenisLitmas === 'Litmas Pendampingan ABH') folderId = kategoriBerkas==='Sidang' ? GDRIVE_FOLDER_LITMAS_SIDANG : GDRIVE_FOLDER_LITMAS_DIVERSI;
-      showToast('Mengunggah berkas litmas ke Google Drive...','info');
-      const up2 = await uploadFileToDrive(berkasFile, folderId);
-      linkBerkas = up2.url;
-    }
-
-    const data = {
-      nomor_surat: val('fm-nosurat'), tanggal_surat: val('fm-tglsurat'), tanggal_diterima: val('fm-tglditerima'),
-      nama_anak: val('fm-nama'), jenis_kelamin: val('fm-jk'), jenis_litmas: jenisLitmas,
-      jenis_perkara: val('fm-perkara'), wilayah_asal: val('fm-wilayah'), kepolisian: val('fm-polisi'),
-      nama_pk: val('fm-pk'), status_jenis: status, keterangan: val('fm-ket'),
-      link_surat_permintaan: linkSurat, link_berkas_litmas: linkBerkas
-    };
-    if(id){
-      const item = allData.find(d=>d.id===id); Object.assign(item, data);
-      sendToSheet('update', item);
-    } else {
-      const item = { id: uid(), ...data, registrasi:null, adjudikasi:{jalur:null,status:'Berjalan',diversi:{kepolisian:{},kejaksaan:{},pengadilan:{}},persidangan:{sidang:[],putusan:{}}}, pasca_adjudikasi:null };
-      allData.push(item);
-      sendToSheet('create', item);
-    }
-    saveAll(); closeModal(); renderAllViews();
-    showSuccessPopup(id ? 'Data litmas berhasil diperbarui & berkas tersimpan' : 'Permintaan litmas berhasil ditambahkan & berkas tersimpan');
-  }catch(err){
-    console.error(err);
-    showToast('Gagal menyimpan: '+err.message, 'error');
-    if(submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = 'Simpan'; }
-  }
-}
-function val(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
-
-function deleteLitmas(id){
-  if(guardWrite())return;
-  if(!confirm('Hapus data permintaan litmas ini? Data registrasi & adjudikasi terkait juga akan terhapus.')) return;
-  allData = allData.filter(d=>d.id!==id);
-  sendToSheet('delete', {id});
-  saveAll(); renderAllViews();
-  showToast('Data dihapus','success');
-}
-
-function getFilteredPermintaan(){
-  const q = (document.getElementById('q-permintaan')?.value||'').toLowerCase();
-  const jl = document.getElementById('f-jenislitmas')?.value||'';
-  const wl = document.getElementById('f-wilayah-p')?.value||'';
-  const st = document.getElementById('f-status-p')?.value||'';
-  return allData.filter(d=>{
-    const mq = !q || (d.nama_anak||'').toLowerCase().includes(q) || (d.nomor_surat||'').toLowerCase().includes(q);
-    return mq && (!jl||d.jenis_litmas===jl) && (!wl||d.wilayah_asal===wl) && (!st||d.status_jenis===st);
-  });
-}
-function renderPermintaanTable(){
-  const tbody = document.getElementById('tb-permintaan'); if(!tbody) return;
-  let data = getFilteredPermintaan();
-  data = sortByTable(data, 'permintaan', (d,key)=> key==='registrasi' ? (d.registrasi?d.registrasi.nomor:'') : d[key]);
-  tbody.innerHTML = data.length ? data.map(d=>`
-    <tr>
-      <td class="font-semibold">${d.nomor_surat||'-'}</td><td>${fmtDate(d.tanggal_surat)}</td><td>${fmtDate(d.tanggal_diterima)}</td>
-      <td>${d.nama_anak||'-'}</td><td>${d.jenis_kelamin||'-'}</td><td>${d.jenis_litmas||'-'}</td>
-      <td>${d.jenis_perkara||'-'}</td><td>${d.wilayah_asal||'-'}</td><td>${d.kepolisian||'-'}</td><td>${d.nama_pk||'-'}</td>
-      <td><span class="badge ${d.status_jenis==='Selesai'?'badge-green':d.status_jenis==='Pending'?'badge-amber':'badge-blue'}">${d.status_jenis||'-'}</span></td>
-      <td>${d.registrasi?`<span class="badge badge-indigo">${d.registrasi.nomor}</span>`:'<span class="badge badge-slate">Belum</span>'}</td>
-      <td class="text-center whitespace-nowrap">
-        ${d.link_surat_permintaan ? `<a href="${d.link_surat_permintaan}" target="_blank" class="btn btn-ghost btn-sm" title="Lihat Berkas Surat"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></a>` : ''}
-        ${d.link_berkas_litmas ? `<a href="${d.link_berkas_litmas}" target="_blank" class="btn btn-ghost btn-sm" title="Lihat Berkas Litmas"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i></a>` : ''}
-        ${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openLitmasModal('${d.id}')" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-        <button class="btn btn-danger btn-sm" onclick="deleteLitmas('${d.id}')" title="Hapus"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">Lihat saja</span>`}
-      </td>
-    </tr>`).join('') : `<tr><td colspan="13" class="text-center py-8 text-slate-400">Tidak ada data.</td></tr>`;
-  lucide.createIcons();
-}
-
-// ==================== 2. REGISTRASI ====================
-function toRomanMonth(dateStr){
-  const m = new Date(dateStr).getMonth();
-  return ROMAN[m>=0&&m<12?m:0];
-}
-function registrasiAnak(id){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id); if(!item) return;
-  const now = new Date().toISOString().split('T')[0];
-  const year = new Date(now).getFullYear();
-  // Nomor urut dilanjutkan dari nomor TERBESAR yang sudah pernah dipakai tahun ini
-  // (bukan sekadar jumlah anak yang sudah teregistrasi), supaya urutan tetap
-  // berkesinambungan lintas bulan walau ada registrasi yang dibatalkan sebelumnya.
-  let maxSeq = 0;
-  allData.forEach(d=>{
-    if(d.registrasi && d.registrasi.tahun===year){
-      const m = String(d.registrasi.nomor||'').match(/^(\d+)\//);
-      if(m){ const n = parseInt(m[1],10); if(n>maxSeq) maxSeq = n; }
-    }
-  });
-  const seq = String(maxSeq+1).padStart(4,'0');
-  const nomor = `${seq}/AN/${toRomanMonth(now)}/${year}`;
-  item.registrasi = { nomor, tanggal: now, tahun: year };
-  sendToSheet('update_registrasi', {id: item.id, nomor_registrasi: nomor, tanggal_registrasi: now});
-  saveAll(); renderAllViews();
-  showToast(`Anak diregistrasi dengan nomor ${nomor}`,'success');
-}
-function batalRegistrasi(id){
-  if(guardWrite())return;
-  if(!confirm('Batalkan registrasi anak ini?')) return;
-  const item = allData.find(d=>d.id===id); if(!item) return;
-  item.registrasi = null;
-  sendToSheet('update_registrasi', {id:item.id, nomor_registrasi:'', tanggal_registrasi:''});
-  saveAll(); renderAllViews();
-  showSuccessPopup('Registrasi anak dibatalkan');
-}
-function getFilteredRegistrasi(){
-  const q = (document.getElementById('q-registrasi')?.value||'').toLowerCase();
-  return allData.filter(d => !q || (d.nama_anak||'').toLowerCase().includes(q) || (d.registrasi?.nomor||'').toLowerCase().includes(q));
-}
-function regGetter(d,key){
-  if(key==='reg_nomor') return d.registrasi?.nomor||'';
-  if(key==='reg_tanggal') return d.registrasi?.tanggal||'';
-  return d[key];
-}
-function renderRegistrasiTables(){
-  const data = getFilteredRegistrasi();
-  const stF = document.getElementById('f-reg-status')?.value||'';
-  let belum = data.filter(d=>!d.registrasi && stF!=='sudah');
-  let sudah = data.filter(d=>d.registrasi && stF!=='belum');
-  belum = sortByTable(belum, 'reg-belum', regGetter);
-  sudah = tableSort['reg-sudah'] ? sortByTable(sudah, 'reg-sudah', regGetter) : sudah.sort((a,b)=> new Date(b.registrasi.tanggal) - new Date(a.registrasi.tanggal));
-  const tbBelum = document.getElementById('tb-reg-belum');
-  if(tbBelum) tbBelum.innerHTML = belum.length ? belum.map(d=>`
-    <tr><td class="font-semibold">${d.nomor_surat||'-'}</td><td>${d.nama_anak||'-'}</td><td>${d.jenis_kelamin||'-'}</td><td>${d.jenis_litmas||'-'}</td><td>${d.wilayah_asal||'-'}</td><td>${d.nama_pk||'-'}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-gold btn-sm" onclick="registrasiAnak('${d.id}')"><i data-lucide="hash" class="w-3.5 h-3.5"></i>Registrasi</button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>
-  `).join('') : `<tr><td colspan="7" class="text-center py-6 text-slate-400">Tidak ada data menunggu registrasi.</td></tr>`;
-  const tbSudah = document.getElementById('tb-reg-sudah');
-  if(tbSudah) tbSudah.innerHTML = sudah.length ? sudah.map(d=>`
-    <tr><td class="font-bold text-brand-navy dark:text-amber-400">${d.registrasi.nomor}</td><td>${fmtDate(d.registrasi.tanggal)}</td><td>${d.nama_anak||'-'}</td><td>${d.jenis_kelamin||'-'}</td><td>${d.jenis_litmas||'-'}</td><td>${d.wilayah_asal||'-'}</td><td>${d.nama_pk||'-'}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="batalRegistrasi('${d.id}')" title="Batalkan"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>
-  `).join('') : `<tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada anak yang teregistrasi.</td></tr>`;
-  lucide.createIcons();
-}
-
-// ==================== 3. ADJUDIKASI ====================
-function getAdjTahapLabel(item){
-  const a = item.adjudikasi; if(!a) return 'Belum Ditentukan';
-  if(!a.jalur) return 'Belum Ditentukan Jalur';
-  if(a.jalur==='Diversi'){
-    const d = a.diversi;
-    if(d.kepolisian?.hasil==='Berhasil') return 'Selesai - Diversi Berhasil (Kepolisian)';
-    if(d.kepolisian?.hasil==='Gagal'){
-      if(d.kejaksaan?.hasil==='Berhasil') return 'Selesai - Diversi Berhasil (Kejaksaan)';
-      if(d.kejaksaan?.hasil==='Gagal'){
-        if(d.pengadilan?.hasil==='Berhasil') return 'Selesai - Diversi Berhasil (Pengadilan)';
-        if(d.pengadilan?.hasil==='Gagal') return 'Lanjut Persidangan (Diversi Gagal Total)';
-        return 'Diversi Tingkat Pengadilan';
-      }
-      return 'Diversi Tingkat Kejaksaan';
-    }
-    return 'Diversi Tingkat Kepolisian';
-  }
-  if(a.jalur==='Persidangan'){
-    if(a.persidangan?.putusan?.tanggal) return 'Selesai - Putusan Hakim Terbit';
-    const n = (a.persidangan?.sidang||[]).length;
-    return n>0 ? `Persidangan ke-${n} (Berjalan)` : 'Menunggu Sidang Pertama';
-  }
-  return 'Belum Ditentukan';
-}
-function getAdjStatus(item){
-  return getAdjTahapLabel(item).startsWith('Selesai') ? 'Selesai' : 'Berjalan';
-}
-function getFilteredAdjudikasi(){
-  const q = (document.getElementById('q-adjudikasi')?.value||'').toLowerCase();
-  const jalur = document.getElementById('f-adj-jalur')?.value||'';
-  const st = document.getElementById('f-adj-status')?.value||'';
-  return allData.filter(d=>d.registrasi).filter(d=>{
-    const mq = !q || (d.nama_anak||'').toLowerCase().includes(q) || (d.registrasi?.nomor||'').toLowerCase().includes(q);
-    const mj = !jalur || (jalur==='Belum' ? !d.adjudikasi?.jalur : d.adjudikasi?.jalur===jalur);
-    const ms = !st || getAdjStatus(d)===st;
-    return mq && mj && ms;
-  });
-}
-function adjudikasiGetter(d,key){
-  if(key==='reg_nomor') return d.registrasi?.nomor||'';
-  if(key==='jalur') return d.adjudikasi?.jalur||'';
-  if(key==='tahap') return getAdjTahapLabel(d);
-  if(key==='status') return getAdjStatus(d);
-  return d[key];
-}
-function renderAdjudikasiTable(){
-  const tbody = document.getElementById('tb-adjudikasi'); if(!tbody) return;
-  let data = getFilteredAdjudikasi();
-  data = sortByTable(data, 'adjudikasi', adjudikasiGetter);
-  tbody.innerHTML = data.length ? data.map(d=>{
-    const tahap = getAdjTahapLabel(d); const status = getAdjStatus(d);
-    return `<tr>
-      <td class="font-semibold">${d.registrasi.nomor}</td><td>${d.nama_anak}</td>
-      <td><span class="badge ${d.adjudikasi?.jalur==='Diversi'?'badge-indigo':d.adjudikasi?.jalur==='Persidangan'?'badge-pink':'badge-slate'}">${d.adjudikasi?.jalur||'Belum Ditentukan'}</span></td>
-      <td class="text-xs">${tahap}</td>
-      <td><span class="badge ${status==='Selesai'?'badge-green':'badge-amber'}">${status}</span></td>
-      <td>${d.nama_pk||'-'}</td>
-      <td class="text-center"><button class="btn btn-gold btn-sm" onclick="openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i>Kelola</button></td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada anak teregistrasi untuk ditracking adjudikasinya.</td></tr>`;
-  lucide.createIcons();
-}
-
-function openAdjudikasiModal(id){
-  const item = allData.find(d=>d.id===id); if(!item) return;
-  const a = item.adjudikasi;
-  let body = '';
-  if(!a.jalur){
-    body = isAdmin() ? `
-      <p class="text-sm mb-4">Tentukan jalur adjudikasi untuk <b>${item.nama_anak}</b>:</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button class="btn btn-primary" onclick="setJalur('${id}','Diversi')"><i data-lucide="handshake" class="w-4 h-4"></i>Jalur Diversi</button>
-        <button class="btn bg-pink-600 text-white hover:bg-pink-700" onclick="setJalur('${id}','Persidangan')"><i data-lucide="landmark" class="w-4 h-4"></i>Jalur Persidangan</button>
-      </div>` : `<p class="text-sm text-slate-500">Jalur adjudikasi belum ditentukan.</p>`;
-  } else if(a.jalur==='Diversi'){
-    body = renderDiversiForm(item);
-  } else {
-    body = renderPersidanganForm(item);
-  }
-  openModal(`
-    <div class="flex justify-between items-center mb-4">
-      <div><h3 class="font-bold text-lg">Tracking Adjudikasi</h3><p class="text-xs text-slate-500">${item.nama_anak} - ${item.registrasi?.nomor||''}</p></div>
-      <button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button>
-    </div>
-    ${a.jalur && isAdmin() ? `<p class="text-xs mb-3"><button class="btn btn-ghost btn-sm" onclick="if(confirm('Ganti jalur adjudikasi? Data tahapan sebelumnya akan direset.')) resetJalur('${id}')"><i data-lucide='refresh-ccw' class='w-3 h-3'></i> Ganti Jalur</button></p>`:''}
-    <div id="adj-body">${body}</div>
-  `);
-}
-function setJalur(id, jalur){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id);
-  item.adjudikasi.jalur = jalur;
-  persistAdj(item); openAdjudikasiModal(id);
-  showSuccessPopup(`Jalur adjudikasi ditetapkan: ${jalur}`);
-}
-function resetJalur(id){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id);
-  item.adjudikasi = {jalur:null,status:'Berjalan',diversi:{kepolisian:{},kejaksaan:{},pengadilan:{}},persidangan:{sidang:[],putusan:{}}};
-  persistAdj(item); openAdjudikasiModal(id);
-  showSuccessPopup('Jalur adjudikasi direset');
-}
-function persistAdj(item){
-  sendToSheet('update_adjudikasi', {id:item.id, adjudikasi:item.adjudikasi});
-  saveAll(); renderAllViews();
-}
-
-function renderDiversiForm(item){
-  const d = item.adjudikasi.diversi;
-  const tierHtml = (key, label, unlocked) => `
-    <div class="p-3 rounded-xl border ${unlocked?'border-slate-200 dark:border-slate-700':'border-slate-100 dark:border-slate-800 opacity-50'} mb-3">
-      <p class="font-semibold text-sm mb-2">${label}</p>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div><label class="fl">Tanggal Pelaksanaan</label><input type="date" class="form-input" id="adj-${key}-tgl" value="${d[key]?.tanggal||''}" ${unlocked&&isAdmin()?'':'disabled'}></div>
-        <div><label class="fl">Hasil</label><select class="form-input" id="adj-${key}-hasil" ${unlocked&&isAdmin()?'':'disabled'}>
-          <option value="">Belum Ada</option>
-          <option value="Berhasil" ${d[key]?.hasil==='Berhasil'?'selected':''}>Berhasil (Kesepakatan Diversi)</option>
-          <option value="Gagal" ${d[key]?.hasil==='Gagal'?'selected':''}>Gagal / Tidak Sepakat</option>
-        </select></div>
-        <div><label class="fl">Catatan</label><input class="form-input" id="adj-${key}-cat" value="${d[key]?.catatan||''}" ${unlocked&&isAdmin()?'':'disabled'}></div>
-      </div>
-      ${unlocked&&isAdmin()?`<button class="btn btn-primary btn-sm mt-2" onclick="saveDiversiTier('${item.id}','${key}')">Simpan ${label}</button>`:''}
-    </div>`;
-  const kepolisianUnlocked = true;
-  const kejaksaanUnlocked = d.kepolisian?.hasil==='Gagal';
-  const pengadilanUnlocked = d.kejaksaan?.hasil==='Gagal';
-  let html = tierHtml('kepolisian','Diversi Tingkat Kepolisian', kepolisianUnlocked);
-  html += tierHtml('kejaksaan','Diversi Tingkat Kejaksaan', kejaksaanUnlocked);
-  html += tierHtml('pengadilan','Diversi Tingkat Pengadilan', pengadilanUnlocked);
-  if(d.pengadilan?.hasil==='Gagal'){
-    html += `<div class="p-3 rounded-xl bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900 text-sm">
-      Diversi gagal di seluruh tingkatan. Kasus otomatis dilanjutkan ke jalur <b>Persidangan</b>.
-      ${isAdmin()?`<button class="btn bg-pink-600 text-white btn-sm mt-2" onclick="setJalur('${item.id}','Persidangan')">Lanjutkan ke Persidangan</button>`:''}
-    </div>`;
-  }
-  return html;
-}
-function saveDiversiTier(id, key){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id);
-  item.adjudikasi.diversi[key] = {
-    tanggal: document.getElementById(`adj-${key}-tgl`).value,
-    hasil: document.getElementById(`adj-${key}-hasil`).value,
-    catatan: document.getElementById(`adj-${key}-cat`).value
-  };
-  persistAdj(item);
-  showToast('Tahap diversi disimpan','success');
-  openAdjudikasiModal(id);
-}
-
-function renderPersidanganForm(item){
-  const p = item.adjudikasi.persidangan;
-  const sidangRows = (p.sidang||[]).map(s=>`
-    <tr><td>Sidang ke-${s.ke}</td><td>${fmtDate(s.tanggal)}</td><td>${s.agenda||'-'}</td><td>${s.catatan||'-'}</td></tr>
-  `).join('') || `<tr><td colspan="4" class="text-center text-slate-400 py-3">Belum ada sidang.</td></tr>`;
-  const putusanDone = !!p.putusan?.tanggal;
-  return `
-    <div class="table-wrap rounded-xl border border-slate-200 dark:border-slate-700 mb-3">
-      <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr><th>Sidang</th><th>Tanggal</th><th>Agenda</th><th>Catatan</th></tr></thead><tbody>${sidangRows}</tbody></table>
-    </div>
-    ${!putusanDone && isAdmin() ? `
-    <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 mb-3">
-      <p class="font-semibold text-sm mb-2">Tambah Jadwal Sidang ke-${(p.sidang||[]).length+1}</p>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div><label class="fl">Tanggal</label><input type="date" class="form-input" id="sd-tgl"></div>
-        <div><label class="fl">Agenda</label><input class="form-input" id="sd-agenda" placeholder="mis. Pembacaan Dakwaan"></div>
-        <div><label class="fl">Catatan</label><input class="form-input" id="sd-cat"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-2" onclick="addSidang('${item.id}')">Tambah Sidang</button>
-    </div>
-    <div class="p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/30">
-      <p class="font-semibold text-sm mb-2">Input Putusan Hakim (Menyelesaikan Adjudikasi)</p>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div><label class="fl">Tanggal Putusan</label><input type="date" class="form-input" id="pt-tgl"></div>
-        <div><label class="fl">Nomor Putusan</label><input class="form-input" id="pt-nomor"></div>
-        <div><label class="fl">Isi Putusan Singkat</label><input class="form-input" id="pt-isi"></div>
-      </div>
-      <button class="btn btn-gold btn-sm mt-2" onclick="savePutusan('${item.id}')">Simpan Putusan</button>
-    </div>` : (!putusanDone ? `<p class="text-sm text-slate-500">Putusan belum tersedia.</p>` : `<div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-sm">
-      <b>Putusan Hakim:</b> ${p.putusan.nomor||'-'} tanggal ${fmtDate(p.putusan.tanggal)}<br>${p.putusan.isi||''}
-    </div>`)}
-  `;
-}
-function addSidang(id){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id);
-  const p = item.adjudikasi.persidangan;
-  const tgl = document.getElementById('sd-tgl').value;
-  if(!tgl){ showToast('Isi tanggal sidang','error'); return; }
-  p.sidang.push({ ke: (p.sidang||[]).length+1, tanggal: tgl, agenda: document.getElementById('sd-agenda').value, catatan: document.getElementById('sd-cat').value });
-  persistAdj(item); openAdjudikasiModal(id); showToast('Jadwal sidang ditambahkan','success');
-}
-function savePutusan(id){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id);
-  const tgl = document.getElementById('pt-tgl').value;
-  if(!tgl){ showToast('Isi tanggal putusan','error'); return; }
-  item.adjudikasi.persidangan.putusan = { tanggal: tgl, nomor: document.getElementById('pt-nomor').value, isi: document.getElementById('pt-isi').value };
-  persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim disimpan, adjudikasi selesai','success');
-}
-
-// ==================== 4. PASCA ADJUDIKASI ====================
-function eligibleForPasca(){ return allData.filter(d=>d.registrasi && getAdjStatus(d)==='Selesai'); }
-function getPascaList(){ return allData.filter(d=>d.pasca_adjudikasi); }
-function openPascaModal(id){
-  const item = allData.find(d=>d.id===id); if(!item) return;
-  const p = item.pasca_adjudikasi || {};
-  openModal(`
-    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Data Bimbingan Pasca Adjudikasi</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    <form class="grid grid-cols-1 sm:grid-cols-2 gap-3" onsubmit="event.preventDefault(); savePasca('${id}')">
-      <div class="sm:col-span-2"><p class="font-semibold">${item.nama_anak}</p></div>
-      <div><label class="fl">Jenis Bimbingan</label><select class="form-input" id="ps-jenis" ${isAdmin()?'':'disabled'}>
-        <option value="Pembebasan Bersyarat (PB)" ${p.jenis==='Pembebasan Bersyarat (PB)'?'selected':''}>Pembebasan Bersyarat (PB)</option>
-        <option value="Cuti Bersyarat (CB)" ${p.jenis==='Cuti Bersyarat (CB)'?'selected':''}>Cuti Bersyarat (CB)</option>
-      </select></div>
-      <div><label class="fl">Asal LPKA</label><input class="form-input" id="ps-lpka" value="${p.asal_lpka||''}" ${isAdmin()?'':'disabled'}></div>
-      <div><label class="fl">Tanggal Mulai Bimbingan</label><input type="date" class="form-input" id="ps-mulai" value="${p.tanggal_mulai||''}" ${isAdmin()?'':'disabled'}></div>
-      <div><label class="fl">Tanggal Selesai Bimbingan</label><input type="date" class="form-input" id="ps-selesai" value="${p.tanggal_selesai||''}" ${isAdmin()?'':'disabled'}></div>
-      <div><label class="fl">PK Pembimbing</label><select class="form-input" id="ps-pk" ${isAdmin()?'':'disabled'}>${PK_LIST.map(x=>`<option ${p.pk_pembimbing===x?'selected':''}>${x}</option>`).join('')}</select></div>
-      <div><label class="fl">Status</label><select class="form-input" id="ps-status" ${isAdmin()?'':'disabled'}>
-        <option ${p.status==='Dalam Bimbingan'?'selected':''}>Dalam Bimbingan</option>
-        <option ${p.status==='Selesai'?'selected':''}>Selesai</option>
-        <option ${p.status==='Dicabut'?'selected':''}>Dicabut</option>
-      </select></div>
-      <div class="sm:col-span-2"><label class="fl">Keterangan</label><textarea class="form-input" id="ps-ket" rows="2" ${isAdmin()?'':'disabled'}>${p.keterangan||''}</textarea></div>
-      <div class="sm:col-span-2 flex justify-end gap-2 pt-2"><button type="button" class="btn btn-ghost" onclick="closeModal()">${isAdmin()?'Batal':'Tutup'}</button>${isAdmin()?'<button class="btn btn-primary">Simpan</button>':''}</div>
-    </form>
-  `);
-}
-function savePasca(id){
-  if(guardWrite())return;
-  const item = allData.find(d=>d.id===id);
-  item.pasca_adjudikasi = {
-    jenis: val('ps-jenis'), asal_lpka: val('ps-lpka'), tanggal_mulai: val('ps-mulai'), tanggal_selesai: val('ps-selesai'),
-    pk_pembimbing: val('ps-pk'), status: val('ps-status'), keterangan: val('ps-ket')
-  };
-  sendToSheet('update_pasca', {id:item.id, pasca_adjudikasi:item.pasca_adjudikasi});
-  saveAll(); closeModal(); renderAllViews();
-  showToast('Data bimbingan pasca adjudikasi disimpan','success');
-}
-function openPascaManualModal(){
-  if(guardWrite())return;
-  const eligible = eligibleForPasca().filter(d=>!d.pasca_adjudikasi);
-  openModal(`
-    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Tambah Klien Bimbingan</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    ${eligible.length ? `
-    <p class="text-sm mb-3">Pilih anak yang telah selesai proses adjudikasi:</p>
-    <select class="form-input mb-3" id="ps-pilih-anak">${eligible.map(d=>`<option value="${d.id}">${d.nama_anak} (${d.registrasi.nomor})</option>`).join('')}</select>
-    <div class="flex justify-end gap-2"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="openPascaModal(document.getElementById('ps-pilih-anak').value)">Lanjutkan</button></div>
-    ` : `<p class="text-sm text-slate-500">Belum ada anak dengan status adjudikasi Selesai yang siap dimasukkan ke bimbingan pasca adjudikasi. Selesaikan proses adjudikasi terlebih dahulu di menu Tracking Adjudikasi.</p>
-    <div class="flex justify-end pt-3"><button class="btn btn-ghost" onclick="closeModal()">Tutup</button></div>`}
-  `);
-}
-function getFilteredPasca(){
-  const q = (document.getElementById('q-pasca')?.value||'').toLowerCase();
-  const jn = document.getElementById('f-pasca-jenis')?.value;
-  const st = document.getElementById('f-pasca-status')?.value;
-  return getPascaList().filter(d=>{
-    const mq = !q || (d.nama_anak||'').toLowerCase().includes(q);
-    return mq && (!jn||d.pasca_adjudikasi.jenis===jn) && (!st||d.pasca_adjudikasi.status===st);
-  });
-}
-function pascaGetter(d,key){
-  if(key==='nama_anak') return d.nama_anak||'';
-  return (d.pasca_adjudikasi||{})[key];
-}
-function renderPascaTable(){
-  const tbody = document.getElementById('tb-pasca'); if(!tbody) return;
-  let data = getFilteredPasca();
-  data = sortByTable(data, 'pasca', pascaGetter);
-  tbody.innerHTML = data.length ? data.map(d=>{ const p = d.pasca_adjudikasi; return `
-    <tr><td class="font-semibold">${d.nama_anak}</td><td><span class="badge ${p.jenis.includes('PB')?'badge-blue':'badge-indigo'}">${p.jenis}</span></td>
-    <td>${p.asal_lpka||'-'}</td><td>${fmtDate(p.tanggal_mulai)}</td><td>${fmtDate(p.tanggal_selesai)}</td><td>${p.pk_pembimbing||'-'}</td>
-    <td><span class="badge ${p.status==='Selesai'?'badge-green':p.status==='Dicabut'?'badge-amber':'badge-blue'}">${p.status}</span></td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>` : `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')" title="Lihat"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>`}</td></tr>
-  `;}).join('') : `<tr><td colspan="8" class="text-center py-8 text-slate-400">Belum ada klien bimbingan pasca adjudikasi.</td></tr>`;
-  lucide.createIcons();
-}
-
-// ==================== 5-7. MASTER DATA (PK / WILAYAH / KEPOLISIAN) ====================
-function openPkModal(oldName){
-  if(guardWrite())return;
-  openModal(`<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} PK</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-  <div><label class="fl">Nama PK</label><input class="form-input" id="pk-name" value="${oldName||''}"></div>
-  <div class="flex justify-end gap-2 pt-4"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="savePk('${oldName||''}')">Simpan</button></div>`);
-}
-function savePk(oldName){
-  if(guardWrite())return;
-  const name = val('pk-name'); if(!name) return;
-  if(oldName){ const i = PK_LIST.indexOf(oldName); if(i>-1) PK_LIST[i]=name; allData.forEach(d=>{ if(d.nama_pk===oldName) d.nama_pk=name; }); }
-  else PK_LIST.push(name);
-  saveMaster(); saveAll(); closeModal(); renderAllViews(); showToast('Data PK disimpan','success');
-}
-function deletePk(name){ if(guardWrite())return; if(!confirm('Hapus PK '+name+'?')) return; PK_LIST = PK_LIST.filter(p=>p!==name); saveMaster(); renderAllViews(); }
-function renderPkTable(){
-  const tbody = document.getElementById('tb-pk'); if(!tbody) return;
-  let rows = PK_LIST.map(p=>{
-    const casesForPk = allData.filter(d=>d.nama_pk===p);
-    return {
-      name: p,
-      int: casesForPk.filter(d=>d.jenis_litmas==='Litmas Integrasi').length,
-      pnd: casesForPk.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length,
-      total: casesForPk.length
-    };
-  });
-  rows = sortByTable(rows, 'pk', (r,key)=>r[key]);
-  tbody.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td>
-    <td class="text-center"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('Litmas Integrasi — PK ${r.name}', allData.filter(d=>d.nama_pk==='${r.name}' && d.jenis_litmas==='Litmas Integrasi'))">${r.int}</span></td>
-    <td class="text-center"><span class="badge badge-indigo" style="cursor:pointer" onclick="showStatDetail('Litmas Pendampingan ABH — PK ${r.name}', allData.filter(d=>d.nama_pk==='${r.name}' && d.jenis_litmas==='Litmas Pendampingan ABH'))">${r.pnd}</span></td>
-    <td class="font-bold text-center">${r.total}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openPkModal('${r.name}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-    <button class="btn btn-danger btn-sm" onclick="deletePk('${r.name}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>`).join('');
-  lucide.createIcons();
-}
-
-function openWilayahModal(oldName){
-  if(guardWrite())return;
-  openModal(`<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} Wilayah</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-  <div><label class="fl">Nama Wilayah</label><input class="form-input" id="wil-name" value="${oldName||''}"></div>
-  <div class="flex justify-end gap-2 pt-4"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveWilayah('${oldName||''}')">Simpan</button></div>`);
-}
-function saveWilayah(oldName){
-  if(guardWrite())return;
-  const name = val('wil-name'); if(!name) return;
-  if(oldName){ const i=WILAYAH.indexOf(oldName); if(i>-1) WILAYAH[i]=name; KEPOLISIAN[name]=KEPOLISIAN[oldName]||[]; if(name!==oldName) delete KEPOLISIAN[oldName]; allData.forEach(d=>{ if(d.wilayah_asal===oldName) d.wilayah_asal=name; }); }
-  else { WILAYAH.push(name); KEPOLISIAN[name]=[]; }
-  saveMaster(); saveAll(); closeModal(); renderAllViews(); showToast('Data wilayah disimpan','success');
-}
-function deleteWilayah(name){ if(guardWrite())return; if(!confirm('Hapus wilayah '+name+'?')) return; WILAYAH=WILAYAH.filter(w=>w!==name); delete KEPOLISIAN[name]; saveMaster(); renderAllViews(); }
-function renderWilayahTable(){
-  const tbody = document.getElementById('tb-wilayah'); if(!tbody) return;
-  let rows = WILAYAH.map(w=>({name:w, total: allData.filter(d=>d.wilayah_asal===w).length}));
-  rows = sortByTable(rows, 'wilayah', (r,key)=>r[key]);
-  tbody.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.total}</td>
-  <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openWilayahModal('${r.name}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-  <button class="btn btn-danger btn-sm" onclick="deleteWilayah('${r.name}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>`).join('');
-  lucide.createIcons();
-}
-
-function openKepolisianModal(wil, oldName){
-  if(guardWrite())return;
-  openModal(`<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} Kepolisian</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-  <div class="space-y-3">
-    <div><label class="fl">Wilayah</label><select class="form-input" id="pol-wil">${WILAYAH.map(w=>`<option ${wil===w?'selected':''}>${w}</option>`).join('')}</select></div>
-    <div><label class="fl">Nama Kepolisian</label><input class="form-input" id="pol-name" value="${oldName||''}"></div>
+<div id="pwa-install-bar">
+  <span class="flex items-center gap-2"><i data-lucide="download-cloud" class="w-4 h-4"></i> Install DIGIT-CICL di perangkat Anda</span>
+  <div class="flex gap-2">
+    <button onclick="installPWA()" class="btn btn-gold btn-sm">Install</button>
+    <button onclick="dismissPWABar()" class="btn btn-ghost btn-sm" style="color:#fff;background:rgba(255,255,255,.15)">Nanti</button>
   </div>
-  <div class="flex justify-end gap-2 pt-4"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveKepolisian('${wil||''}','${oldName||''}')">Simpan</button></div>`);
-}
-function saveKepolisian(oldWil, oldName){
-  if(guardWrite())return;
-  const wil = val('pol-wil'); const name = val('pol-name'); if(!name) return;
-  if(!KEPOLISIAN[wil]) KEPOLISIAN[wil]=[];
-  if(oldName){ KEPOLISIAN[oldWil] = (KEPOLISIAN[oldWil]||[]).filter(p=>p!==oldName); }
-  KEPOLISIAN[wil].push(name);
-  saveMaster(); closeModal(); renderAllViews(); showToast('Data kepolisian disimpan','success');
-}
-function deleteKepolisian(wil, name){ if(guardWrite())return; if(!confirm('Hapus '+name+'?')) return; KEPOLISIAN[wil] = (KEPOLISIAN[wil]||[]).filter(p=>p!==name); saveMaster(); renderAllViews(); }
-function renderKepolisianTable(){
-  const tbody = document.getElementById('tb-kepolisian'); if(!tbody) return;
-  let items = [];
-  WILAYAH.forEach(w=>{ (KEPOLISIAN[w]||[]).forEach(p=>{
-    items.push({wilayah:w, nama:p, total: allData.filter(d=>d.kepolisian===p).length});
-  });});
-  items = sortByTable(items, 'kepolisian', (r,key)=>r[key]);
-  tbody.innerHTML = items.length ? items.map((r,i)=>`<tr><td>${i+1}</td><td>${r.wilayah}</td><td>${r.nama}</td><td>${r.total}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openKepolisianModal('${r.wilayah}','${r.nama}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-    <button class="btn btn-danger btn-sm" onclick="deleteKepolisian('${r.wilayah}','${r.nama}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>`).join('') : `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data.</td></tr>`;
-  lucide.createIcons();
-}
+</div>
 
-// ==================== 8. REKAP PK ====================
-function renderRekapTable(){
-  const head = document.getElementById('rekap-head'); const tbody = document.getElementById('tb-rekap');
-  if(!head||!tbody) return;
-  head.innerHTML = '<th class="sortable" data-table="rekap" data-key="pk">PK<span class="sort-arrow"></span></th>'
-    + WILAYAH.map(w=>`<th>${w}</th>`).join('')
-    + '<th class="sortable font-extrabold" data-table="rekap" data-key="total">TOTAL<span class="sort-arrow"></span></th>';
-  let rows = PK_LIST.map(pk=>{
-    let total=0;
-    const perWilayah = WILAYAH.map(w=>{ const c = allData.filter(d=>d.nama_pk===pk && d.wilayah_asal===w).length; total+=c; return c; });
-    return { pk, perWilayah, total };
-  });
-  rows = sortByTable(rows, 'rekap', (r,key)=>key==='pk'?r.pk:r.total);
-  tbody.innerHTML = rows.map(r=>{
-    const cells = r.perWilayah.map(c=>`<td>${c}</td>`).join('');
-    return `<tr><td class="font-semibold">${r.pk}</td>${cells}<td class="font-extrabold text-brand-navy dark:text-amber-400">${r.total}</td></tr>`;
-  }).join('');
-  updateSortIndicators();
-}
-function exportCSV(){
-  let csv = "No Registrasi,Nomor Surat,Nama Anak,JK,Jenis Litmas,Wilayah,PK,Status Litmas,Jalur Adjudikasi,Tahap Adjudikasi\n";
-  allData.forEach(d=>{
-    csv += `"${d.registrasi?.nomor||''}","${d.nomor_surat||''}","${d.nama_anak||''}","${d.jenis_kelamin||''}","${d.jenis_litmas||''}","${d.wilayah_asal||''}","${d.nama_pk||''}","${d.status_jenis||''}","${d.adjudikasi?.jalur||''}","${getAdjTahapLabel(d)}"\n`;
-  });
-  const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download = `DIGIT-CICL_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-}
 
-// ==================== 9. STATISTIK & DASHBOARD CHARTS ====================
-let charts = {};
-const JENIS_LITMAS_LIST = ['Litmas Integrasi','Litmas Pendampingan ABH'];
-const JENIS_COLORS = {'Litmas Integrasi':'#1e3a5f','Litmas Pendampingan ABH':'#8b5cf6'};
-
-// Popup detail data saat item statistik diklik
-function showStatDetail(title, list){
-  const rows = list.length ? list.map(d=>`
-    <tr>
-      <td class="font-semibold">${d.nomor_surat||'-'}</td>
-      <td>${d.nama_anak||'-'}</td>
-      <td>${d.jenis_kelamin||'-'}</td>
-      <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${d.jenis_litmas||'-'}</span></td>
-      <td>${d.wilayah_asal||'-'}</td>
-      <td>${d.nama_pk||'-'}</td>
-      <td><span class="badge ${d.status_jenis==='Selesai'?'badge-green':d.status_jenis==='Pending'?'badge-amber':'badge-blue'}">${d.status_jenis||'-'}</span></td>
-      <td>${d.registrasi?`<span class="badge badge-slate">${d.registrasi.nomor}</span>`:'-'}</td>
-    </tr>`).join('') : `<tr><td colspan="8" class="text-center py-8 text-slate-400">Tidak ada data untuk kategori ini.</td></tr>`;
-  openModal(`
-    <div class="flex justify-between items-center mb-4">
-      <div><h3 class="font-bold text-lg">${title}</h3><p class="text-xs text-slate-500">${list.length} data ditemukan</p></div>
-      <button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button>
-    </div>
-    <div class="table-wrap rounded-xl border border-slate-200 dark:border-slate-700" style="max-height:60vh;overflow-y:auto">
-      <table><thead class="bg-slate-50 dark:bg-slate-800/60" style="position:sticky;top:0"><tr>
-        <th>No Surat</th><th>Nama Anak</th><th>JK</th><th>Jenis Litmas</th><th>Wilayah</th><th>PK</th><th>Status</th><th>Reg.</th>
-      </tr></thead><tbody>${rows}</tbody></table>
-    </div>
-    <div class="flex justify-end pt-3"><button class="btn btn-ghost" onclick="closeModal()">Tutup</button></div>
-  `);
-  lucide.createIcons();
-}
-function clickedEl(evt, chart){
-  const pts = chart.getElementsAtEventForMode(evt, 'nearest', {intersect:true}, true);
-  return pts.length ? pts[0] : null;
-}
-
-function renderAllCharts(){
-  const isDark = document.documentElement.classList.contains('dark');
-  const tc = isDark ? '#e2e8f0' : '#334155';
-  const mk = (id,type,data,opts={})=>{
-    const ctx = document.getElementById(id)?.getContext('2d'); if(!ctx) return;
-    if(charts[id]) charts[id].destroy();
-    ctx.canvas.style.cursor = 'pointer';
-    charts[id] = new Chart(ctx,{type,data,options:Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc}}},scales:type==='bar'||type==='line'?{x:{ticks:{color:tc}},y:{ticks:{color:tc}}}:{}},opts)});
-  };
-
-  // --- Distribusi Wilayah (klik untuk detail per wilayah) ---
-  mk('ch-wil','doughnut',{labels:WILAYAH,datasets:[{data:WILAYAH.map(w=>allData.filter(d=>d.wilayah_asal===w).length),backgroundColor:['#1e3a5f','#d4a843','#10b981','#3b82f6','#8b5cf6','#ec4899']}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const wil = WILAYAH[el.index];
-      showStatDetail(`Wilayah: ${wil}`, allData.filter(d=>d.wilayah_asal===wil)); }
-  });
-
-  // --- Jalur Adjudikasi (klik untuk detail per jalur) ---
-  const divCount = allData.filter(d=>d.adjudikasi?.jalur==='Diversi').length;
-  const sidCount = allData.filter(d=>d.adjudikasi?.jalur==='Persidangan').length;
-  const belumCount = allData.filter(d=>d.registrasi && !d.adjudikasi?.jalur).length;
-  const jalurLabels = ['Diversi','Persidangan','Belum Ditentukan'];
-  mk('ch-jalur','pie',{labels:jalurLabels,datasets:[{data:[divCount,sidCount,belumCount],backgroundColor:['#3b82f6','#ec4899','#94a3b8']}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const label = jalurLabels[el.index];
-      const list = label==='Belum Ditentukan' ? allData.filter(d=>d.registrasi && !d.adjudikasi?.jalur) : allData.filter(d=>d.adjudikasi?.jalur===label);
-      showStatDetail(`Jalur Adjudikasi: ${label}`, list); }
-  });
-
-  // --- Beban Kerja PK, dipisah per Jenis Litmas ---
-  mk('st-pk','bar',{labels:PK_LIST,datasets:JENIS_LITMAS_LIST.map(jenis=>({
-    label:jenis,
-    data:PK_LIST.map(p=>allData.filter(d=>d.nama_pk===p && d.jenis_litmas===jenis).length),
-    backgroundColor:JENIS_COLORS[jenis],
-    borderRadius:6
-  }))},{
-    indexAxis:'y',
-    scales:{x:{stacked:true,ticks:{color:tc}},y:{stacked:true,ticks:{color:tc}}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const pk = PK_LIST[el.index]; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
-      showStatDetail(`${jenis} — PK ${pk}`, allData.filter(d=>d.nama_pk===pk && d.jenis_litmas===jenis)); }
-  });
-
-  // --- Tren Bulanan Permintaan, dipisah per Jenis Litmas ---
-  const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  const trendByJenis = {'Litmas Integrasi': new Array(12).fill(0), 'Litmas Pendampingan ABH': new Array(12).fill(0)};
-  allData.forEach(d=>{ if(d.tanggal_diterima && trendByJenis[d.jenis_litmas]){ const m=new Date(d.tanggal_diterima).getMonth(); if(m>=0&&m<12) trendByJenis[d.jenis_litmas][m]++; } });
-  mk('st-trend','line',{labels:months,datasets:[
-    {label:'Litmas Integrasi',data:trendByJenis['Litmas Integrasi'],borderColor:JENIS_COLORS['Litmas Integrasi'],backgroundColor:'rgba(30,58,95,.15)',fill:true,tension:.3},
-    {label:'Litmas Pendampingan ABH',data:trendByJenis['Litmas Pendampingan ABH'],borderColor:JENIS_COLORS['Litmas Pendampingan ABH'],backgroundColor:'rgba(139,92,246,.15)',fill:true,tension:.3}
-  ]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const monthIdx = el.index; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
-      const list = allData.filter(d=>d.jenis_litmas===jenis && d.tanggal_diterima && new Date(d.tanggal_diterima).getMonth()===monthIdx);
-      showStatDetail(`${jenis} — Bulan ${months[monthIdx]}`, list); }
-  });
-
-  // --- Jenis Litmas (klik untuk detail) ---
-  mk('st-jenis','pie',{labels:JENIS_LITMAS_LIST,datasets:[{data:JENIS_LITMAS_LIST.map(j=>allData.filter(d=>d.jenis_litmas===j).length),backgroundColor:[JENIS_COLORS['Litmas Integrasi'],JENIS_COLORS['Litmas Pendampingan ABH']]}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const jenis = JENIS_LITMAS_LIST[el.index];
-      showStatDetail(jenis, allData.filter(d=>d.jenis_litmas===jenis)); }
-  });
-
-  // --- Status Adjudikasi (klik untuk detail) ---
-  const adjSelesai = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Selesai').length;
-  const adjBerjalan = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
-  const adjLabels = ['Selesai','Berjalan'];
-  mk('st-adj','doughnut',{labels:adjLabels,datasets:[{data:[adjSelesai,adjBerjalan],backgroundColor:['#10b981','#f59e0b']}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const label = adjLabels[el.index];
-      showStatDetail(`Adjudikasi ${label}`, allData.filter(d=>d.registrasi && getAdjStatus(d)===label)); }
-  });
-
-  // --- Statistik Jenis Tindak Pidana (berdasarkan field Jenis Perkara) ---
-  const perkaraMap = {};
-  allData.forEach(d=>{ const p = (d.jenis_perkara||'').trim(); if(!p) return; (perkaraMap[p] = perkaraMap[p]||[]).push(d); });
-  const perkaraLabels = Object.keys(perkaraMap).sort((a,b)=> perkaraMap[b].length - perkaraMap[a].length);
-  mk('st-perkara','bar',{labels:perkaraLabels,datasets:[{label:'Jumlah Kasus',data:perkaraLabels.map(p=>perkaraMap[p].length),backgroundColor:'#d4a843',borderRadius:6}]},{
-    indexAxis:'y',
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const p = perkaraLabels[el.index];
-      showStatDetail(`Jenis Tindak Pidana: ${p}`, perkaraMap[p]); }
-  });
-
-  // --- Jumlah Sidang per Bulan (dari seluruh jadwal sidang persidangan) ---
-  const sidangByMonth = new Array(12).fill(0).map(()=>[]);
-  allData.forEach(d=>{ (d.adjudikasi?.persidangan?.sidang||[]).forEach(s=>{
-    if(!s.tanggal) return; const m = new Date(s.tanggal).getMonth(); if(m>=0&&m<12) sidangByMonth[m].push(d);
-  }); });
-  mk('st-sidang','bar',{labels:months,datasets:[{label:'Jumlah Sidang',data:sidangByMonth.map(l=>l.length),backgroundColor:'#3b82f6',borderRadius:6}]},{
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const m = el.index;
-      const uniq = Array.from(new Map(sidangByMonth[m].map(d=>[d.id,d])).values());
-      showStatDetail(`Sidang — Bulan ${months[m]}`, uniq); }
-  });
-
-  // --- Jumlah Putusan per Bulan ---
-  const putusanByMonth = new Array(12).fill(0).map(()=>[]);
-  allData.forEach(d=>{ const tgl = d.adjudikasi?.persidangan?.putusan?.tanggal; if(!tgl) return; const m = new Date(tgl).getMonth(); if(m>=0&&m<12) putusanByMonth[m].push(d); });
-  mk('st-putusan','bar',{labels:months,datasets:[{label:'Jumlah Putusan',data:putusanByMonth.map(l=>l.length),backgroundColor:'#ec4899',borderRadius:6}]},{
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const m = el.index;
-      showStatDetail(`Putusan — Bulan ${months[m]}`, putusanByMonth[m]); }
-  });
-
-  // --- Jumlah Diversi Berhasil per Bulan (dari tingkat kepolisian/kejaksaan/pengadilan) ---
-  const diversiOkByMonth = new Array(12).fill(0).map(()=>[]);
-  allData.forEach(d=>{
-    const dv = d.adjudikasi?.diversi; if(!dv) return;
-    ['kepolisian','kejaksaan','pengadilan'].forEach(tier=>{
-      const t = dv[tier]; if(t && t.hasil==='Berhasil' && t.tanggal){ const m = new Date(t.tanggal).getMonth(); if(m>=0&&m<12) diversiOkByMonth[m].push(d); }
-    });
-  });
-  mk('st-diversi-berhasil','bar',{labels:months,datasets:[{label:'Diversi Berhasil',data:diversiOkByMonth.map(l=>l.length),backgroundColor:'#10b981',borderRadius:6}]},{
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const m = el.index;
-      const uniq = Array.from(new Map(diversiOkByMonth[m].map(d=>[d.id,d])).values());
-      showStatDetail(`Diversi Berhasil — Bulan ${months[m]}`, uniq); }
-  });
-}
-
-function fmtDate(s){ if(!s) return '-'; const d = new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
-
-// ==================== GOOGLE SHEET SYNC (opsional) ====================
-async function sendToSheet(action, payload){
-  if(!gsheetUrl) return;
-  try{
-    await fetch(gsheetUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
-  }catch(e){ console.error('Gagal sinkron ke sheet',e); }
-}
-// Sama seperti sendToSheet, tapi RESPONSNYA BISA DIBACA (dipakai saat perlu URL hasil
-// unggah berkas dari Drive). Content-Type text/plain dipakai agar tidak memicu
-// preflight CORS yang tidak didukung Apps Script Web App.
-async function postToSheetJSON(action, payload){
-  if(!gsheetUrl) throw new Error('URL Google Apps Script belum diisi di menu Pengaturan.');
-  const res = await fetch(gsheetUrl, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action, ...payload})
-  });
-  const json = await res.json();
-  if(json.status === 'error') throw new Error(json.message || 'Gagal memproses permintaan di server.');
-  return json;
-}
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = ()=> resolve(String(reader.result).split(',')[1]);
-    reader.onerror = ()=> reject(new Error('Gagal membaca berkas.'));
-    reader.readAsDataURL(file);
-  });
-}
-// Mengunggah berkas ke folder Google Drive tertentu lewat Apps Script, mengembalikan { url, fileId, fileName }.
-async function uploadFileToDrive(file, folderId){
-  const base64 = await fileToBase64(file);
-  return postToSheetJSON('upload_file', { fileData: base64, fileName: file.name, mimeType: file.type || 'application/octet-stream', folderId });
-}
-async function syncDataFromSheets(manual){
-  const dot = document.getElementById('sheet-status-dot'); const text = document.getElementById('sheet-status-text');
-  if(!gsheetUrl){ if(manual) showToast('Isi URL Google Apps Script dulu di menu Pengaturan','error'); return; }
-  try{
-    if(text) text.textContent = 'Menyinkronkan...';
-    const res = await fetch(gsheetUrl); const data = await res.json();
-    if(Array.isArray(data)){
-      allData = data.map(d=>({
-        ...d,
-        registrasi: d.nomor_registrasi ? {nomor:d.nomor_registrasi, tanggal:d.tanggal_registrasi, tahun:new Date(d.tanggal_registrasi).getFullYear()} : null,
-        adjudikasi: d.adjudikasi || {jalur:null,status:'Berjalan',diversi:{kepolisian:{},kejaksaan:{},pengadilan:{}},persidangan:{sidang:[],putusan:{}}},
-        pasca_adjudikasi: d.pasca_adjudikasi || null
-      }));
-      saveAll();
-      if(dot) dot.classList.remove('bg-red-500'); if(dot) dot.classList.add('bg-emerald-500');
-      if(text) text.textContent = 'Sinkron dengan Google Sheet';
-      if(manual) showToast('Data berhasil disinkronkan','success');
-      renderAllViews();
-    }
-  }catch(e){
-    console.error(e);
-    if(dot){ dot.classList.remove('bg-emerald-500'); dot.classList.add('bg-red-500'); }
-    if(text) text.textContent = 'Gagal sinkron ke Google Sheet';
-    if(manual) showToast('Gagal sinkron ke Google Sheet','error');
-  }
-}
-
-// ==================== RUNNING TEXT (info ticker) ====================
-function updateRunningText(){
-  const track = document.getElementById('running-text-track'); if(!track) return;
-  const total = allData.length;
-  const belumReg = allData.filter(d=>!d.registrasi).length;
-  const sudahReg = allData.filter(d=>d.registrasi).length;
-  const dalamAdj = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
-  const adjSelesai = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Selesai').length;
-  const bimbinganPasca = getPascaList().filter(d=>d.pasca_adjudikasi.status==='Dalam Bimbingan').length;
-  const divCount = allData.filter(d=>d.adjudikasi?.jalur==='Diversi').length;
-  const sidCount = allData.filter(d=>d.adjudikasi?.jalur==='Persidangan').length;
-  const litInt = allData.filter(d=>d.jenis_litmas==='Litmas Integrasi').length;
-  const litPnd = allData.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length;
-  const now = new Date();
-  const tgl = now.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-
-  const items = [
-    `📅 ${tgl}`,
-    `📊 Total Permintaan Litmas: ${total}`,
-    `📥 Litmas Integrasi: ${litInt}`,
-    `🧭 Litmas Pendampingan ABH: ${litPnd}`,
-    `⏳ Belum Registrasi: ${belumReg}`,
-    `🔢 Sudah Registrasi: ${sudahReg}`,
-    `⚖️ Dalam Proses Adjudikasi: ${dalamAdj}`,
-    `✅ Adjudikasi Selesai: ${adjSelesai}`,
-    `🤝 Jalur Diversi: ${divCount}`,
-    `🏛️ Jalur Persidangan: ${sidCount}`,
-    `❤️ Bimbingan Pasca Adjudikasi (Aktif): ${bimbinganPasca}`,
-    `🏢 Wilayah Kerja: ${WILAYAH.length}`,
-    `👥 Total PK: ${PK_LIST.length}`,
-    `DIGIT-CICL — Sistem Litmas, Registrasi & Tracking Adjudikasi Anak, Bapas Kelas II Lahat`
-  ];
-  const groupHtml = items.map(t=>`<span class="running-text-item">${t}<span class="rt-dot"></span></span>`).join('');
-  // Konten digandakan 2x agar animasi scroll berputar mulus tanpa jeda (seamless loop).
-  track.innerHTML = `<span class="running-text-group">${groupHtml}</span><span class="running-text-group">${groupHtml}</span>`;
-}
-
-// ==================== RENDER ALL ====================
-function renderKpi(){
-  document.getElementById('k-total').textContent = allData.length;
-  document.getElementById('k-belumreg').textContent = allData.filter(d=>!d.registrasi).length;
-  document.getElementById('k-reg').textContent = allData.filter(d=>d.registrasi).length;
-  document.getElementById('k-adj').textContent = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
-  document.getElementById('k-pasca').textContent = getPascaList().filter(d=>d.pasca_adjudikasi.status==='Dalam Bimbingan').length;
-}
-function renderAllViews(){
-  initDropdowns();
-  renderKpi();
-  updateRunningText();
-  renderPermintaanTable();
-  renderRegistrasiTables();
-  renderAdjudikasiTable();
-  renderPascaTable();
-  renderPkTable();
-  renderWilayahTable();
-  renderKepolisianTable();
-  renderRekapTable();
-  renderAllCharts();
-  lucide.createIcons();
-  updateSortIndicators();
-}
-
-window.onload = function(){
-  renderAllViews();
-  if(gsheetUrl) syncDataFromSheets(false);
-  lucide.createIcons();
-  initAuth();
-};
-</script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then((reg) => console.log('PWA Service Worker aktif'))
-        .catch((err) => console.warn('SW gagal:', err));
-    });
-  }
-</script>
+<script src="js/app.js"></script>
 </body>
 </html>
