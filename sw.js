@@ -1,5 +1,5 @@
 /* DIGIT-CICL Service Worker — offline-first shell + runtime cache */
-const CACHE_NAME = 'digit-cicl-v2';
+const CACHE_NAME = 'digit-cicl-v4';
 const SHELL = [
   './',
   './index.html',

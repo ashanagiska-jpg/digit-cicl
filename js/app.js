@@ -3284,98 +3284,125 @@ async function uploadFileToDrive(file, folderId){
   });
 }
 
+function mapLitmasRows(data){
+  return (data||[]).map(d=>({
+    ...d,
+    registrasi: d.nomor_registrasi
+      ? {
+          nomor: d.nomor_registrasi,
+          tanggal: d.tanggal_registrasi,
+          tahun: d.tanggal_registrasi ? new Date(d.tanggal_registrasi).getFullYear() : null
+        }
+      : null,
+    adjudikasi: d.adjudikasi || {
+      jalur: null,
+      status: 'Berjalan',
+      diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
+      persidangan: { sidang:[], putusan:{} }
+    },
+    pasca_adjudikasi: d.pasca_adjudikasi || null
+  }));
+}
+
+/** Terapkan payload master dari sheet; unggah seed jika sheet kosong (hanya saat manual). */
+async function applyMasterFromRemote(pkRemote, wilRemote, polRemote, manual){
+  let note = '';
+  if(Array.isArray(pkRemote) && pkRemote.length){
+    PK_MASTER = normalizePkMaster(pkRemote);
+    note += ', ' + PK_MASTER.length + ' PK';
+  } else if(Array.isArray(pkRemote) && pkRemote.length === 0 && PK_MASTER.length && manual){
+    try{ await pushPkListToSheet(); note += ', PK diunggah'; }catch(e){ console.warn('seed PK', e); }
+  }
+  if(Array.isArray(wilRemote) && wilRemote.length){
+    WILAYAH_MASTER = normalizeWilayahMaster(wilRemote);
+    note += ', ' + WILAYAH_MASTER.length + ' wilayah';
+  } else if(Array.isArray(wilRemote) && wilRemote.length === 0 && WILAYAH_MASTER.length && manual){
+    try{ await pushWilayahListToSheet(); note += ', wilayah diunggah'; }catch(e){ console.warn('seed wilayah', e); }
+  }
+  if(Array.isArray(polRemote) && polRemote.length){
+    KEPOLISIAN_MASTER = normalizeKepolisianMaster(polRemote);
+    note += ', ' + KEPOLISIAN_MASTER.length + ' polisi';
+  } else if(Array.isArray(polRemote) && polRemote.length === 0 && KEPOLISIAN_MASTER.length && manual){
+    try{ await pushKepolisianListToSheet(); note += ', polisi diunggah'; }catch(e){ console.warn('seed polisi', e); }
+  }
+  saveMaster();
+  return note;
+}
+
 async function syncDataFromSheets(manual){
   const dot = document.getElementById('sheet-status-dot');
-  const text = document.getElementById('sheet-status-text');
+  const textEl = document.getElementById('sheet-status-text');
   const url = normalizeGasUrl(gsheetUrl);
   if(!url){
     if(manual) showToast('Isi URL Google Apps Script dulu di menu Pengaturan','error');
     return;
   }
+  const t0 = performance.now();
   try{
-    if(text) text.textContent = 'Menyinkronkan...';
-    const res = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
-    const raw = await res.text();
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (parseErr) {
-      throw new Error(
-        'Respons bukan JSON. Biasanya Web App belum di-deploy sebagai "Anyone" ' +
-        'atau URL salah. Cuplikan: ' + raw.slice(0, 100)
-      );
+    if(textEl) textEl.textContent = 'Menyinkronkan…';
+    if(dot){ dot.classList.remove('bg-emerald-500','bg-red-500'); dot.classList.add('bg-amber-500'); }
+
+    let litmas = null, pkRemote = null, wilRemote = null, polRemote = null;
+    let mode = 'all';
+
+    // 1) Coba 1 request bulk (?resource=all) — paling cepat
+    try{
+      const sep = url.includes('?') ? '&' : '?';
+      const res = await fetch(url + sep + 'resource=all', { method:'GET', redirect:'follow', cache:'no-store' });
+      const raw = await res.text();
+      let payload;
+      try { payload = JSON.parse(raw); } catch(e){
+        throw new Error('Respons all bukan JSON');
+      }
+      if(payload && payload.status === 'error') throw new Error(payload.message || 'Server error');
+      if(payload && Array.isArray(payload.litmas)){
+        litmas = payload.litmas;
+        pkRemote = payload.pk;
+        wilRemote = payload.wilayah;
+        polRemote = payload.kepolisian;
+      } else {
+        throw new Error('Endpoint all belum tersedia');
+      }
+    }catch(bulkErr){
+      console.warn('Bulk sync gagal, fallback paralel:', bulkErr.message || bulkErr);
+      mode = 'parallel';
+      // 2) Fallback: 4 request paralel (bukan berurutan)
+      const sep = url.includes('?') ? '&' : '?';
+      const [rLit, rPk, rWil, rPol] = await Promise.all([
+        fetch(url, { method:'GET', redirect:'follow', cache:'no-store' }).then(r=>r.text()),
+        fetch(url + sep + 'resource=pk', { method:'GET', redirect:'follow', cache:'no-store' }).then(r=>r.text()).catch(()=>null),
+        fetch(url + sep + 'resource=wilayah', { method:'GET', redirect:'follow', cache:'no-store' }).then(r=>r.text()).catch(()=>null),
+        fetch(url + sep + 'resource=kepolisian', { method:'GET', redirect:'follow', cache:'no-store' }).then(r=>r.text()).catch(()=>null)
+      ]);
+      try { litmas = JSON.parse(rLit); } catch(e){
+        throw new Error('Respons litmas bukan JSON. Cuplikan: ' + String(rLit).slice(0,100));
+      }
+      if(litmas && litmas.status === 'error') throw new Error(litmas.message || 'Server error');
+      if(!Array.isArray(litmas)) throw new Error('Format litmas tidak valid (bukan array).');
+      try { if(rPk) pkRemote = JSON.parse(rPk); } catch(_){}
+      try { if(rWil) wilRemote = JSON.parse(rWil); } catch(_){}
+      try { if(rPol) polRemote = JSON.parse(rPol); } catch(_){}
     }
-    if(!Array.isArray(data)){
-      throw new Error(
-        data && data.message
-          ? ('Server error: ' + data.message)
-          : 'Format data tidak valid (bukan array).'
-      );
+
+    if(!Array.isArray(litmas)){
+      throw new Error('Data litmas tidak valid.');
     }
-    allData = data.map(d=>({
-      ...d,
-      registrasi: d.nomor_registrasi
-        ? {
-            nomor: d.nomor_registrasi,
-            tanggal: d.tanggal_registrasi,
-            tahun: d.tanggal_registrasi ? new Date(d.tanggal_registrasi).getFullYear() : null
-          }
-        : null,
-      adjudikasi: d.adjudikasi || {
-        jalur: null,
-        status: 'Berjalan',
-        diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
-        persidangan: { sidang:[], putusan:{} }
-      },
-      pasca_adjudikasi: d.pasca_adjudikasi || null
-    }));
+
+    allData = mapLitmasRows(litmas);
     saveAll();
 
-    // Sinkron master: PK + Wilayah + Kepolisian
-    let masterNote = '';
-    try{
-      const pkRemote = await fetchPkFromSheet();
-      if(Array.isArray(pkRemote) && pkRemote.length){
-        PK_MASTER = normalizePkMaster(pkRemote);
-        masterNote += ', ' + PK_MASTER.length + ' PK';
-      } else if(Array.isArray(pkRemote) && pkRemote.length === 0 && PK_MASTER.length && manual){
-        try{ await pushPkListToSheet(); masterNote += ', PK diunggah'; }
-        catch(upErr){ console.warn('seed PK', upErr); }
-      }
-    }catch(pkErr){ console.warn('Sinkron PK:', pkErr); masterNote += ', PK lokal'; }
+    const masterNote = await applyMasterFromRemote(pkRemote, wilRemote, polRemote, manual);
+    const ms = Math.round(performance.now() - t0);
+    const summary = allData.length + ' litmas' + masterNote;
 
-    try{
-      const wilRemote = await fetchWilayahFromSheet();
-      if(Array.isArray(wilRemote) && wilRemote.length){
-        WILAYAH_MASTER = normalizeWilayahMaster(wilRemote);
-        masterNote += ', ' + WILAYAH_MASTER.length + ' wilayah';
-      } else if(Array.isArray(wilRemote) && wilRemote.length === 0 && WILAYAH_MASTER.length && manual){
-        try{ await pushWilayahListToSheet(); masterNote += ', wilayah diunggah'; }
-        catch(upErr){ console.warn('seed wilayah', upErr); }
-      }
-    }catch(wErr){ console.warn('Sinkron wilayah:', wErr); masterNote += ', wilayah lokal'; }
-
-    try{
-      const polRemote = await fetchKepolisianFromSheet();
-      if(Array.isArray(polRemote) && polRemote.length){
-        KEPOLISIAN_MASTER = normalizeKepolisianMaster(polRemote);
-        masterNote += ', ' + KEPOLISIAN_MASTER.length + ' polisi';
-      } else if(Array.isArray(polRemote) && polRemote.length === 0 && KEPOLISIAN_MASTER.length && manual){
-        try{ await pushKepolisianListToSheet(); masterNote += ', polisi diunggah'; }
-        catch(upErr){ console.warn('seed polisi', upErr); }
-      }
-    }catch(pErr){ console.warn('Sinkron kepolisian:', pErr); masterNote += ', polisi lokal'; }
-
-    saveMaster();
-
-    if(dot){ dot.classList.remove('bg-red-500'); dot.classList.add('bg-emerald-500'); }
-    if(text) text.textContent = 'Sinkron Google Sheet (' + allData.length + ' litmas' + masterNote + ')';
-    if(manual) showToast('Sinkron berhasil: ' + allData.length + ' litmas' + masterNote, 'success');
+    if(dot){ dot.classList.remove('bg-red-500','bg-amber-500'); dot.classList.add('bg-emerald-500'); }
+    if(textEl) textEl.textContent = 'Sinkron Google Sheet (' + summary + ') · ' + ms + ' ms';
+    if(manual) showToast('Sinkron berhasil (' + mode + '): ' + summary + ' · ' + ms + ' ms', 'success');
     renderAllViews();
   }catch(e){
     console.error('syncDataFromSheets:', e);
-    if(dot){ dot.classList.remove('bg-emerald-500'); dot.classList.add('bg-red-500'); }
-    if(text) text.textContent = 'Gagal sinkron ke Google Sheet';
+    if(dot){ dot.classList.remove('bg-emerald-500','bg-amber-500'); dot.classList.add('bg-red-500'); }
+    if(textEl) textEl.textContent = 'Gagal sinkron ke Google Sheet';
     if(manual) showToast('Gagal sinkron: ' + (e.message || e), 'error');
   }
 }
