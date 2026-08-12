@@ -7,8 +7,7 @@ let KEPOLISIAN = JSON.parse(localStorage.getItem('CICL_POLISI')||'null') || {
   'Kabupaten Empat Lawang':['Polres Empat Lawang','Polsek Tebing Tinggi','Polsek Pendopo','Polsek Ulu Musi','Polsek Pasemah Air Keruh','Polsek Saling'],
   'Kota Pagar Alam':['Polres Pagar Alam','Polsek Pagar Alam Utara','Polsek Pagar Alam Selatan','Polsek Dempo Utara','Polsek Dempo Selatan']
 };
-// --- Data PK (model kaya) ---
-// Kompatibel mundur: localStorage CICL_PK bisa array string lama ATAU array objek baru.
+// --- Data PK (model kaya, disimpan lokal + Google Sheet MasterPK) ---
 const DEFAULT_PK_MASTER = [
   { name:'Firman Syahri', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
   { name:'Sarnudi', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
@@ -36,20 +35,20 @@ function normalizePkMaster(raw){
     });
   }
   return raw.map(p=>({
-    name: p.name || p.nama || '',
-    nip: p.nip || '',
-    jabatan: p.jabatan || 'PK',
+    name: String(p.name || p.nama || '').trim(),
+    nip: String(p.nip || '').trim(),
+    jabatan: String(p.jabatan || 'PK').trim() || 'PK',
     status: p.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
-    wilayah_fokus: p.wilayah_fokus || p.wilayah || '',
-    telepon: p.telepon || p.phone || '',
-    email: p.email || '',
-    tanggal_masuk: p.tanggal_masuk || '',
-    catatan: p.catatan || ''
+    wilayah_fokus: String(p.wilayah_fokus || p.wilayah || '').trim(),
+    telepon: String(p.telepon || p.phone || '').trim(),
+    email: String(p.email || '').trim(),
+    tanggal_masuk: String(p.tanggal_masuk || '').trim(),
+    catatan: String(p.catatan || '').trim()
   })).filter(p=>p.name);
 }
 
 let PK_MASTER = normalizePkMaster(JSON.parse(localStorage.getItem('CICL_PK')||'null'));
-/** Daftar nama PK (dropdown & filter — selalu sinkron dengan PK_MASTER). */
+/** Nama PK untuk dropdown — selalu sinkron dengan PK_MASTER. */
 let PK_LIST = PK_MASTER.map(p=>p.name);
 
 function syncPkListFromMaster(){
@@ -248,6 +247,55 @@ function saveMaster(){
   syncPkListFromMaster();
 }
 
+/** Push seluruh daftar PK ke Google Sheet (sheet MasterPK). */
+async function pushPkListToSheet(){
+  if(!gsheetUrl) return;
+  try{
+    await postToSheetJSON('save_pk_list', { list: PK_MASTER });
+  }catch(e){
+    console.error('pushPkListToSheet:', e);
+    throw e;
+  }
+}
+
+/** Upsert satu PK ke sheet. */
+async function pushPkUpsertToSheet(payload, oldName){
+  if(!gsheetUrl) return;
+  try{
+    await postToSheetJSON('upsert_pk', { ...payload, oldName: oldName || '' });
+  }catch(e){
+    console.error('pushPkUpsertToSheet:', e);
+    throw e;
+  }
+}
+
+/** Hapus satu PK di sheet. */
+async function pushPkDeleteToSheet(name){
+  if(!gsheetUrl) return;
+  try{
+    await postToSheetJSON('delete_pk', { name });
+  }catch(e){
+    console.error('pushPkDeleteToSheet:', e);
+    throw e;
+  }
+}
+
+/** Ambil master PK dari Google Sheet. */
+async function fetchPkFromSheet(){
+  const url = normalizeGasUrl(gsheetUrl);
+  if(!url) return null;
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + 'resource=pk', { method:'GET', redirect:'follow', cache:'no-store' });
+  const raw = await res.text();
+  let data;
+  try { data = JSON.parse(raw); } catch(e){
+    throw new Error('Respons PK bukan JSON: ' + raw.slice(0,100));
+  }
+  if(data && data.status === 'error') throw new Error(data.message || 'Gagal ambil PK');
+  if(!Array.isArray(data)) throw new Error('Format master PK tidak valid');
+  return data;
+}
+
 function uid(){ return String(Date.now()) + Math.floor(Math.random()*1000); }
 
 function showToast(msg, type='info'){
@@ -262,7 +310,7 @@ function showToast(msg, type='info'){
 // Popup "Berhasil" yang lebih menonjol dipakai setiap kali proses simpan selesai di semua menu.
 function showSuccessPopup(msg){ showToast(msg, 'success'); }
 
-function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); renderAllCharts(); if(typeof renderPkCharts==='function') renderPkCharts(); }
+function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); renderAllCharts(); }
 
 // ==================== NAVIGATION ====================
 function navigateTo(pageId){
@@ -1780,95 +1828,54 @@ function renderPascaTable(){
 }
 
 // ==================== 5-7. MASTER DATA (PK / WILAYAH / KEPOLISIAN) ====================
-// ==================== DATA PK — VERSI MASIF ====================
+// ==================== DATA PK (lokal + Google Sheet MasterPK) ====================
 function pkInitials(name){
   if(!name) return '?';
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
-  if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
-  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
 }
 function pkAvatarColor(name){
   const palette = ['#1e3a5f','#0f766e','#7c3aed','#b45309','#be185d','#0369a1','#15803d','#9a3412'];
-  let h = 0;
-  for(let i=0;i<(name||'').length;i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return palette[h % palette.length];
+  let h=0; for(let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))>>>0;
+  return palette[h%palette.length];
 }
 function getPkStats(name){
   const casesForPk = allData.filter(d=>d.nama_pk===name);
-  const int = casesForPk.filter(d=>d.jenis_litmas==='Litmas Integrasi').length;
-  const pnd = casesForPk.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length;
-  const proses = casesForPk.filter(d=>d.status_jenis==='Proses').length;
-  const selesai = casesForPk.filter(d=>d.status_jenis==='Selesai').length;
-  const adjBerjalan = casesForPk.filter(d=>d.registrasi && typeof getAdjStatus==='function' && getAdjStatus(d)==='Berjalan').length;
-  return { int, pnd, total: casesForPk.length, proses, selesai, adjBerjalan, cases: casesForPk };
-}
-function bebanLevel(total){
-  if(total >= 8) return { key:'tinggi', label:'Tinggi', cls:'badge-pink', bar:'bg-rose-500' };
-  if(total >= 3) return { key:'sedang', label:'Sedang', cls:'badge-amber', bar:'bg-amber-500' };
-  return { key:'rendah', label:'Rendah', cls:'badge-green', bar:'bg-emerald-500' };
-}
-function bebanBarPct(total, maxTotal){
-  if(!maxTotal) return 0;
-  return Math.min(100, Math.round((total / maxTotal) * 100));
+  return {
+    int: casesForPk.filter(d=>d.jenis_litmas==='Litmas Integrasi').length,
+    pnd: casesForPk.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length,
+    total: casesForPk.length,
+    cases: casesForPk
+  };
 }
 function getPkRows(){
-  const maxTotal = Math.max(1, ...PK_MASTER.map(p=>getPkStats(p.name).total));
   return PK_MASTER.map(p=>{
     const st = getPkStats(p.name);
-    const bl = bebanLevel(st.total);
-    return {
-      ...p,
-      int: st.int, pnd: st.pnd, total: st.total,
-      proses: st.proses, selesai: st.selesai, adjBerjalan: st.adjBerjalan,
-      bebanKey: bl.key, bebanLabel: bl.label, bebanCls: bl.cls, bebanBar: bl.bar,
-      bebanPct: bebanBarPct(st.total, maxTotal)
-    };
-  });
-}
-function onPkFilterChange(){ pageState.pk = 1; renderPkTable(); }
-function resetPkFilters(){
-  const q = document.getElementById('q-pk'); if(q) q.value = '';
-  const s = document.getElementById('f-pk-status'); if(s) s.value = '';
-  const b = document.getElementById('f-pk-beban'); if(b) b.value = '';
-  pageState.pk = 1; renderPkTable();
-}
-function filterPkRows(rows){
-  const q = (document.getElementById('q-pk')?.value||'').trim().toLowerCase();
-  const st = document.getElementById('f-pk-status')?.value||'';
-  const bb = document.getElementById('f-pk-beban')?.value||'';
-  return rows.filter(r=>{
-    if(st && r.status !== st) return false;
-    if(bb && r.bebanKey !== bb) return false;
-    if(q){
-      const hay = [r.name, r.nip, r.jabatan, r.wilayah_fokus, r.email, r.telepon, r.catatan]
-        .map(x=>String(x||'').toLowerCase()).join(' ');
-      if(!hay.includes(q)) return false;
-    }
-    return true;
+    return { ...p, int: st.int, pnd: st.pnd, total: st.total };
   });
 }
 function openPkModal(oldName){
   if(guardWrite())return;
   const item = oldName ? PK_MASTER.find(p=>p.name===oldName) : null;
-  const wilOpts = ['', ...WILAYAH].map(w=>`<option value="${w}" ${item&&item.wilayah_fokus===w?'selected':''}>${w||'— Tidak ditentukan —'}</option>`).join('');
+  const wilOpts = ['',...WILAYAH].map(w=>`<option value="${w}" ${item&&item.wilayah_fokus===w?'selected':''}>${w||'— Tidak ditentukan —'}</option>`).join('');
   const jabatanList = ['PK Ahli Pertama','PK Ahli Muda','PK Ahli Madya','PK Ahli Utama','PK','Kepala Subseksi Bimbingan Klien','Staf PK'];
   const jabOpts = jabatanList.map(j=>`<option ${item&&item.jabatan===j?'selected':''}>${j}</option>`).join('');
   openModal(`
     <div class="flex justify-between items-start mb-4 gap-3">
       <div>
         <h3 class="font-bold text-lg">${oldName?'Edit Profil PK':'Tambah Pembimbing Kemasyarakatan'}</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Lengkapi profil agar analisis beban kerja & rekomendasi AI lebih akurat.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Data disimpan lokal dan ke Google Sheet (tab MasterPK).</p>
       </div>
       <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div class="sm:col-span-2"><label class="fl">Nama Lengkap *</label>
-        <input class="form-input" id="pk-name" value="${item?item.name:''}" placeholder="Contoh: Firman Syahri"></div>
+        <input class="form-input" id="pk-name" value="${item?item.name.replace(/"/g,'&quot;'):''}" placeholder="Contoh: Firman Syahri"></div>
       <div><label class="fl">NIP</label>
-        <input class="form-input" id="pk-nip" value="${item?item.nip:''}" placeholder="NIP (opsional)"></div>
+        <input class="form-input" id="pk-nip" value="${item?(item.nip||'').replace(/"/g,'&quot;'):''}"></div>
       <div><label class="fl">Jabatan</label>
-        <select class="form-input" id="pk-jabatan">${jabOpts}<option value="__custom__">Lainnya…</option></select>
-        <input class="form-input mt-2 hidden" id="pk-jabatan-custom" placeholder="Tulis jabatan"></div>
+        <select class="form-input" id="pk-jabatan">${jabOpts}</select></div>
       <div><label class="fl">Status</label>
         <select class="form-input" id="pk-status">
           <option value="Aktif" ${!item||item.status==='Aktif'?'selected':''}>Aktif</option>
@@ -1877,43 +1884,28 @@ function openPkModal(oldName){
       <div><label class="fl">Wilayah Fokus</label>
         <select class="form-input" id="pk-wilayah">${wilOpts}</select></div>
       <div><label class="fl">Telepon / WA</label>
-        <input class="form-input" id="pk-telepon" value="${item?item.telepon:''}" placeholder="08…"></div>
+        <input class="form-input" id="pk-telepon" value="${item?(item.telepon||'').replace(/"/g,'&quot;'):''}"></div>
       <div><label class="fl">Email</label>
-        <input class="form-input" id="pk-email" type="email" value="${item?item.email:''}" placeholder="nama@email.com"></div>
+        <input class="form-input" id="pk-email" type="email" value="${item?(item.email||'').replace(/"/g,'&quot;'):''}"></div>
       <div><label class="fl">Tanggal Masuk</label>
-        <input class="form-input" id="pk-tanggal" type="date" value="${item?item.tanggal_masuk:''}"></div>
+        <input class="form-input" id="pk-tanggal" type="date" value="${item?item.tanggal_masuk||'':''}"></div>
       <div class="sm:col-span-2"><label class="fl">Catatan</label>
-        <textarea class="form-input" id="pk-catatan" rows="2" placeholder="Catatan internal (opsional)">${item?item.catatan:''}</textarea></div>
+        <textarea class="form-input" id="pk-catatan" rows="2">${item?item.catatan||'':''}</textarea></div>
     </div>
     <div class="flex justify-end gap-2 pt-5">
       <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
-      <button class="btn btn-primary" onclick="savePk('${(oldName||'').replace(/'/g,"\\\\'")}')"><i data-lucide="save" class="w-4 h-4"></i> Simpan</button>
+      <button class="btn btn-primary" id="btn-save-pk" onclick="savePk('${(oldName||'').replace(/'/g,"\\\\'")}')"><i data-lucide="save" class="w-4 h-4"></i> Simpan</button>
     </div>
   `);
-  const jabSel = document.getElementById('pk-jabatan');
-  const jabCustom = document.getElementById('pk-jabatan-custom');
-  if(item && item.jabatan && !jabatanList.includes(item.jabatan)){
-    jabSel.value = '__custom__';
-    jabCustom.classList.remove('hidden');
-    jabCustom.value = item.jabatan;
-  }
-  jabSel.addEventListener('change', ()=>{
-    if(jabSel.value==='__custom__'){ jabCustom.classList.remove('hidden'); jabCustom.focus(); }
-    else jabCustom.classList.add('hidden');
-  });
 }
-function savePk(oldName){
+async function savePk(oldName){
   if(guardWrite())return;
   const name = (document.getElementById('pk-name')?.value||'').trim();
   if(!name){ showToast('Nama PK wajib diisi','error'); return; }
-  const jabSel = document.getElementById('pk-jabatan')?.value;
-  const jabatan = jabSel==='__custom__'
-    ? (document.getElementById('pk-jabatan-custom')?.value||'').trim() || 'PK'
-    : (jabSel || 'PK');
   const payload = {
     name,
     nip: (document.getElementById('pk-nip')?.value||'').trim(),
-    jabatan,
+    jabatan: document.getElementById('pk-jabatan')?.value || 'PK',
     status: document.getElementById('pk-status')?.value || 'Aktif',
     wilayah_fokus: document.getElementById('pk-wilayah')?.value || '',
     telepon: (document.getElementById('pk-telepon')?.value||'').trim(),
@@ -1938,9 +1930,18 @@ function savePk(oldName){
     }
     PK_MASTER.push(payload);
   }
-  saveMaster(); saveAll(); closeModal(); renderAllViews(); showSuccessPopup('Data PK disimpan');
+  saveMaster(); saveAll();
+  const btn = document.getElementById('btn-save-pk');
+  if(btn){ btn.disabled=true; btn.innerHTML='Menyimpan ke Sheet…'; }
+  try{
+    await pushPkUpsertToSheet(payload, oldName||'');
+    showSuccessPopup('Data PK disimpan (lokal + Google Sheet)');
+  }catch(e){
+    showToast('Tersimpan lokal. Gagal ke Sheet: '+(e.message||e),'error');
+  }
+  closeModal(); renderAllViews();
 }
-function deletePk(name){
+async function deletePk(name){
   if(guardWrite())return;
   const st = getPkStats(name);
   const msg = st.total
@@ -1948,21 +1949,30 @@ function deletePk(name){
     : `Hapus PK "${name}"?`;
   if(!confirm(msg)) return;
   PK_MASTER = PK_MASTER.filter(p=>p.name!==name);
-  saveMaster(); renderAllViews(); showToast('PK dihapus','success');
+  saveMaster();
+  try{
+    await pushPkDeleteToSheet(name);
+    showToast('PK dihapus dari lokal + Google Sheet','success');
+  }catch(e){
+    showToast('Dihapus lokal. Gagal hapus di Sheet: '+(e.message||e),'error');
+  }
+  renderAllViews();
 }
-function togglePkStatus(name){
+async function pushAllPkToSheet(){
   if(guardWrite())return;
-  const p = PK_MASTER.find(x=>x.name===name);
-  if(!p) return;
-  p.status = p.status==='Aktif' ? 'Nonaktif' : 'Aktif';
-  saveMaster(); renderAllViews();
-  showToast(`Status ${name} → ${p.status}`,'success');
+  if(!gsheetUrl){ showToast('Isi URL Google Apps Script di Pengaturan','error'); return; }
+  try{
+    showToast('Mengunggah daftar PK ke Google Sheet…','info');
+    await pushPkListToSheet();
+    showSuccessPopup('Seluruh master PK berhasil diunggah ke Sheet (tab MasterPK)');
+  }catch(e){
+    showToast('Gagal unggah PK: '+(e.message||e),'error');
+  }
 }
 function showPkDetail(name){
   const p = PK_MASTER.find(x=>x.name===name);
   if(!p) return;
   const st = getPkStats(name);
-  const bl = bebanLevel(st.total);
   const cases = st.cases.slice().sort((a,b)=>String(b.tanggal_diterima||'').localeCompare(String(a.tanggal_diterima||'')));
   const rows = cases.length ? cases.map(d=>`
     <tr>
@@ -1980,19 +1990,17 @@ function showPkDetail(name){
           <h3 class="font-bold text-lg leading-tight">${p.name}</h3>
           <p class="text-xs text-slate-500">${p.jabatan||'PK'}${p.nip?` · NIP ${p.nip}`:''}</p>
           <div class="flex flex-wrap gap-1.5 mt-1.5">
-            <span class="badge ${p.status==='Aktif'?'badge-green':'badge-slate'}">${p.status}</span>
-            <span class="badge ${bl.cls}">Beban ${bl.label}</span>
+            <span class="badge ${p.status==='Aktif'?'badge-green':'badge-slate'}">${p.status||'Aktif'}</span>
             ${p.wilayah_fokus?`<span class="badge badge-blue">${p.wilayah_fokus}</span>`:''}
           </div>
         </div>
       </div>
       <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
       <div class="rounded-xl bg-slate-50 dark:bg-white/5 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Total</p><p class="text-xl font-extrabold">${st.total}</p></div>
       <div class="rounded-xl bg-blue-50 dark:bg-blue-500/10 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Integrasi</p><p class="text-xl font-extrabold text-blue-600 dark:text-blue-400">${st.int}</p></div>
       <div class="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Pendampingan</p><p class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">${st.pnd}</p></div>
-      <div class="rounded-xl bg-amber-50 dark:bg-amber-500/10 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Adj. Berjalan</p><p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">${st.adjBerjalan}</p></div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-4">
       <p><span class="text-slate-400 text-xs font-semibold uppercase">Telepon</span><br>${p.telepon||'-'}</p>
@@ -2002,10 +2010,8 @@ function showPkDetail(name){
     </div>
     <h4 class="font-bold text-sm mb-2">Daftar Kasus (${cases.length})</h4>
     <div class="table-wrap rounded-xl max-h-[40vh] overflow-y-auto">
-      <table>
-        <thead><tr><th>Anak</th><th>Jenis</th><th>Wilayah</th><th>Status</th><th>Diterima</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <table><thead><tr><th>Anak</th><th>Jenis</th><th>Wilayah</th><th>Status</th><th>Diterima</th></tr></thead>
+      <tbody>${rows}</tbody></table>
     </div>
     <div class="flex flex-wrap justify-end gap-2 pt-4">
       ${isAdmin()?`<button class="btn btn-ghost btn-sm" onclick="closeModal(); openPkModal('${p.name.replace(/'/g,"\\\\'")}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit</button>`:''}
@@ -2015,10 +2021,10 @@ function showPkDetail(name){
 }
 function exportPkCSV(){
   const rows = getPkRows();
-  let csv = 'No,Nama,NIP,Jabatan,Status,Wilayah Fokus,Telepon,Email,Tanggal Masuk,Integrasi,Pendampingan,Total,Beban,Catatan\n';
+  let csv = 'No,Nama,NIP,Jabatan,Status,Wilayah Fokus,Telepon,Email,Tanggal Masuk,Integrasi,Pendampingan,Total,Catatan\n';
   rows.forEach((r,i)=>{
     const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
-    csv += [i+1,r.name,r.nip,r.jabatan,r.status,r.wilayah_fokus,r.telepon,r.email,r.tanggal_masuk,r.int,r.pnd,r.total,r.bebanLabel,r.catatan].map(esc).join(',') + '\n';
+    csv += [i+1,r.name,r.nip,r.jabatan,r.status,r.wilayah_fokus,r.telepon,r.email,r.tanggal_masuk,r.int,r.pnd,r.total,r.catatan].map(esc).join(',') + '\n';
   });
   const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
@@ -2028,7 +2034,7 @@ function exportPkCSV(){
 }
 function renderPkKpi(){
   const rows = getPkRows();
-  const aktif = rows.filter(r=>r.status==='Aktif').length;
+  const aktif = rows.filter(r=>r.status!=='Nonaktif').length;
   const non = rows.length - aktif;
   const totalKasus = rows.reduce((s,r)=>s+r.total,0);
   const avg = rows.length ? (totalKasus / rows.length) : 0;
@@ -2043,7 +2049,8 @@ function renderPkKpi(){
 }
 function renderPkCharts(){
   if(typeof Chart === 'undefined') return;
-  if(typeof charts === 'undefined') window.charts = window.charts || {};
+  if(typeof charts === 'undefined') window.charts = {};
+  const store = (typeof charts !== 'undefined' && charts) ? charts : window.charts;
   const rows = getPkRows().slice().sort((a,b)=>b.total-a.total);
   const isDark = document.documentElement.classList.contains('dark');
   const tick = isDark ? '#94a3b8' : '#64748b';
@@ -2051,9 +2058,9 @@ function renderPkCharts(){
 
   const ctx1 = document.getElementById('ch-pk-beban');
   if(ctx1){
-    if(charts['ch-pk-beban']) charts['ch-pk-beban'].destroy();
+    if(store['ch-pk-beban']) store['ch-pk-beban'].destroy();
     const labels = rows.map(r=>r.name.length>18?r.name.slice(0,16)+'…':r.name);
-    charts['ch-pk-beban'] = new Chart(ctx1, {
+    store['ch-pk-beban'] = new Chart(ctx1, {
       type: 'bar',
       data: {
         labels,
@@ -2082,10 +2089,10 @@ function renderPkCharts(){
 
   const ctx2 = document.getElementById('ch-pk-status');
   if(ctx2){
-    if(charts['ch-pk-status']) charts['ch-pk-status'].destroy();
-    const aktif = rows.filter(r=>r.status==='Aktif').length;
+    if(store['ch-pk-status']) store['ch-pk-status'].destroy();
+    const aktif = rows.filter(r=>r.status!=='Nonaktif').length;
     const non = rows.length - aktif;
-    charts['ch-pk-status'] = new Chart(ctx2, {
+    store['ch-pk-status'] = new Chart(ctx2, {
       type: 'doughnut',
       data: {
         labels: ['Aktif','Nonaktif'],
@@ -2100,67 +2107,49 @@ function renderPkCharts(){
 
   const leg = document.getElementById('pk-workload-legend');
   if(leg){
-    const tinggi = rows.filter(r=>r.bebanKey==='tinggi').length;
-    const sedang = rows.filter(r=>r.bebanKey==='sedang').length;
-    const rendah = rows.filter(r=>r.bebanKey==='rendah').length;
+    const tinggi = rows.filter(r=>r.total>=8).length;
+    const sedang = rows.filter(r=>r.total>=3 && r.total<8).length;
+    const rendah = rows.filter(r=>r.total<3).length;
     leg.innerHTML = `
       <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Beban Tinggi (≥8)</span><b>${tinggi}</b></div>
       <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Beban Sedang (3–7)</span><b>${sedang}</b></div>
       <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Beban Rendah (0–2)</span><b>${rendah}</b></div>`;
   }
 }
+
 function renderPkTable(){
   const tbody = document.getElementById('tb-pk'); if(!tbody) return;
-  renderPkKpi();
-  renderPkCharts();
-
-  let rows = filterPkRows(getPkRows());
-  rows = sortByTable(rows, 'pk', (r,key)=>{
-    if(key==='status') return r.status;
-    if(key==='jabatan') return r.jabatan;
-    return r[key];
-  });
-  const countEl = document.getElementById('pk-count');
-  if(countEl) countEl.textContent = `${rows.length} PK ditampilkan`;
-
+  if(typeof renderPkKpi==='function') renderPkKpi();
+  if(typeof renderPkCharts==='function') renderPkCharts();
+  let rows = getPkRows();
+  rows = sortByTable(rows, 'pk', (r,key)=>r[key]);
   const pg = paginate(rows, 'pk');
   tbody.innerHTML = pg.slice.length ? pg.slice.map((r,i)=>{
-    const safeName = r.name.replace(/'/g,"\\\\'");
+    const safe = r.name.replace(/'/g,"\\\\'");
     return `<tr>
       <td class="text-slate-400 text-xs">${pg.start+i+1}</td>
       <td>
-        <button type="button" class="flex items-center gap-2.5 text-left group" onclick="showPkDetail('${safeName}')">
-          <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm" style="background:${pkAvatarColor(r.name)}">${pkInitials(r.name)}</span>
+        <button type="button" class="flex items-center gap-2.5 text-left group" onclick="showPkDetail('${safe}')">
+          <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:${pkAvatarColor(r.name)}">${pkInitials(r.name)}</span>
           <span>
-            <span class="block font-semibold text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">${r.name}</span>
-            <span class="block text-[11px] text-slate-400">${r.wilayah_fokus||'Wilayah belum diisi'}${r.nip?` · ${r.nip}`:''}</span>
+            <span class="block font-semibold text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400">${r.name}</span>
+            <span class="block text-[11px] text-slate-400">${r.jabatan||'PK'}${r.wilayah_fokus?` · ${r.wilayah_fokus}`:''}</span>
           </span>
         </button>
       </td>
-      <td class="text-sm">${r.jabatan||'-'}</td>
-      <td><span class="badge ${r.status==='Aktif'?'badge-green':'badge-slate'}">${r.status}</span></td>
-      <td class="text-center"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('Litmas Integrasi — PK ${safeName}', allData.filter(d=>d.nama_pk==='${safeName}' && d.jenis_litmas==='Litmas Integrasi'))">${r.int}</span></td>
-      <td class="text-center"><span class="badge badge-indigo" style="cursor:pointer" onclick="showStatDetail('Litmas Pendampingan ABH — PK ${safeName}', allData.filter(d=>d.nama_pk==='${safeName}' && d.jenis_litmas==='Litmas Pendampingan ABH'))">${r.pnd}</span></td>
-      <td class="font-extrabold text-center">${r.total}</td>
-      <td style="min-width:110px">
-        <div class="flex items-center gap-2">
-          <div class="flex-1 h-2 rounded-full bg-slate-200/80 dark:bg-white/10 overflow-hidden">
-            <div class="h-full rounded-full ${r.bebanBar}" style="width:${r.bebanPct}%"></div>
-          </div>
-          <span class="badge ${r.bebanCls} text-[10px]">${r.bebanLabel}</span>
-        </div>
-      </td>
+      <td><span class="badge ${r.status==='Nonaktif'?'badge-slate':'badge-green'}">${r.status||'Aktif'}</span></td>
+      <td class="text-center"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('Litmas Integrasi — PK ${safe}', allData.filter(d=>d.nama_pk==='${safe}' && d.jenis_litmas==='Litmas Integrasi'))">${r.int}</span></td>
+      <td class="text-center"><span class="badge badge-indigo" style="cursor:pointer" onclick="showStatDetail('Litmas Pendampingan ABH — PK ${safe}', allData.filter(d=>d.nama_pk==='${safe}' && d.jenis_litmas==='Litmas Pendampingan ABH'))">${r.pnd}</span></td>
+      <td class="font-bold text-center">${r.total}</td>
       <td class="text-center whitespace-nowrap">
-        <button class="btn btn-ghost btn-sm" title="Detail" onclick="showPkDetail('${safeName}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+        <button class="btn btn-ghost btn-sm" title="Detail" onclick="showPkDetail('${safe}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
         ${isAdmin() ? `
-          <button class="btn btn-ghost btn-sm" title="Edit" onclick="openPkModal('${safeName}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-          <button class="btn btn-ghost btn-sm" title="Toggle status" onclick="togglePkStatus('${safeName}')"><i data-lucide="${r.status==='Aktif'?'user-x':'user-check'}" class="w-3.5 h-3.5"></i></button>
-          <button class="btn btn-danger btn-sm" title="Hapus" onclick="deletePk('${safeName}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="openPkModal('${safe}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deletePk('${safe}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         ` : ''}
       </td>
     </tr>`;
-  }).join('') : `<tr><td colspan="9" class="text-center py-10 text-slate-400">Tidak ada data PK sesuai filter.</td></tr>`;
-
+  }).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data PK.</td></tr>`;
   renderPagination('pg-pk', 'pk', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
@@ -2888,9 +2877,32 @@ async function syncDataFromSheets(manual){
       pasca_adjudikasi: d.pasca_adjudikasi || null
     }));
     saveAll();
+
+    // Sinkron master PK dari sheet MasterPK
+    let pkNote = '';
+    try{
+      const pkRemote = await fetchPkFromSheet();
+      if(Array.isArray(pkRemote) && pkRemote.length){
+        PK_MASTER = normalizePkMaster(pkRemote);
+        saveMaster();
+        pkNote = ', ' + PK_MASTER.length + ' PK';
+      } else if(Array.isArray(pkRemote) && pkRemote.length === 0 && PK_MASTER.length){
+        // Sheet kosong tapi lokal ada data → unggah sekali agar sheet terisi
+        if(manual){
+          try{ await pushPkListToSheet(); pkNote = ', PK diunggah ('+PK_MASTER.length+')'; }
+          catch(upErr){ console.warn('seed PK ke sheet gagal', upErr); pkNote = ', PK lokal tetap'; }
+        } else {
+          pkNote = ', PK lokal';
+        }
+      }
+    }catch(pkErr){
+      console.warn('Sinkron PK:', pkErr);
+      pkNote = ', PK lokal (sheet gagal)';
+    }
+
     if(dot){ dot.classList.remove('bg-red-500'); dot.classList.add('bg-emerald-500'); }
-    if(text) text.textContent = 'Sinkron dengan Google Sheet (' + allData.length + ' data)';
-    if(manual) showToast('Data berhasil disinkronkan (' + allData.length + ' baris)','success');
+    if(text) text.textContent = 'Sinkron Google Sheet (' + allData.length + ' litmas' + pkNote + ')';
+    if(manual) showToast('Sinkron berhasil: ' + allData.length + ' litmas' + pkNote, 'success');
     renderAllViews();
   }catch(e){
     console.error('syncDataFromSheets:', e);

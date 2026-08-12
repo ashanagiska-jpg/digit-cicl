@@ -592,15 +592,21 @@
       <div>
         <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Master Data</p>
         <h3 class="text-lg font-extrabold tracking-tight">Pembimbing Kemasyarakatan (PK)</h3>
-        <p class="text-xs text-slate-500 mt-1">Profil, beban kerja, status aktif, dan distribusi kasus per PK</p>
+        <p class="text-xs text-slate-500 mt-1">Profil, beban kerja, status aktif — disimpan di <b>Google Sheet → tab MasterPK</b></p>
       </div>
       <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="pushAllPkToSheet()" title="Unggah seluruh daftar PK ke Google Sheet">
+          <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> Unggah ke Sheet
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="syncDataFromSheets(true)">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tarik dari Sheet
+        </button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="exportPkCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
         <button type="button" class="btn btn-primary btn-sm admin-only" onclick="openPkModal()"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah PK</button>
       </div>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5" id="pk-kpi-row">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
       <div class="card-panel p-3.5 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0"><i data-lucide="users" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total PK</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-total">0</p></div>
@@ -642,39 +648,16 @@
     </div>
 
     <div class="card-panel p-4 sm:p-5 space-y-4">
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="relative flex-1 min-w-[200px]">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, NIP, jabatan, wilayah fokus…" id="q-pk" oninput="onPkFilterChange()">
-        </div>
-        <select class="form-input" style="width:auto;min-width:140px" id="f-pk-status" onchange="onPkFilterChange()">
-          <option value="">Semua Status</option>
-          <option value="Aktif">Aktif</option>
-          <option value="Nonaktif">Nonaktif</option>
-        </select>
-        <select class="form-input" style="width:auto;min-width:160px" id="f-pk-beban" onchange="onPkFilterChange()">
-          <option value="">Semua Beban</option>
-          <option value="tinggi">Beban Tinggi (≥8)</option>
-          <option value="sedang">Beban Sedang (3–7)</option>
-          <option value="rendah">Beban Rendah (0–2)</option>
-        </select>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="resetPkFilters()" title="Reset filter"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
-      </div>
-      <div class="flex items-center justify-between">
-        <span class="text-[11px] text-slate-400" id="pk-count"></span>
-      </div>
       <div class="table-wrap rounded-xl">
         <table>
           <thead>
             <tr>
               <th class="w-10">No</th>
               <th class="sortable" data-table="pk" data-key="name">PK / Profil<span class="sort-arrow"></span></th>
-              <th class="sortable" data-table="pk" data-key="jabatan">Jabatan<span class="sort-arrow"></span></th>
               <th class="sortable" data-table="pk" data-key="status">Status<span class="sort-arrow"></span></th>
               <th class="sortable" data-table="pk" data-key="int">Integrasi<span class="sort-arrow"></span></th>
               <th class="sortable" data-table="pk" data-key="pnd">Pendampingan<span class="sort-arrow"></span></th>
               <th class="sortable" data-table="pk" data-key="total">Total<span class="sort-arrow"></span></th>
-              <th>Beban</th>
               <th class="text-center">Aksi</th>
             </tr>
           </thead>
