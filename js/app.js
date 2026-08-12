@@ -1,12 +1,93 @@
 // ==================== DATA MASTER ====================
-let WILAYAH = JSON.parse(localStorage.getItem('CICL_WILAYAH')||'null') || ['Kabupaten Lahat','Kabupaten Muara Enim','Kabupaten PALI','Kabupaten Empat Lawang','Kota Pagar Alam'];
-let KEPOLISIAN = JSON.parse(localStorage.getItem('CICL_POLISI')||'null') || {
+const DEFAULT_WILAYAH_NAMES = ['Kabupaten Lahat','Kabupaten Muara Enim','Kabupaten PALI','Kabupaten Empat Lawang','Kota Pagar Alam'];
+const DEFAULT_KEPOLISIAN_MAP = {
   'Kabupaten Lahat':['Polres Lahat','Polsek Kota Lahat','Polsek Merapi','Polsek Kikim Barat','Polsek Kikim Timur','Polsek Kikim Tengah','Polsek Kikim Selatan','Polsek Jarai','Polsek Pajar Bulan','Polsek Pulau Pinang','Polsek Tanjung Sakti','Polsek Mulak Ulu','Polsek Gumay Talang','Polsek Pseksu'],
   'Kabupaten Muara Enim':['Polres Muara Enim','Polsek Lawang Kidul','Polsek Muara Enim','Polsek Gelumbang','Polsek Tanjung Agung','Polsek Rambang Dangku','Polsek Benakat','Polsek Lembak','Polsek Sungai Rotan','Polsek Semende','Polsek Rambang','Polsek Rambang Lubai','Polsek Gunung Megang'],
   'Kabupaten PALI':['Polres PALI','Polsek Talang Ubi','Polsek Penukal Abab','Polsek Tanah Abang'],
   'Kabupaten Empat Lawang':['Polres Empat Lawang','Polsek Tebing Tinggi','Polsek Pendopo','Polsek Ulu Musi','Polsek Pasemah Air Keruh','Polsek Saling'],
   'Kota Pagar Alam':['Polres Pagar Alam','Polsek Pagar Alam Utara','Polsek Pagar Alam Selatan','Polsek Dempo Utara','Polsek Dempo Selatan']
 };
+
+function normalizeWilayahMaster(raw){
+  if(!raw || !Array.isArray(raw) || !raw.length){
+    return DEFAULT_WILAYAH_NAMES.map(name=>({ name, kode:'', status:'Aktif', catatan:'' }));
+  }
+  if(typeof raw[0] === 'string'){
+    return raw.map(name=>({ name, kode:'', status:'Aktif', catatan:'' }));
+  }
+  return raw.map(w=>({
+    name: String(w.name || w.nama || '').trim(),
+    kode: String(w.kode || '').trim(),
+    status: w.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
+    catatan: String(w.catatan || '').trim()
+  })).filter(w=>w.name);
+}
+
+function normalizeKepolisianMaster(raw){
+  // Accept: object map {wilayah:[names]} OR array of {wilayah,nama,...}
+  if(!raw) return flattenKepolisianMap(DEFAULT_KEPOLISIAN_MAP);
+  if(Array.isArray(raw)){
+    return raw.map(p=>({
+      wilayah: String(p.wilayah || '').trim(),
+      nama: String(p.nama || p.name || '').trim(),
+      jenis: String(p.jenis || inferJenisPolisi(p.nama || p.name || '')).trim(),
+      status: p.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
+      catatan: String(p.catatan || '').trim()
+    })).filter(p=>p.wilayah && p.nama);
+  }
+  // object map
+  return flattenKepolisianMap(raw);
+}
+function inferJenisPolisi(nama){
+  const n = String(nama||'').toLowerCase();
+  if(n.includes('polres')) return 'Polres';
+  if(n.includes('polsek')) return 'Polsek';
+  return 'Lainnya';
+}
+function flattenKepolisianMap(map){
+  const list = [];
+  Object.keys(map||{}).forEach(wil=>{
+    (map[wil]||[]).forEach(nama=>{
+      list.push({ wilayah: wil, nama, jenis: inferJenisPolisi(nama), status:'Aktif', catatan:'' });
+    });
+  });
+  return list;
+}
+function kepolisianMapFromMaster(list){
+  const map = {};
+  (list||[]).forEach(p=>{
+    if(!p.wilayah || !p.nama) return;
+    if(p.status === 'Nonaktif') return; // dropdown hanya aktif
+    if(!map[p.wilayah]) map[p.wilayah] = [];
+    if(!map[p.wilayah].includes(p.nama)) map[p.wilayah].push(p.nama);
+  });
+  return map;
+}
+
+let WILAYAH_MASTER = normalizeWilayahMaster(JSON.parse(localStorage.getItem('CICL_WILAYAH')||'null'));
+/** Nama wilayah untuk dropdown — sinkron dari WILAYAH_MASTER (aktif saja). */
+let WILAYAH = WILAYAH_MASTER.filter(w=>w.status!=='Nonaktif').map(w=>w.name);
+// Pastikan semua nama (termasuk nonaktif) tetap di list internal untuk mapping
+if(!WILAYAH.length) WILAYAH = WILAYAH_MASTER.map(w=>w.name);
+
+let KEPOLISIAN_MASTER = (()=>{
+  const stored = JSON.parse(localStorage.getItem('CICL_POLISI')||'null');
+  if(stored && Array.isArray(stored)) return normalizeKepolisianMaster(stored);
+  if(stored && typeof stored === 'object') return normalizeKepolisianMaster(stored);
+  return normalizeKepolisianMaster(DEFAULT_KEPOLISIAN_MAP);
+})();
+/** Map wilayah → [nama unit] untuk dropdown form. */
+let KEPOLISIAN = kepolisianMapFromMaster(KEPOLISIAN_MASTER);
+
+function syncWilayahFromMaster(){
+  WILAYAH = WILAYAH_MASTER.filter(w=>w.status!=='Nonaktif').map(w=>w.name);
+  if(!WILAYAH.length) WILAYAH = WILAYAH_MASTER.map(w=>w.name);
+}
+function syncKepolisianFromMaster(){
+  KEPOLISIAN = kepolisianMapFromMaster(KEPOLISIAN_MASTER);
+  // Pastikan setiap wilayah punya key
+  WILAYAH_MASTER.forEach(w=>{ if(!KEPOLISIAN[w.name]) KEPOLISIAN[w.name]=[]; });
+}
 // --- Data PK (model kaya, disimpan lokal + Google Sheet MasterPK) ---
 const DEFAULT_PK_MASTER = [
   { name:'Firman Syahri', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
@@ -241,10 +322,12 @@ function initAuth(){
 
 function saveAll(){ localStorage.setItem('CICL_DATA', JSON.stringify(allData)); }
 function saveMaster(){
-  localStorage.setItem('CICL_WILAYAH', JSON.stringify(WILAYAH));
-  localStorage.setItem('CICL_POLISI', JSON.stringify(KEPOLISIAN));
+  localStorage.setItem('CICL_WILAYAH', JSON.stringify(WILAYAH_MASTER));
+  localStorage.setItem('CICL_POLISI', JSON.stringify(KEPOLISIAN_MASTER));
   localStorage.setItem('CICL_PK', JSON.stringify(PK_MASTER));
   syncPkListFromMaster();
+  syncWilayahFromMaster();
+  syncKepolisianFromMaster();
 }
 
 /** Push seluruh daftar PK ke Google Sheet (sheet MasterPK). */
@@ -295,6 +378,54 @@ async function fetchPkFromSheet(){
   if(!Array.isArray(data)) throw new Error('Format master PK tidak valid');
   return data;
 }
+
+async function fetchWilayahFromSheet(){
+  const url = normalizeGasUrl(gsheetUrl);
+  if(!url) return null;
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + 'resource=wilayah', { method:'GET', redirect:'follow', cache:'no-store' });
+  const raw = await res.text();
+  let data; try { data = JSON.parse(raw); } catch(e){ throw new Error('Respons wilayah bukan JSON'); }
+  if(data && data.status === 'error') throw new Error(data.message || 'Gagal ambil wilayah');
+  if(!Array.isArray(data)) throw new Error('Format master wilayah tidak valid');
+  return data;
+}
+async function fetchKepolisianFromSheet(){
+  const url = normalizeGasUrl(gsheetUrl);
+  if(!url) return null;
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + 'resource=kepolisian', { method:'GET', redirect:'follow', cache:'no-store' });
+  const raw = await res.text();
+  let data; try { data = JSON.parse(raw); } catch(e){ throw new Error('Respons kepolisian bukan JSON'); }
+  if(data && data.status === 'error') throw new Error(data.message || 'Gagal ambil kepolisian');
+  if(!Array.isArray(data)) throw new Error('Format master kepolisian tidak valid');
+  return data;
+}
+async function pushWilayahListToSheet(){
+  if(!gsheetUrl) return;
+  await postToSheetJSON('save_wilayah_list', { list: WILAYAH_MASTER });
+}
+async function pushKepolisianListToSheet(){
+  if(!gsheetUrl) return;
+  await postToSheetJSON('save_kepolisian_list', { list: KEPOLISIAN_MASTER });
+}
+async function pushWilayahUpsertToSheet(payload, oldName){
+  if(!gsheetUrl) return;
+  await postToSheetJSON('upsert_wilayah', { ...payload, oldName: oldName||'' });
+}
+async function pushWilayahDeleteToSheet(name){
+  if(!gsheetUrl) return;
+  await postToSheetJSON('delete_wilayah', { name });
+}
+async function pushKepolisianUpsertToSheet(payload, oldWilayah, oldName){
+  if(!gsheetUrl) return;
+  await postToSheetJSON('upsert_kepolisian', { ...payload, oldWilayah: oldWilayah||'', oldName: oldName||'' });
+}
+async function pushKepolisianDeleteToSheet(wilayah, nama){
+  if(!gsheetUrl) return;
+  await postToSheetJSON('delete_kepolisian', { wilayah, nama });
+}
+
 
 function uid(){ return String(Date.now()) + Math.floor(Math.random()*1000); }
 
@@ -2156,59 +2287,381 @@ function renderPkTable(){
 
 function openWilayahModal(oldName){
   if(guardWrite())return;
-  openModal(`<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} Wilayah</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-  <div><label class="fl">Nama Wilayah</label><input class="form-input" id="wil-name" value="${oldName||''}"></div>
-  <div class="flex justify-end gap-2 pt-4"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveWilayah('${oldName||''}')">Simpan</button></div>`);
+  const item = oldName ? WILAYAH_MASTER.find(w=>w.name===oldName) : null;
+  openModal(`
+    <div class="flex justify-between items-start mb-4 gap-3">
+      <div>
+        <h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} Wilayah Kerja</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Data disimpan lokal + Google Sheet (tab MasterWilayah).</p>
+      </div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="sm:col-span-2"><label class="fl">Nama Wilayah *</label>
+        <input class="form-input" id="wil-name" value="${item?item.name.replace(/"/g,'&quot;'):''}" placeholder="Contoh: Kabupaten Lahat"></div>
+      <div><label class="fl">Kode</label>
+        <input class="form-input" id="wil-kode" value="${item?(item.kode||'').replace(/"/g,'&quot;'):''}" placeholder="Opsional"></div>
+      <div><label class="fl">Status</label>
+        <select class="form-input" id="wil-status">
+          <option value="Aktif" ${!item||item.status==='Aktif'?'selected':''}>Aktif</option>
+          <option value="Nonaktif" ${item&&item.status==='Nonaktif'?'selected':''}>Nonaktif</option>
+        </select></div>
+      <div class="sm:col-span-2"><label class="fl">Catatan</label>
+        <textarea class="form-input" id="wil-catatan" rows="2">${item?item.catatan||'':''}</textarea></div>
+    </div>
+    <div class="flex justify-end gap-2 pt-5">
+      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" id="btn-save-wil" onclick="saveWilayah('${(oldName||'').replace(/'/g,"\\\\'")}')"><i data-lucide="save" class="w-4 h-4"></i> Simpan</button>
+    </div>
+  `);
 }
-function saveWilayah(oldName){
+async function saveWilayah(oldName){
   if(guardWrite())return;
-  const name = val('wil-name'); if(!name) return;
-  if(oldName){ const i=WILAYAH.indexOf(oldName); if(i>-1) WILAYAH[i]=name; KEPOLISIAN[name]=KEPOLISIAN[oldName]||[]; if(name!==oldName) delete KEPOLISIAN[oldName]; allData.forEach(d=>{ if(d.wilayah_asal===oldName) d.wilayah_asal=name; }); }
-  else { WILAYAH.push(name); KEPOLISIAN[name]=[]; }
-  saveMaster(); saveAll(); closeModal(); renderAllViews(); showToast('Data wilayah disimpan','success');
+  const name = (document.getElementById('wil-name')?.value||'').trim();
+  if(!name){ showToast('Nama wilayah wajib','error'); return; }
+  const payload = {
+    name,
+    kode: (document.getElementById('wil-kode')?.value||'').trim(),
+    status: document.getElementById('wil-status')?.value || 'Aktif',
+    catatan: (document.getElementById('wil-catatan')?.value||'').trim()
+  };
+  if(oldName){
+    const i = WILAYAH_MASTER.findIndex(w=>w.name===oldName);
+    if(i>-1) WILAYAH_MASTER[i] = payload;
+    if(oldName !== name){
+      // pindahkan unit polisi
+      KEPOLISIAN_MASTER.forEach(p=>{ if(p.wilayah===oldName) p.wilayah=name; });
+      allData.forEach(d=>{ if(d.wilayah_asal===oldName) d.wilayah_asal=name; });
+    }
+  } else {
+    if(WILAYAH_MASTER.some(w=>w.name.toLowerCase()===name.toLowerCase())){
+      showToast('Wilayah sudah ada','error'); return;
+    }
+    WILAYAH_MASTER.push(payload);
+  }
+  saveMaster(); saveAll();
+  try{
+    await pushWilayahUpsertToSheet(payload, oldName||'');
+    if(oldName && oldName!==name){
+      // re-push kepolisian map changes
+      try{ await pushKepolisianListToSheet(); }catch(_){}
+    }
+    showSuccessPopup('Wilayah disimpan (lokal + Sheet)');
+  }catch(e){
+    showToast('Tersimpan lokal. Gagal Sheet: '+(e.message||e),'error');
+  }
+  closeModal(); renderAllViews();
 }
-function deleteWilayah(name){ if(guardWrite())return; if(!confirm('Hapus wilayah '+name+'?')) return; WILAYAH=WILAYAH.filter(w=>w!==name); delete KEPOLISIAN[name]; saveMaster(); renderAllViews(); }
+async function deleteWilayah(name){
+  if(guardWrite())return;
+  const nPol = KEPOLISIAN_MASTER.filter(p=>p.wilayah===name).length;
+  const nKas = allData.filter(d=>d.wilayah_asal===name).length;
+  if(!confirm(`Hapus wilayah "${name}"?\n${nPol} unit polisi & ${nKas} kasus terkait (nama di kasus tidak dihapus).`)) return;
+  WILAYAH_MASTER = WILAYAH_MASTER.filter(w=>w.name!==name);
+  KEPOLISIAN_MASTER = KEPOLISIAN_MASTER.filter(p=>p.wilayah!==name);
+  saveMaster();
+  try{
+    await pushWilayahDeleteToSheet(name);
+    await pushKepolisianListToSheet();
+    showToast('Wilayah dihapus dari lokal + Sheet','success');
+  }catch(e){
+    showToast('Dihapus lokal. Gagal Sheet: '+(e.message||e),'error');
+  }
+  renderAllViews();
+}
+async function pushAllWilayahToSheet(){
+  if(guardWrite())return;
+  if(!gsheetUrl){ showToast('Isi URL Apps Script di Pengaturan','error'); return; }
+  try{
+    showToast('Mengunggah wilayah…','info');
+    await pushWilayahListToSheet();
+    showSuccessPopup('Master wilayah diunggah ke Sheet (tab MasterWilayah)');
+  }catch(e){ showToast('Gagal: '+(e.message||e),'error'); }
+}
+function exportWilayahCSV(){
+  const rows = getWilayahRows();
+  let csv = 'No,Nama,Kode,Status,Unit Polisi,Total Kasus,Catatan\n';
+  rows.forEach((r,i)=>{
+    const esc = v=>`"${String(v??'').replace(/"/g,'""')}"`;
+    csv += [i+1,r.name,r.kode,r.status,r.polisi,r.total,r.catatan].map(esc).join(',')+'\n';
+  });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`DIGIT-CICL_Wilayah_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+function getWilayahRows(){
+  return WILAYAH_MASTER.map(w=>{
+    const polisi = KEPOLISIAN_MASTER.filter(p=>p.wilayah===w.name).length;
+    const total = allData.filter(d=>d.wilayah_asal===w.name).length;
+    return { ...w, polisi, total };
+  });
+}
+function renderWilayahKpi(){
+  const rows = getWilayahRows();
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('wilkpi-total', rows.length);
+  set('wilkpi-aktif', rows.filter(r=>r.status!=='Nonaktif').length);
+  set('wilkpi-kasus', rows.reduce((s,r)=>s+r.total,0));
+  set('wilkpi-polisi', KEPOLISIAN_MASTER.length);
+}
+function renderWilayahCharts(){
+  if(typeof Chart==='undefined') return;
+  if(typeof charts==='undefined') window.charts={};
+  const store = charts || window.charts;
+  const rows = getWilayahRows().slice().sort((a,b)=>b.total-a.total);
+  const isDark = document.documentElement.classList.contains('dark');
+  const tick = isDark?'#94a3b8':'#64748b';
+  const grid = isDark?'rgba(255,255,255,0.06)':'rgba(15,23,42,0.06)';
+  const palette = ['#3b82f6','#6366f1','#10b981','#f59e0b','#ec4899','#14b8a6','#8b5cf6','#ef4444'];
+
+  const ctx1 = document.getElementById('ch-wilayah-bar');
+  if(ctx1){
+    if(store['ch-wilayah-bar']) store['ch-wilayah-bar'].destroy();
+    store['ch-wilayah-bar'] = new Chart(ctx1,{
+      type:'bar',
+      data:{ labels: rows.map(r=>r.name.replace('Kabupaten ','Kab. ').replace('Kota ','')),
+        datasets:[{ label:'Kasus', data:rows.map(r=>r.total), backgroundColor:palette, borderRadius:8, borderSkipped:false }]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{ x:{ ticks:{ color:tick, font:{size:10} }, grid:{ display:false } }, y:{ ticks:{ color:tick }, grid:{ color:grid } } },
+        onClick:(evt,els)=>{ if(!els.length) return; showStatDetail('Wilayah: '+rows[els[0].index].name, allData.filter(d=>d.wilayah_asal===rows[els[0].index].name)); }
+      }
+    });
+  }
+  const ctx2 = document.getElementById('ch-wilayah-pie');
+  if(ctx2){
+    if(store['ch-wilayah-pie']) store['ch-wilayah-pie'].destroy();
+    store['ch-wilayah-pie'] = new Chart(ctx2,{
+      type:'doughnut',
+      data:{ labels: rows.map(r=>r.name.replace('Kabupaten ','Kab. ').replace('Kota ','')),
+        datasets:[{ data:rows.map(r=>r.total), backgroundColor:palette, borderWidth:0, hoverOffset:6 }]},
+      options:{ cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{ color:tick, boxWidth:10, font:{size:10} } } },
+        onClick:(evt,els)=>{ if(!els.length) return; showStatDetail('Wilayah: '+rows[els[0].index].name, allData.filter(d=>d.wilayah_asal===rows[els[0].index].name)); }
+      }
+    });
+  }
+}
 function renderWilayahTable(){
   const tbody = document.getElementById('tb-wilayah'); if(!tbody) return;
-  let rows = WILAYAH.map(w=>({name:w, total: allData.filter(d=>d.wilayah_asal===w).length}));
+  renderWilayahKpi(); renderWilayahCharts();
+  const q = (document.getElementById('q-wilayah')?.value||'').trim().toLowerCase();
+  let rows = getWilayahRows().filter(r=>!q || r.name.toLowerCase().includes(q) || (r.kode||'').toLowerCase().includes(q));
   rows = sortByTable(rows, 'wilayah', (r,key)=>r[key]);
   const pg = paginate(rows, 'wilayah');
-  tbody.innerHTML = pg.slice.map((r,i)=>`<tr><td>${pg.start+i+1}</td><td>${r.name}</td><td>${r.total}</td>
-  <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openWilayahModal('${r.name}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-  <button class="btn btn-danger btn-sm" onclick="deleteWilayah('${r.name}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>`).join('');
+  tbody.innerHTML = pg.slice.length ? pg.slice.map((r,i)=>{
+    const safe = r.name.replace(/'/g,"\\\\'");
+    return `<tr>
+      <td class="text-slate-400 text-xs">${pg.start+i+1}</td>
+      <td class="font-semibold">${r.name}</td>
+      <td class="text-sm text-slate-500">${r.kode||'-'}</td>
+      <td><span class="badge ${r.status==='Nonaktif'?'badge-slate':'badge-green'}">${r.status||'Aktif'}</span></td>
+      <td class="text-center"><span class="badge badge-indigo">${r.polisi}</span></td>
+      <td class="text-center font-bold"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('Wilayah: ${safe}', allData.filter(d=>d.wilayah_asal==='${safe}'))">${r.total}</span></td>
+      <td class="text-center whitespace-nowrap">
+        ${isAdmin()?`
+          <button class="btn btn-ghost btn-sm" onclick="openWilayahModal('${safe}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteWilayah('${safe}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        `:`<span class="text-slate-400 text-xs">-</span>`}
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data wilayah.</td></tr>`;
   renderPagination('pg-wilayah', 'wilayah', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
 
 function openKepolisianModal(wil, oldName){
   if(guardWrite())return;
-  openModal(`<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} Kepolisian</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-  <div class="space-y-3">
-    <div><label class="fl">Wilayah</label><select class="form-input" id="pol-wil">${WILAYAH.map(w=>`<option ${wil===w?'selected':''}>${w}</option>`).join('')}</select></div>
-    <div><label class="fl">Nama Kepolisian</label><input class="form-input" id="pol-name" value="${oldName||''}"></div>
-  </div>
-  <div class="flex justify-end gap-2 pt-4"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveKepolisian('${wil||''}','${oldName||''}')">Simpan</button></div>`);
+  const item = (wil && oldName) ? KEPOLISIAN_MASTER.find(p=>p.wilayah===wil && p.nama===oldName) : null;
+  const wilOpts = WILAYAH_MASTER.map(w=>`<option value="${w.name}" ${(item?item.wilayah:wil)===w.name?'selected':''}>${w.name}</option>`).join('');
+  openModal(`
+    <div class="flex justify-between items-start mb-4 gap-3">
+      <div>
+        <h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} Kepolisian Mitra</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Data disimpan lokal + Google Sheet (tab MasterKepolisian).</p>
+      </div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div><label class="fl">Wilayah *</label>
+        <select class="form-input" id="pol-wil">${wilOpts}</select></div>
+      <div><label class="fl">Nama Unit *</label>
+        <input class="form-input" id="pol-name" value="${item?(item.nama||'').replace(/"/g,'&quot;'):(oldName||'').replace(/"/g,'&quot;')}" placeholder="Polsek / Polres …"></div>
+      <div><label class="fl">Jenis</label>
+        <select class="form-input" id="pol-jenis">
+          <option value="Polres" ${item&&item.jenis==='Polres'?'selected':''}>Polres</option>
+          <option value="Polsek" ${!item||item.jenis==='Polsek'?'selected':''}>Polsek</option>
+          <option value="Lainnya" ${item&&item.jenis==='Lainnya'?'selected':''}>Lainnya</option>
+        </select></div>
+      <div><label class="fl">Status</label>
+        <select class="form-input" id="pol-status">
+          <option value="Aktif" ${!item||item.status==='Aktif'?'selected':''}>Aktif</option>
+          <option value="Nonaktif" ${item&&item.status==='Nonaktif'?'selected':''}>Nonaktif</option>
+        </select></div>
+      <div class="sm:col-span-2"><label class="fl">Catatan</label>
+        <textarea class="form-input" id="pol-catatan" rows="2">${item?item.catatan||'':''}</textarea></div>
+    </div>
+    <div class="flex justify-end gap-2 pt-5">
+      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveKepolisian('${(wil||'').replace(/'/g,"\\\\'")}','${(oldName||'').replace(/'/g,"\\\\'")}')"><i data-lucide="save" class="w-4 h-4"></i> Simpan</button>
+    </div>
+  `);
 }
-function saveKepolisian(oldWil, oldName){
+async function saveKepolisian(oldWil, oldName){
   if(guardWrite())return;
-  const wil = val('pol-wil'); const name = val('pol-name'); if(!name) return;
-  if(!KEPOLISIAN[wil]) KEPOLISIAN[wil]=[];
-  if(oldName){ KEPOLISIAN[oldWil] = (KEPOLISIAN[oldWil]||[]).filter(p=>p!==oldName); }
-  KEPOLISIAN[wil].push(name);
-  saveMaster(); closeModal(); renderAllViews(); showToast('Data kepolisian disimpan','success');
+  const wilayah = (document.getElementById('pol-wil')?.value||'').trim();
+  const nama = (document.getElementById('pol-name')?.value||'').trim();
+  if(!wilayah || !nama){ showToast('Wilayah dan nama wajib','error'); return; }
+  const payload = {
+    wilayah, nama,
+    jenis: document.getElementById('pol-jenis')?.value || inferJenisPolisi(nama),
+    status: document.getElementById('pol-status')?.value || 'Aktif',
+    catatan: (document.getElementById('pol-catatan')?.value||'').trim()
+  };
+  if(oldName){
+    const i = KEPOLISIAN_MASTER.findIndex(p=>p.wilayah===oldWil && p.nama===oldName);
+    if(i>-1) KEPOLISIAN_MASTER[i] = payload;
+    if(oldName !== nama || oldWil !== wilayah){
+      allData.forEach(d=>{ if(d.kepolisian===oldName && d.wilayah_asal===oldWil) d.kepolisian=nama; });
+    }
+  } else {
+    if(KEPOLISIAN_MASTER.some(p=>p.wilayah===wilayah && p.nama.toLowerCase()===nama.toLowerCase())){
+      showToast('Unit sudah ada di wilayah ini','error'); return;
+    }
+    KEPOLISIAN_MASTER.push(payload);
+  }
+  saveMaster(); saveAll();
+  try{
+    await pushKepolisianUpsertToSheet(payload, oldWil||'', oldName||'');
+    showSuccessPopup('Kepolisian disimpan (lokal + Sheet)');
+  }catch(e){
+    showToast('Tersimpan lokal. Gagal Sheet: '+(e.message||e),'error');
+  }
+  closeModal(); renderAllViews();
 }
-function deleteKepolisian(wil, name){ if(guardWrite())return; if(!confirm('Hapus '+name+'?')) return; KEPOLISIAN[wil] = (KEPOLISIAN[wil]||[]).filter(p=>p!==name); saveMaster(); renderAllViews(); }
+async function deleteKepolisian(wil, name){
+  if(guardWrite())return;
+  if(!confirm(`Hapus "${name}" di ${wil}?`)) return;
+  KEPOLISIAN_MASTER = KEPOLISIAN_MASTER.filter(p=>!(p.wilayah===wil && p.nama===name));
+  saveMaster();
+  try{
+    await pushKepolisianDeleteToSheet(wil, name);
+    showToast('Dihapus dari lokal + Sheet','success');
+  }catch(e){
+    showToast('Dihapus lokal. Gagal Sheet: '+(e.message||e),'error');
+  }
+  renderAllViews();
+}
+async function pushAllKepolisianToSheet(){
+  if(guardWrite())return;
+  if(!gsheetUrl){ showToast('Isi URL Apps Script di Pengaturan','error'); return; }
+  try{
+    showToast('Mengunggah kepolisian…','info');
+    await pushKepolisianListToSheet();
+    showSuccessPopup('Master kepolisian diunggah ke Sheet (tab MasterKepolisian)');
+  }catch(e){ showToast('Gagal: '+(e.message||e),'error'); }
+}
+function exportKepolisianCSV(){
+  const rows = getKepolisianRows();
+  let csv = 'No,Wilayah,Nama,Jenis,Status,Total Masuk,Catatan\n';
+  rows.forEach((r,i)=>{
+    const esc = v=>`"${String(v??'').replace(/"/g,'""')}"`;
+    csv += [i+1,r.wilayah,r.nama,r.jenis,r.status,r.total,r.catatan].map(esc).join(',')+'\n';
+  });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`DIGIT-CICL_Kepolisian_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+function getKepolisianRows(){
+  return KEPOLISIAN_MASTER.map(p=>({
+    ...p,
+    total: allData.filter(d=>d.kepolisian===p.nama).length
+  }));
+}
+function renderKepolisianKpi(){
+  const rows = getKepolisianRows();
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('polkpi-total', rows.length);
+  set('polkpi-polres', rows.filter(r=>r.jenis==='Polres').length);
+  set('polkpi-polsek', rows.filter(r=>r.jenis==='Polsek').length);
+  set('polkpi-kasus', rows.reduce((s,r)=>s+r.total,0));
+}
+function renderKepolisianCharts(){
+  if(typeof Chart==='undefined') return;
+  if(typeof charts==='undefined') window.charts={};
+  const store = charts || window.charts;
+  const rows = getKepolisianRows().slice().sort((a,b)=>b.total-a.total);
+  const isDark = document.documentElement.classList.contains('dark');
+  const tick = isDark?'#94a3b8':'#64748b';
+  const grid = isDark?'rgba(255,255,255,0.06)':'rgba(15,23,42,0.06)';
+  const top = rows.slice(0,10);
+
+  const ctx1 = document.getElementById('ch-polisi-bar');
+  if(ctx1){
+    if(store['ch-polisi-bar']) store['ch-polisi-bar'].destroy();
+    store['ch-polisi-bar'] = new Chart(ctx1,{
+      type:'bar',
+      data:{ labels: top.map(r=>r.nama.length>22?r.nama.slice(0,20)+'…':r.nama),
+        datasets:[{ label:'Kasus', data:top.map(r=>r.total), backgroundColor:'#3b82f6', borderRadius:6, borderSkipped:false }]},
+      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{ x:{ ticks:{ color:tick }, grid:{ color:grid } }, y:{ ticks:{ color:tick, font:{size:10} }, grid:{ display:false } } },
+        onClick:(evt,els)=>{ if(!els.length) return; const r=top[els[0].index]; showStatDetail(r.nama, allData.filter(d=>d.kepolisian===r.nama)); }
+      }
+    });
+  }
+  const ctx2 = document.getElementById('ch-polisi-jenis');
+  if(ctx2){
+    if(store['ch-polisi-jenis']) store['ch-polisi-jenis'].destroy();
+    const labels = ['Polres','Polsek','Lainnya'];
+    const data = labels.map(j=>rows.filter(r=>r.jenis===j).length);
+    store['ch-polisi-jenis'] = new Chart(ctx2,{
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:['#6366f1','#10b981','#94a3b8'], borderWidth:0, hoverOffset:6 }]},
+      options:{ cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{ color:tick, boxWidth:12, font:{size:11} } } } }
+    });
+  }
+}
 function renderKepolisianTable(){
   const tbody = document.getElementById('tb-kepolisian'); if(!tbody) return;
-  let items = [];
-  WILAYAH.forEach(w=>{ (KEPOLISIAN[w]||[]).forEach(p=>{
-    items.push({wilayah:w, nama:p, total: allData.filter(d=>d.kepolisian===p).length});
-  });});
-  items = sortByTable(items, 'kepolisian', (r,key)=>r[key]);
-  const pg = paginate(items, 'kepolisian');
-  tbody.innerHTML = pg.slice.length ? pg.slice.map((r,i)=>`<tr><td>${pg.start+i+1}</td><td>${r.wilayah}</td><td>${r.nama}</td><td>${r.total}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openKepolisianModal('${r.wilayah}','${r.nama}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-    <button class="btn btn-danger btn-sm" onclick="deleteKepolisian('${r.wilayah}','${r.nama}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>`).join('') : `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data.</td></tr>`;
+  renderKepolisianKpi(); renderKepolisianCharts();
+
+  // populate filter wilayah
+  const fWil = document.getElementById('f-pol-wilayah');
+  if(fWil){
+    const cur = fWil.value;
+    fWil.innerHTML = '<option value="">Semua Wilayah</option>' + WILAYAH_MASTER.map(w=>`<option>${w.name}</option>`).join('');
+    fWil.value = cur;
+  }
+
+  const q = (document.getElementById('q-kepolisian')?.value||'').trim().toLowerCase();
+  const fw = document.getElementById('f-pol-wilayah')?.value||'';
+  const fj = document.getElementById('f-pol-jenis')?.value||'';
+  let rows = getKepolisianRows().filter(r=>{
+    if(fw && r.wilayah!==fw) return false;
+    if(fj && r.jenis!==fj) return false;
+    if(q && !(r.nama||'').toLowerCase().includes(q) && !(r.wilayah||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  rows = sortByTable(rows, 'kepolisian', (r,key)=>r[key]);
+  const pg = paginate(rows, 'kepolisian');
+  tbody.innerHTML = pg.slice.length ? pg.slice.map((r,i)=>{
+    const safeWil = r.wilayah.replace(/'/g,"\\\\'");
+    const safeNama = r.nama.replace(/'/g,"\\\\'");
+    return `<tr>
+      <td class="text-slate-400 text-xs">${pg.start+i+1}</td>
+      <td class="text-sm">${r.wilayah}</td>
+      <td class="font-semibold">${r.nama}</td>
+      <td><span class="badge ${r.jenis==='Polres'?'badge-indigo':r.jenis==='Polsek'?'badge-green':'badge-slate'}">${r.jenis||'-'}</span></td>
+      <td><span class="badge ${r.status==='Nonaktif'?'badge-slate':'badge-green'}">${r.status||'Aktif'}</span></td>
+      <td class="text-center font-bold"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('${safeNama}', allData.filter(d=>d.kepolisian==='${safeNama}'))">${r.total}</span></td>
+      <td class="text-center whitespace-nowrap">
+        ${isAdmin()?`
+          <button class="btn btn-ghost btn-sm" onclick="openKepolisianModal('${safeWil}','${safeNama}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteKepolisian('${safeWil}','${safeNama}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        `:`<span class="text-slate-400 text-xs">-</span>`}
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data kepolisian.</td></tr>`;
   renderPagination('pg-kepolisian', 'kepolisian', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
@@ -2878,31 +3331,46 @@ async function syncDataFromSheets(manual){
     }));
     saveAll();
 
-    // Sinkron master PK dari sheet MasterPK
-    let pkNote = '';
+    // Sinkron master: PK + Wilayah + Kepolisian
+    let masterNote = '';
     try{
       const pkRemote = await fetchPkFromSheet();
       if(Array.isArray(pkRemote) && pkRemote.length){
         PK_MASTER = normalizePkMaster(pkRemote);
-        saveMaster();
-        pkNote = ', ' + PK_MASTER.length + ' PK';
-      } else if(Array.isArray(pkRemote) && pkRemote.length === 0 && PK_MASTER.length){
-        // Sheet kosong tapi lokal ada data → unggah sekali agar sheet terisi
-        if(manual){
-          try{ await pushPkListToSheet(); pkNote = ', PK diunggah ('+PK_MASTER.length+')'; }
-          catch(upErr){ console.warn('seed PK ke sheet gagal', upErr); pkNote = ', PK lokal tetap'; }
-        } else {
-          pkNote = ', PK lokal';
-        }
+        masterNote += ', ' + PK_MASTER.length + ' PK';
+      } else if(Array.isArray(pkRemote) && pkRemote.length === 0 && PK_MASTER.length && manual){
+        try{ await pushPkListToSheet(); masterNote += ', PK diunggah'; }
+        catch(upErr){ console.warn('seed PK', upErr); }
       }
-    }catch(pkErr){
-      console.warn('Sinkron PK:', pkErr);
-      pkNote = ', PK lokal (sheet gagal)';
-    }
+    }catch(pkErr){ console.warn('Sinkron PK:', pkErr); masterNote += ', PK lokal'; }
+
+    try{
+      const wilRemote = await fetchWilayahFromSheet();
+      if(Array.isArray(wilRemote) && wilRemote.length){
+        WILAYAH_MASTER = normalizeWilayahMaster(wilRemote);
+        masterNote += ', ' + WILAYAH_MASTER.length + ' wilayah';
+      } else if(Array.isArray(wilRemote) && wilRemote.length === 0 && WILAYAH_MASTER.length && manual){
+        try{ await pushWilayahListToSheet(); masterNote += ', wilayah diunggah'; }
+        catch(upErr){ console.warn('seed wilayah', upErr); }
+      }
+    }catch(wErr){ console.warn('Sinkron wilayah:', wErr); masterNote += ', wilayah lokal'; }
+
+    try{
+      const polRemote = await fetchKepolisianFromSheet();
+      if(Array.isArray(polRemote) && polRemote.length){
+        KEPOLISIAN_MASTER = normalizeKepolisianMaster(polRemote);
+        masterNote += ', ' + KEPOLISIAN_MASTER.length + ' polisi';
+      } else if(Array.isArray(polRemote) && polRemote.length === 0 && KEPOLISIAN_MASTER.length && manual){
+        try{ await pushKepolisianListToSheet(); masterNote += ', polisi diunggah'; }
+        catch(upErr){ console.warn('seed polisi', upErr); }
+      }
+    }catch(pErr){ console.warn('Sinkron kepolisian:', pErr); masterNote += ', polisi lokal'; }
+
+    saveMaster();
 
     if(dot){ dot.classList.remove('bg-red-500'); dot.classList.add('bg-emerald-500'); }
-    if(text) text.textContent = 'Sinkron Google Sheet (' + allData.length + ' litmas' + pkNote + ')';
-    if(manual) showToast('Sinkron berhasil: ' + allData.length + ' litmas' + pkNote, 'success');
+    if(text) text.textContent = 'Sinkron Google Sheet (' + allData.length + ' litmas' + masterNote + ')';
+    if(manual) showToast('Sinkron berhasil: ' + allData.length + ' litmas' + masterNote, 'success');
     renderAllViews();
   }catch(e){
     console.error('syncDataFromSheets:', e);
