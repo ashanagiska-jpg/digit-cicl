@@ -7,8 +7,54 @@ let KEPOLISIAN = JSON.parse(localStorage.getItem('CICL_POLISI')||'null') || {
   'Kabupaten Empat Lawang':['Polres Empat Lawang','Polsek Tebing Tinggi','Polsek Pendopo','Polsek Ulu Musi','Polsek Pasemah Air Keruh','Polsek Saling'],
   'Kota Pagar Alam':['Polres Pagar Alam','Polsek Pagar Alam Utara','Polsek Pagar Alam Selatan','Polsek Dempo Utara','Polsek Dempo Selatan']
 };
-let PK_LIST = JSON.parse(localStorage.getItem('CICL_PK')||'null') || ['Firman Syahri','Sarnudi','Merwandi','Rinto Harahap','Darwind Sepriyansyah','M. Habibur Rozak','M. Eryzal Qarnein','Revan Kurniadi','Marendi Pusaka','Armicho Roy Jaka Suma',
-'Henry Manumpak','Simamora','Arief Tri Hantoro','Choirul Muslimah','Pinesthi Laksa Ambawani'];
+// --- Data PK (model kaya) ---
+// Kompatibel mundur: localStorage CICL_PK bisa array string lama ATAU array objek baru.
+const DEFAULT_PK_MASTER = [
+  { name:'Firman Syahri', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Sarnudi', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Merwandi', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Muara Enim', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Rinto Harahap', nip:'', jabatan:'PK Ahli Madya', status:'Aktif', wilayah_fokus:'Kabupaten Muara Enim', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Darwind Sepriyansyah', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten PALI', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'M. Habibur Rozak', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Empat Lawang', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'M. Eryzal Qarnein', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kota Pagar Alam', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Revan Kurniadi', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Marendi Pusaka', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Muara Enim', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Armicho Roy Jaka Suma', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten PALI', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Henry Manumpak', nip:'', jabatan:'PK Ahli Madya', status:'Aktif', wilayah_fokus:'Kabupaten Empat Lawang', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Simamora', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kota Pagar Alam', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Arief Tri Hantoro', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten Lahat', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Choirul Muslimah', nip:'', jabatan:'PK Ahli Muda', status:'Aktif', wilayah_fokus:'Kabupaten Muara Enim', telepon:'', email:'', tanggal_masuk:'', catatan:'' },
+  { name:'Pinesthi Laksa Ambawani', nip:'', jabatan:'PK Ahli Pertama', status:'Aktif', wilayah_fokus:'Kabupaten Empat Lawang', telepon:'', email:'', tanggal_masuk:'', catatan:'' }
+];
+
+function normalizePkMaster(raw){
+  if(!raw || !Array.isArray(raw) || !raw.length) return DEFAULT_PK_MASTER.map(p=>({...p}));
+  if(typeof raw[0] === 'string'){
+    return raw.map(name=>{
+      const def = DEFAULT_PK_MASTER.find(d=>d.name===name);
+      return def ? {...def} : { name, nip:'', jabatan:'PK', status:'Aktif', wilayah_fokus:'', telepon:'', email:'', tanggal_masuk:'', catatan:'' };
+    });
+  }
+  return raw.map(p=>({
+    name: p.name || p.nama || '',
+    nip: p.nip || '',
+    jabatan: p.jabatan || 'PK',
+    status: p.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
+    wilayah_fokus: p.wilayah_fokus || p.wilayah || '',
+    telepon: p.telepon || p.phone || '',
+    email: p.email || '',
+    tanggal_masuk: p.tanggal_masuk || '',
+    catatan: p.catatan || ''
+  })).filter(p=>p.name);
+}
+
+let PK_MASTER = normalizePkMaster(JSON.parse(localStorage.getItem('CICL_PK')||'null'));
+/** Daftar nama PK (dropdown & filter — selalu sinkron dengan PK_MASTER). */
+let PK_LIST = PK_MASTER.map(p=>p.name);
+
+function syncPkListFromMaster(){
+  PK_LIST = PK_MASTER.map(p=>p.name);
+}
 
 let allData = JSON.parse(localStorage.getItem('CICL_DATA')||'[]');
 let gsheetUrl = localStorage.getItem('CICL_GAS_URL') || 'https://script.google.com/macros/s/AKfycbxtFxetSm7wc7poQF7bzxYRQ2wfl0buyAer3XvYqeahYhphkUZ7HqJzeN5SAJTSp5F1FA/exec';
@@ -198,7 +244,8 @@ function saveAll(){ localStorage.setItem('CICL_DATA', JSON.stringify(allData)); 
 function saveMaster(){
   localStorage.setItem('CICL_WILAYAH', JSON.stringify(WILAYAH));
   localStorage.setItem('CICL_POLISI', JSON.stringify(KEPOLISIAN));
-  localStorage.setItem('CICL_PK', JSON.stringify(PK_LIST));
+  localStorage.setItem('CICL_PK', JSON.stringify(PK_MASTER));
+  syncPkListFromMaster();
 }
 
 function uid(){ return String(Date.now()) + Math.floor(Math.random()*1000); }
@@ -215,15 +262,27 @@ function showToast(msg, type='info'){
 // Popup "Berhasil" yang lebih menonjol dipakai setiap kali proses simpan selesai di semua menu.
 function showSuccessPopup(msg){ showToast(msg, 'success'); }
 
-function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); renderAllCharts(); }
+function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); renderAllCharts(); if(typeof renderPkCharts==='function') renderPkCharts(); }
 
 // ==================== NAVIGATION ====================
 function navigateTo(pageId){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const t = document.getElementById('page-'+pageId); if(t) t.classList.add('active');
+  const t = document.getElementById('page-'+pageId);
+  if(t){
+    // Restart page enter animation
+    t.classList.remove('active');
+    void t.offsetWidth;
+    t.classList.add('active');
+  }
   document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-page')===pageId));
   const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking Adjudikasi', pasca:'Pasca Adjudikasi (Bimbingan)', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
-  document.getElementById('nav-title').textContent = titles[pageId] || 'DIGIT-CICL';
+  const titleEl = document.getElementById('nav-title');
+  if(titleEl){
+    titleEl.style.animation = 'none';
+    void titleEl.offsetWidth;
+    titleEl.textContent = titles[pageId] || 'DIGIT-CICL';
+    titleEl.style.animation = 'fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both';
+  }
   closeSidebar();
   renderAllViews();
 }
@@ -707,36 +766,229 @@ function deleteLitmas(id){
 }
 
 function getFilteredPermintaan(){
-  const q = (document.getElementById('q-permintaan')?.value||'').toLowerCase();
+  const q = (document.getElementById('q-permintaan')?.value||'').toLowerCase().trim();
   const jl = document.getElementById('f-jenislitmas')?.value||'';
   const wl = document.getElementById('f-wilayah-p')?.value||'';
   const st = document.getElementById('f-status-p')?.value||'';
+  const reg = document.getElementById('f-reg-p')?.value||'';
+  const jk = document.getElementById('f-jk-p')?.value||'';
+  const pk = document.getElementById('f-pk-p')?.value||'';
+  const from = parseDay(document.getElementById('f-from-p')?.value);
+  const to = parseDay(document.getElementById('f-to-p')?.value);
   return allData.filter(d=>{
-    const mq = !q || (d.nama_anak||'').toLowerCase().includes(q) || (d.nomor_surat||'').toLowerCase().includes(q);
-    return mq && (!jl||d.jenis_litmas===jl) && (!wl||d.wilayah_asal===wl) && (!st||d.status_jenis===st);
+    if(q){
+      const hay = [d.nama_anak,d.nomor_surat,d.jenis_perkara,d.nama_pk,d.kepolisian,d.wilayah_asal,d.keterangan]
+        .map(x=>(x||'').toLowerCase()).join(' ');
+      if(!hay.includes(q)) return false;
+    }
+    if(jl && d.jenis_litmas!==jl) return false;
+    if(wl && d.wilayah_asal!==wl) return false;
+    if(st && d.status_jenis!==st) return false;
+    if(pk && d.nama_pk!==pk) return false;
+    if(jk && !(d.jenis_kelamin||'').includes(jk.includes('Laki')?'Laki':'Perempuan')) return false;
+    if(reg==='sudah' && !d.registrasi) return false;
+    if(reg==='belum' && d.registrasi) return false;
+    if(from || to){
+      const dt = itemDate(d);
+      if(!dt) return false;
+      if(from && dt < from) return false;
+      if(to){
+        const end = new Date(to); end.setHours(23,59,59,999);
+        if(dt > end) return false;
+      }
+    }
+    return true;
   });
 }
+
+let permintaanView = localStorage.getItem('CICL_PVIEW') || 'table';
+
+function setPermintaanView(mode){
+  permintaanView = mode;
+  localStorage.setItem('CICL_PVIEW', mode);
+  const tw = document.getElementById('permintaan-table-wrap');
+  const cw = document.getElementById('permintaan-card-wrap');
+  if(tw) tw.classList.toggle('hidden', mode!=='table');
+  if(cw) cw.classList.toggle('hidden', mode!=='card');
+  document.getElementById('pv-table')?.classList.toggle('active', mode==='table');
+  document.getElementById('pv-card')?.classList.toggle('active', mode==='card');
+  renderPermintaanTable();
+}
+
+function onPermintaanFilterChange(){
+  if(typeof pageState !== 'undefined') pageState.permintaan = 1;
+  renderPermintaanTable();
+}
+
+function resetPermintaanFilters(){
+  ['q-permintaan','f-jenislitmas','f-wilayah-p','f-status-p','f-reg-p','f-jk-p','f-pk-p','f-from-p','f-to-p'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  onPermintaanFilterChange();
+}
+
+function populatePermintaanFilterOptions(){
+  const wil = document.getElementById('f-wilayah-p');
+  if(wil){
+    const cur = wil.value;
+    wil.innerHTML = '<option value="">Semua Wilayah</option>' + WILAYAH.map(w=>`<option>${w}</option>`).join('');
+    wil.value = cur;
+  }
+  const pk = document.getElementById('f-pk-p');
+  if(pk){
+    const cur = pk.value;
+    pk.innerHTML = '<option value="">Semua PK</option>' + PK_LIST.map(p=>`<option>${p}</option>`).join('');
+    pk.value = cur;
+  }
+}
+
+function statusBadge(st){
+  if(st==='Selesai') return 'badge-green';
+  if(st==='Pending') return 'badge-amber';
+  return 'badge-blue';
+}
+function initials(name){
+  const p = String(name||'?').trim().split(/\s+/).filter(Boolean);
+  if(!p.length) return '?';
+  return ((p[0][0]||'') + (p.length>1 ? p[p.length-1][0] : '')).toUpperCase();
+}
+function shortText(s, n=48){
+  s = String(s||'').trim();
+  if(!s) return '-';
+  return s.length > n ? s.slice(0,n-1)+'…' : s;
+}
+
+function renderPermintaanKpi(list){
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+  set('pkpi-total', list.length);
+  set('pkpi-proses', list.filter(d=>d.status_jenis==='Proses').length);
+  set('pkpi-selesai', list.filter(d=>d.status_jenis==='Selesai').length);
+  set('pkpi-belumreg', list.filter(d=>!d.registrasi).length);
+}
+
+function permintaanActionBtns(d){
+  return `
+    <div class="flex items-center justify-center gap-1 flex-wrap">
+      ${d.link_surat_permintaan ? `<a href="${d.link_surat_permintaan}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" title="Berkas surat"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></a>` : ''}
+      ${d.link_berkas_litmas ? `<a href="${d.link_berkas_litmas}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" title="Berkas litmas"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i></a>` : ''}
+      ${isAdmin() ? `
+        <button class="btn btn-ghost btn-sm" onclick="openLitmasModal('${d.id}')" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteLitmas('${d.id}')" title="Hapus"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+      ` : `<span class="text-[10px] text-slate-400">View</span>`}
+    </div>`;
+}
+
 function renderPermintaanTable(){
-  const tbody = document.getElementById('tb-permintaan'); if(!tbody) return;
+  populatePermintaanFilterOptions();
+  const tbody = document.getElementById('tb-permintaan');
+  const cards = document.getElementById('permintaan-cards');
+  if(!tbody && !cards) return;
+
   let data = getFilteredPermintaan();
-  data = sortByTable(data, 'permintaan', (d,key)=> key==='registrasi' ? (d.registrasi?d.registrasi.nomor:'') : d[key]);
+  renderPermintaanKpi(data);
+  data = sortByTable(data, 'permintaan', (d,key)=>{
+    if(key==='registrasi') return d.registrasi ? d.registrasi.nomor : '';
+    return d[key];
+  });
   const pg = paginate(data, 'permintaan');
-  tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>`
-    <tr>
-      <td class="font-semibold">${d.nomor_surat||'-'}</td><td>${fmtDate(d.tanggal_surat)}</td><td>${fmtDate(d.tanggal_diterima)}</td>
-      <td>${d.nama_anak||'-'}</td><td>${d.jenis_kelamin||'-'}</td><td>${d.jenis_litmas||'-'}</td>
-      <td>${d.jenis_perkara||'-'}</td><td>${d.wilayah_asal||'-'}</td><td>${d.kepolisian||'-'}</td><td>${d.nama_pk||'-'}</td>
-      <td><span class="badge ${d.status_jenis==='Selesai'?'badge-green':d.status_jenis==='Pending'?'badge-amber':'badge-blue'}">${d.status_jenis||'-'}</span></td>
-      <td>${d.registrasi?`<span class="badge badge-indigo">${d.registrasi.nomor}</span>`:'<span class="badge badge-slate">Belum</span>'}</td>
-      <td class="text-center whitespace-nowrap">
-        ${d.link_surat_permintaan ? `<a href="${d.link_surat_permintaan}" target="_blank" class="btn btn-ghost btn-sm" title="Lihat Berkas Surat"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></a>` : ''}
-        ${d.link_berkas_litmas ? `<a href="${d.link_berkas_litmas}" target="_blank" class="btn btn-ghost btn-sm" title="Lihat Berkas Litmas"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i></a>` : ''}
-        ${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openLitmasModal('${d.id}')" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-        <button class="btn btn-danger btn-sm" onclick="deleteLitmas('${d.id}')" title="Hapus"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">Lihat saja</span>`}
-      </td>
-    </tr>`).join('') : `<tr><td colspan="13" class="text-center py-8 text-slate-400">Tidak ada data.</td></tr>`;
+  const countEl = document.getElementById('permintaan-count');
+  if(countEl) countEl.textContent = data.length ? `${data.length} hasil filter` : 'Tidak ada hasil';
+
+  // Keep view mode
+  const tw = document.getElementById('permintaan-table-wrap');
+  const cw = document.getElementById('permintaan-card-wrap');
+  if(tw) tw.classList.toggle('hidden', permintaanView!=='table');
+  if(cw) cw.classList.toggle('hidden', permintaanView!=='card');
+  document.getElementById('pv-table')?.classList.toggle('active', permintaanView==='table');
+  document.getElementById('pv-card')?.classList.toggle('active', permintaanView==='card');
+
+  if(tbody){
+    tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>`
+      <tr class="align-top">
+        <td>
+          <div class="flex items-start gap-2.5 min-w-[200px]">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
+            <div class="min-w-0">
+              <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+              <p class="text-[11px] text-slate-400 truncate">${d.nomor_surat||'-'} · ${d.jenis_kelamin||'-'}</p>
+              <p class="text-[10px] text-slate-400">Surat ${fmtDate(d.tanggal_surat)}</p>
+            </div>
+          </div>
+        </td>
+        <td class="whitespace-nowrap text-sm">${fmtDate(d.tanggal_diterima)}</td>
+        <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${shortText(d.jenis_litmas,28)}</span></td>
+        <td class="text-xs max-w-[180px]" title="${(d.jenis_perkara||'').replace(/"/g,'&quot;')}">${shortText(d.jenis_perkara,56)}</td>
+        <td>
+          <p class="text-sm font-medium">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '),22)}</p>
+          <p class="text-[11px] text-slate-400">${shortText(d.kepolisian,28)}</p>
+        </td>
+        <td class="text-sm">${shortText(d.nama_pk,22)}</td>
+        <td><span class="badge ${statusBadge(d.status_jenis)}">${d.status_jenis||'-'}</span></td>
+        <td>${d.registrasi?`<span class="badge badge-indigo">${d.registrasi.nomor}</span>`:`<span class="badge badge-slate">Belum</span>`}</td>
+        <td class="text-center">${permintaanActionBtns(d)}</td>
+      </tr>`).join('') : `<tr><td colspan="9" class="text-center py-12 text-slate-400">
+        <div class="flex flex-col items-center gap-2">
+          <i data-lucide="inbox" class="w-8 h-8 opacity-40"></i>
+          <p class="font-semibold">Tidak ada data permintaan</p>
+          <p class="text-xs">Ubah filter atau tambah data baru</p>
+        </div>
+      </td></tr>`;
+  }
+
+  if(cards){
+    cards.innerHTML = pg.slice.length ? pg.slice.map(d=>`
+      <div class="card-panel p-4 hover:border-amber-500/30 transition relative overflow-hidden">
+        <div class="flex items-start justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-xs font-extrabold shrink-0">${initials(d.nama_anak)}</div>
+            <div class="min-w-0">
+              <p class="font-bold text-sm truncate">${d.nama_anak||'-'}</p>
+              <p class="text-[11px] text-slate-400 truncate">${d.jenis_kelamin||'-'} · ${fmtDate(d.tanggal_diterima)}</p>
+            </div>
+          </div>
+          <span class="badge ${statusBadge(d.status_jenis)} shrink-0">${d.status_jenis||'-'}</span>
+        </div>
+        <div class="space-y-1.5 text-xs text-slate-500 mb-3">
+          <p><span class="font-semibold text-slate-400">No. Surat</span> · ${d.nomor_surat||'-'}</p>
+          <p><span class="font-semibold text-slate-400">Jenis</span> · ${d.jenis_litmas||'-'}</p>
+          <p class="line-clamp-2" title="${(d.jenis_perkara||'').replace(/"/g,'&quot;')}"><span class="font-semibold text-slate-400">Perkara</span> · ${d.jenis_perkara||'-'}</p>
+          <p><span class="font-semibold text-slate-400">Wilayah</span> · ${d.wilayah_asal||'-'}</p>
+          <p><span class="font-semibold text-slate-400">Kepolisian</span> · ${d.kepolisian||'-'}</p>
+          <p><span class="font-semibold text-slate-400">PK</span> · ${d.nama_pk||'-'}</p>
+        </div>
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60 dark:border-white/5">
+          ${d.registrasi?`<span class="badge badge-indigo">${d.registrasi.nomor}</span>`:`<span class="badge badge-slate">Belum registrasi</span>`}
+          ${permintaanActionBtns(d)}
+        </div>
+      </div>`).join('') : `<div class="col-span-full text-center py-12 text-slate-400">
+        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+        <p class="font-semibold">Tidak ada data permintaan</p>
+      </div>`;
+  }
+
   renderPagination('pg-permintaan', 'permintaan', pg.total, pg.pages, pg.page);
   lucide.createIcons();
+}
+
+function exportPermintaanCSV(){
+  const rows = getFilteredPermintaan();
+  if(!rows.length){ showToast('Tidak ada data untuk diekspor','error'); return; }
+  const headers = ['nomor_surat','tanggal_surat','tanggal_diterima','nama_anak','jenis_kelamin','jenis_litmas','jenis_perkara','wilayah_asal','kepolisian','nama_pk','status_jenis','nomor_registrasi','keterangan'];
+  const esc = v => {
+    const s = v==null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+  const lines = [headers.join(',')].concat(rows.map(d=>headers.map(h=>{
+    if(h==='nomor_registrasi') return esc(d.registrasi?.nomor||'');
+    return esc(d[h]);
+  }).join(',')));
+  const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'permintaan-litmas-'+toYMD(new Date())+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('CSV berhasil diunduh','success');
 }
 
 // ==================== 2. REGISTRASI ====================
@@ -775,37 +1027,230 @@ function batalRegistrasi(id){
   saveAll(); renderAllViews();
   showSuccessPopup('Registrasi anak dibatalkan');
 }
-function getFilteredRegistrasi(){
-  const q = (document.getElementById('q-registrasi')?.value||'').toLowerCase();
-  return allData.filter(d => !q || (d.nama_anak||'').toLowerCase().includes(q) || (d.registrasi?.nomor||'').toLowerCase().includes(q));
+let regTab = localStorage.getItem('CICL_REGTAB') || 'belum';
+
+function setRegTab(tab){
+  regTab = tab;
+  localStorage.setItem('CICL_REGTAB', tab);
+  document.getElementById('reg-panel-belum')?.classList.toggle('hidden', tab==='sudah');
+  document.getElementById('reg-panel-sudah')?.classList.toggle('hidden', tab==='belum');
+  document.getElementById('rtab-belum')?.classList.toggle('active', tab==='belum' || tab==='all');
+  document.getElementById('rtab-sudah')?.classList.toggle('active', tab==='sudah' || tab==='all');
+  document.getElementById('rtab-all')?.classList.toggle('active', tab==='all');
+  if(tab==='all'){
+    document.getElementById('reg-panel-belum')?.classList.remove('hidden');
+    document.getElementById('reg-panel-sudah')?.classList.remove('hidden');
+  }
+  renderRegistrasiTables();
 }
+
+function onRegFilterChange(){
+  if(typeof pageState !== 'undefined'){
+    pageState['reg-belum'] = 1;
+    pageState['reg-sudah'] = 1;
+  }
+  renderRegistrasiTables();
+}
+
+function resetRegFilters(){
+  ['q-registrasi','f-reg-jenis','f-reg-wilayah','f-reg-pk','f-reg-tahun'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  onRegFilterChange();
+}
+
+function populateRegFilterOptions(){
+  const wil = document.getElementById('f-reg-wilayah');
+  if(wil){
+    const cur = wil.value;
+    wil.innerHTML = '<option value="">Semua Wilayah</option>' + WILAYAH.map(w=>`<option>${w}</option>`).join('');
+    wil.value = cur;
+  }
+  const pk = document.getElementById('f-reg-pk');
+  if(pk){
+    const cur = pk.value;
+    pk.innerHTML = '<option value="">Semua PK</option>' + PK_LIST.map(p=>`<option>${p}</option>`).join('');
+    pk.value = cur;
+  }
+  const th = document.getElementById('f-reg-tahun');
+  if(th){
+    const years = [...new Set(allData.filter(d=>d.registrasi?.tahun).map(d=>String(d.registrasi.tahun)))].sort((a,b)=>b-a);
+    const cur = th.value;
+    th.innerHTML = '<option value="">Semua Tahun Reg.</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    th.value = cur;
+  }
+}
+
+function previewNextRegNomor(){
+  const now = new Date();
+  const year = now.getFullYear();
+  const ymd = toYMD(now);
+  let maxSeq = 0;
+  allData.forEach(d=>{
+    if(d.registrasi && d.registrasi.tahun===year){
+      const m = String(d.registrasi.nomor||'').match(/^(\d+)\//);
+      if(m){ const n = parseInt(m[1],10); if(n>maxSeq) maxSeq = n; }
+    }
+  });
+  const seq = String(maxSeq+1).padStart(4,'0');
+  const nomor = `${seq}/AN/${toRomanMonth(ymd)}/${year}`;
+  const el = document.getElementById('reg-next-nomor');
+  if(el) el.textContent = nomor;
+  return nomor;
+}
+
+function getFilteredRegistrasi(){
+  const q = (document.getElementById('q-registrasi')?.value||'').toLowerCase().trim();
+  const jl = document.getElementById('f-reg-jenis')?.value||'';
+  const wl = document.getElementById('f-reg-wilayah')?.value||'';
+  const pk = document.getElementById('f-reg-pk')?.value||'';
+  const th = document.getElementById('f-reg-tahun')?.value||'';
+  return allData.filter(d=>{
+    if(q){
+      const hay = [d.nama_anak, d.nomor_surat, d.registrasi?.nomor, d.nama_pk, d.wilayah_asal, d.kepolisian]
+        .map(x=>(x||'').toLowerCase()).join(' ');
+      if(!hay.includes(q)) return false;
+    }
+    if(jl && d.jenis_litmas!==jl) return false;
+    if(wl && d.wilayah_asal!==wl) return false;
+    if(pk && d.nama_pk!==pk) return false;
+    if(th && String(d.registrasi?.tahun||'') !== th) return false;
+    return true;
+  });
+}
+
 function regGetter(d,key){
   if(key==='reg_nomor') return d.registrasi?.nomor||'';
   if(key==='reg_tanggal') return d.registrasi?.tanggal||'';
   return d[key];
 }
+
 function renderRegistrasiTables(){
+  populateRegFilterOptions();
+  previewNextRegNomor();
   const data = getFilteredRegistrasi();
-  const stF = document.getElementById('f-reg-status')?.value||'';
-  let belum = data.filter(d=>!d.registrasi && stF!=='sudah');
-  let sudah = data.filter(d=>d.registrasi && stF!=='belum');
-  belum = sortByTable(belum, 'reg-belum', regGetter);
-  sudah = tableSort['reg-sudah'] ? sortByTable(sudah, 'reg-sudah', regGetter) : sudah.sort((a,b)=> new Date(b.registrasi.tanggal) - new Date(a.registrasi.tanggal));
+  const year = new Date().getFullYear();
+  const belumAll = data.filter(d=>!d.registrasi);
+  const sudahAll = data.filter(d=>d.registrasi);
+
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+  set('rkpi-total', data.length);
+  set('rkpi-belum', belumAll.length);
+  set('rkpi-sudah', sudahAll.length);
+  set('rkpi-tahun', allData.filter(d=>d.registrasi && d.registrasi.tahun===year).length);
+  set('rtab-belum-n', belumAll.length);
+  set('rtab-sudah-n', sudahAll.length);
+  set('reg-belum-count', belumAll.length ? belumAll.length + ' anak' : '');
+  set('reg-sudah-count', sudahAll.length ? sudahAll.length + ' anak' : '');
+
+  // Tab visibility
+  document.getElementById('reg-panel-belum')?.classList.toggle('hidden', regTab==='sudah');
+  document.getElementById('reg-panel-sudah')?.classList.toggle('hidden', regTab==='belum');
+  if(regTab==='all'){
+    document.getElementById('reg-panel-belum')?.classList.remove('hidden');
+    document.getElementById('reg-panel-sudah')?.classList.remove('hidden');
+  }
+  document.getElementById('rtab-belum')?.classList.toggle('active', regTab==='belum');
+  document.getElementById('rtab-sudah')?.classList.toggle('active', regTab==='sudah');
+  document.getElementById('rtab-all')?.classList.toggle('active', regTab==='all');
+
+  let belum = sortByTable(belumAll, 'reg-belum', regGetter);
+  let sudah = tableSort['reg-sudah']
+    ? sortByTable(sudahAll, 'reg-sudah', regGetter)
+    : sudahAll.slice().sort((a,b)=> new Date(b.registrasi.tanggal) - new Date(a.registrasi.tanggal));
+
   const pgB = paginate(belum, 'reg-belum');
   const pgS = paginate(sudah, 'reg-sudah');
+
   const tbBelum = document.getElementById('tb-reg-belum');
-  if(tbBelum) tbBelum.innerHTML = pgB.slice.length ? pgB.slice.map(d=>`
-    <tr><td class="font-semibold">${d.nomor_surat||'-'}</td><td>${d.nama_anak||'-'}</td><td>${d.jenis_kelamin||'-'}</td><td>${d.jenis_litmas||'-'}</td><td>${d.wilayah_asal||'-'}</td><td>${d.nama_pk||'-'}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-gold btn-sm" onclick="registrasiAnak('${d.id}')"><i data-lucide="hash" class="w-3.5 h-3.5"></i>Registrasi</button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>
-  `).join('') : `<tr><td colspan="7" class="text-center py-6 text-slate-400">Tidak ada data menunggu registrasi.</td></tr>`;
+  if(tbBelum){
+    tbBelum.innerHTML = pgB.slice.length ? pgB.slice.map(d=>`
+      <tr class="align-top">
+        <td>
+          <div class="flex items-start gap-2.5 min-w-[200px]">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-amber-400 text-white flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
+            <div class="min-w-0">
+              <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+              <p class="text-[11px] text-slate-400 truncate">${d.nomor_surat||'-'} · ${d.jenis_kelamin||'-'}</p>
+            </div>
+          </div>
+        </td>
+        <td class="text-sm whitespace-nowrap">${fmtDate(d.tanggal_diterima)}</td>
+        <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${shortText(d.jenis_litmas,26)}</span></td>
+        <td class="text-sm">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '),24)}</td>
+        <td class="text-sm">${shortText(d.nama_pk,22)}</td>
+        <td class="text-center">
+          ${isAdmin()
+            ? `<button class="btn btn-gold btn-sm" onclick="registrasiAnak('${d.id}')"><i data-lucide="hash" class="w-3.5 h-3.5"></i> Registrasi</button>`
+            : `<span class="text-slate-400 text-xs">View</span>`}
+        </td>
+      </tr>`).join('') : `<tr><td colspan="6" class="text-center py-12 text-slate-400">
+        <div class="flex flex-col items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-8 h-8 opacity-40 text-emerald-500"></i>
+          <p class="font-semibold">Tidak ada yang menunggu registrasi</p>
+          <p class="text-xs">Semua anak pada filter ini sudah punya nomor</p>
+        </div>
+      </td></tr>`;
+  }
+
   const tbSudah = document.getElementById('tb-reg-sudah');
-  if(tbSudah) tbSudah.innerHTML = pgS.slice.length ? pgS.slice.map(d=>`
-    <tr><td class="font-bold text-brand-navy dark:text-amber-400">${d.registrasi.nomor}</td><td>${fmtDate(d.registrasi.tanggal)}</td><td>${d.nama_anak||'-'}</td><td>${d.jenis_kelamin||'-'}</td><td>${d.jenis_litmas||'-'}</td><td>${d.wilayah_asal||'-'}</td><td>${d.nama_pk||'-'}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="batalRegistrasi('${d.id}')" title="Batalkan"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>
-  `).join('') : `<tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada anak yang teregistrasi.</td></tr>`;
+  if(tbSudah){
+    tbSudah.innerHTML = pgS.slice.length ? pgS.slice.map(d=>`
+      <tr class="align-top">
+        <td>
+          <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400 tracking-tight">${d.registrasi.nomor}</span>
+        </td>
+        <td class="text-sm whitespace-nowrap">${fmtDate(d.registrasi.tanggal)}</td>
+        <td>
+          <div class="flex items-start gap-2.5 min-w-[180px]">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
+            <div class="min-w-0">
+              <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+              <p class="text-[11px] text-slate-400 truncate">${d.jenis_kelamin||'-'} · ${d.nomor_surat||'-'}</p>
+            </div>
+          </div>
+        </td>
+        <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${shortText(d.jenis_litmas,26)}</span></td>
+        <td class="text-sm">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '),24)}</td>
+        <td class="text-sm">${shortText(d.nama_pk,22)}</td>
+        <td class="text-center">
+          ${isAdmin()
+            ? `<button class="btn btn-danger btn-sm" onclick="batalRegistrasi('${d.id}')" title="Batalkan registrasi"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>`
+            : `<span class="text-slate-400 text-xs">View</span>`}
+        </td>
+      </tr>`).join('') : `<tr><td colspan="7" class="text-center py-12 text-slate-400">
+        <div class="flex flex-col items-center gap-2">
+          <i data-lucide="inbox" class="w-8 h-8 opacity-40"></i>
+          <p class="font-semibold">Belum ada anak teregistrasi</p>
+        </div>
+      </td></tr>`;
+  }
+
   renderPagination('pg-reg-belum', 'reg-belum', pgB.total, pgB.pages, pgB.page);
   renderPagination('pg-reg-sudah', 'reg-sudah', pgS.total, pgS.pages, pgS.page);
   lucide.createIcons();
+}
+
+function exportRegistrasiCSV(){
+  const rows = getFilteredRegistrasi().filter(d=>d.registrasi);
+  if(!rows.length){ showToast('Tidak ada data registrasi untuk diekspor','error'); return; }
+  const headers = ['nomor_registrasi','tanggal_registrasi','nama_anak','jenis_kelamin','jenis_litmas','nomor_surat','wilayah_asal','kepolisian','nama_pk','status_jenis'];
+  const esc = v => {
+    const s = v==null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+  const lines = [headers.join(',')].concat(rows.map(d=>[
+    esc(d.registrasi?.nomor), esc(d.registrasi?.tanggal), esc(d.nama_anak), esc(d.jenis_kelamin),
+    esc(d.jenis_litmas), esc(d.nomor_surat), esc(d.wilayah_asal), esc(d.kepolisian),
+    esc(d.nama_pk), esc(d.status_jenis)
+  ].join(',')));
+  const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'registrasi-anak-'+toYMD(new Date())+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('CSV registrasi diunduh','success');
 }
 
 // ==================== 3. ADJUDIKASI ====================
@@ -836,17 +1281,74 @@ function getAdjTahapLabel(item){
 function getAdjStatus(item){
   return getAdjTahapLabel(item).startsWith('Selesai') ? 'Selesai' : 'Berjalan';
 }
+let adjTab = localStorage.getItem('CICL_ADJTAB') || 'all';
+
+function setAdjTab(tab){
+  adjTab = tab;
+  localStorage.setItem('CICL_ADJTAB', tab);
+  ['all','belum','berjalan','selesai'].forEach(t=>{
+    document.getElementById('atab-'+t)?.classList.toggle('active', t===tab);
+  });
+  if(typeof pageState !== 'undefined') pageState.adjudikasi = 1;
+  renderAdjudikasiTable();
+}
+
+function onAdjFilterChange(){
+  if(typeof pageState !== 'undefined') pageState.adjudikasi = 1;
+  renderAdjudikasiTable();
+}
+
+function resetAdjFilters(){
+  ['q-adjudikasi','f-adj-jalur','f-adj-status','f-adj-wilayah','f-adj-pk'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  adjTab = 'all';
+  localStorage.setItem('CICL_ADJTAB', 'all');
+  onAdjFilterChange();
+}
+
+function populateAdjFilterOptions(){
+  const wil = document.getElementById('f-adj-wilayah');
+  if(wil){
+    const cur = wil.value;
+    wil.innerHTML = '<option value="">Semua Wilayah</option>' + WILAYAH.map(w=>`<option>${w}</option>`).join('');
+    wil.value = cur;
+  }
+  const pk = document.getElementById('f-adj-pk');
+  if(pk){
+    const cur = pk.value;
+    pk.innerHTML = '<option value="">Semua PK</option>' + PK_LIST.map(p=>`<option>${p}</option>`).join('');
+    pk.value = cur;
+  }
+}
+
 function getFilteredAdjudikasi(){
-  const q = (document.getElementById('q-adjudikasi')?.value||'').toLowerCase();
+  const q = (document.getElementById('q-adjudikasi')?.value||'').toLowerCase().trim();
   const jalur = document.getElementById('f-adj-jalur')?.value||'';
   const st = document.getElementById('f-adj-status')?.value||'';
+  const wl = document.getElementById('f-adj-wilayah')?.value||'';
+  const pk = document.getElementById('f-adj-pk')?.value||'';
   return allData.filter(d=>d.registrasi).filter(d=>{
-    const mq = !q || (d.nama_anak||'').toLowerCase().includes(q) || (d.registrasi?.nomor||'').toLowerCase().includes(q);
-    const mj = !jalur || (jalur==='Belum' ? !d.adjudikasi?.jalur : d.adjudikasi?.jalur===jalur);
-    const ms = !st || getAdjStatus(d)===st;
-    return mq && mj && ms;
+    if(q){
+      const hay = [d.nama_anak, d.registrasi?.nomor, d.nama_pk, d.wilayah_asal, d.kepolisian, d.jenis_perkara]
+        .map(x=>(x||'').toLowerCase()).join(' ');
+      if(!hay.includes(q)) return false;
+    }
+    if(jalur){
+      if(jalur==='Belum'){ if(d.adjudikasi?.jalur) return false; }
+      else if(d.adjudikasi?.jalur!==jalur) return false;
+    }
+    if(st && getAdjStatus(d)!==st) return false;
+    if(wl && d.wilayah_asal!==wl) return false;
+    if(pk && d.nama_pk!==pk) return false;
+    // tab
+    if(adjTab==='belum' && d.adjudikasi?.jalur) return false;
+    if(adjTab==='berjalan' && (getAdjStatus(d)!=='Berjalan' || !d.adjudikasi?.jalur)) return false;
+    if(adjTab==='selesai' && getAdjStatus(d)!=='Selesai') return false;
+    return true;
   });
 }
+
 function adjudikasiGetter(d,key){
   if(key==='reg_nomor') return d.registrasi?.nomor||'';
   if(key==='jalur') return d.adjudikasi?.jalur||'';
@@ -854,26 +1356,136 @@ function adjudikasiGetter(d,key){
   if(key==='status') return getAdjStatus(d);
   return d[key];
 }
+
+/** Mini progress dots for Diversi / Persidangan */
+function adjProgressHtml(d){
+  const a = d.adjudikasi;
+  if(!a || !a.jalur){
+    return `<div class="flex items-center gap-1 text-[10px] text-slate-400"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Belum dipilih</div>`;
+  }
+  if(a.jalur==='Diversi'){
+    const tiers = [
+      {k:'kepolisian', l:'Pol'},
+      {k:'kejaksaan', l:'Jks'},
+      {k:'pengadilan', l:'PN'}
+    ];
+    const dots = tiers.map(t=>{
+      const h = a.diversi?.[t.k]?.hasil;
+      let cls = 'bg-slate-300 dark:bg-slate-600';
+      if(h==='Berhasil') cls = 'bg-emerald-500';
+      else if(h==='Gagal') cls = 'bg-red-500';
+      else if(h) cls = 'bg-amber-400';
+      return `<span class="inline-flex items-center gap-0.5" title="${t.l}: ${h||'Belum'}"><span class="w-2.5 h-2.5 rounded-full ${cls}"></span><span class="text-[9px] text-slate-400">${t.l}</span></span>`;
+    }).join('<span class="text-slate-300 text-[9px]">›</span>');
+    return `<div class="flex items-center gap-1 flex-wrap">${dots}</div>`;
+  }
+  // Persidangan
+  const n = (a.persidangan?.sidang||[]).length;
+  const put = !!a.persidangan?.putusan?.tanggal;
+  return `<div class="flex items-center gap-1.5 text-[10px]">
+    <span class="badge badge-blue" style="font-size:10px;padding:2px 7px">${n} sidang</span>
+    <span class="w-2.5 h-2.5 rounded-full ${put?'bg-emerald-500':'bg-slate-300'}" title="${put?'Putusan terbit':'Belum putusan'}"></span>
+    <span class="text-slate-400">${put?'Putusan':'Menunggu putusan'}</span>
+  </div>`;
+}
+
+function jalurBadge(jalur){
+  if(jalur==='Diversi') return 'badge-indigo';
+  if(jalur==='Persidangan') return 'badge-pink';
+  return 'badge-slate';
+}
+
 function renderAdjudikasiTable(){
+  populateAdjFilterOptions();
   const tbody = document.getElementById('tb-adjudikasi'); if(!tbody) return;
+
+  // KPI from all registered (ignore tab, respect light search filters except tab)
+  const base = allData.filter(d=>d.registrasi);
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+  set('akpi-total', base.length);
+  set('akpi-berjalan', base.filter(d=>d.adjudikasi?.jalur && getAdjStatus(d)==='Berjalan').length);
+  set('akpi-selesai', base.filter(d=>getAdjStatus(d)==='Selesai').length);
+  set('akpi-diversi', base.filter(d=>d.adjudikasi?.jalur==='Diversi').length);
+  set('akpi-sidang', base.filter(d=>d.adjudikasi?.jalur==='Persidangan').length);
+
+  // Tab counts (respect filters except tab itself)
+  const prevTab = adjTab;
+  adjTab = 'all';
+  const forCount = getFilteredAdjudikasi();
+  adjTab = prevTab;
+  set('atab-all-n', forCount.length);
+  set('atab-belum-n', forCount.filter(d=>!d.adjudikasi?.jalur).length);
+  set('atab-berjalan-n', forCount.filter(d=>d.adjudikasi?.jalur && getAdjStatus(d)==='Berjalan').length);
+  set('atab-selesai-n', forCount.filter(d=>getAdjStatus(d)==='Selesai').length);
+
+  ['all','belum','berjalan','selesai'].forEach(t=>{
+    document.getElementById('atab-'+t)?.classList.toggle('active', t===adjTab);
+  });
+
   let data = getFilteredAdjudikasi();
   data = sortByTable(data, 'adjudikasi', adjudikasiGetter);
   const pg = paginate(data, 'adjudikasi');
+  const countEl = document.getElementById('adj-count');
+  if(countEl) countEl.textContent = data.length ? data.length + ' anak ditampilkan' : 'Tidak ada data';
+
   tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>{
-    const tahap = getAdjTahapLabel(d); const status = getAdjStatus(d);
-    return `<tr>
-      <td class="font-semibold">${d.registrasi.nomor}</td><td>${d.nama_anak}</td>
-      <td><span class="badge ${d.adjudikasi?.jalur==='Diversi'?'badge-indigo':d.adjudikasi?.jalur==='Persidangan'?'badge-pink':'badge-slate'}">${d.adjudikasi?.jalur||'Belum Ditentukan'}</span></td>
-      <td class="text-xs">${tahap}</td>
+    const tahap = getAdjTahapLabel(d);
+    const status = getAdjStatus(d);
+    const jalur = d.adjudikasi?.jalur || '';
+    return `<tr class="align-top">
+      <td>
+        <div class="flex items-start gap-2.5 min-w-[200px]">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
+          <div class="min-w-0">
+            <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+            <p class="text-[11px] font-semibold text-amber-600/90 truncate">${d.registrasi?.nomor||'-'}</p>
+            <p class="text-[10px] text-slate-400 truncate">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '),28)}</p>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge ${jalurBadge(jalur)}">${jalur||'Belum'}</span></td>
+      <td class="min-w-[120px]">${adjProgressHtml(d)}</td>
+      <td class="text-xs max-w-[200px]">${tahap}</td>
       <td><span class="badge ${status==='Selesai'?'badge-green':'badge-amber'}">${status}</span></td>
-      <td>${d.nama_pk||'-'}</td>
-      <td class="text-center">${status==='Selesai'
-        ? `<button class="btn btn-ghost btn-sm" onclick="openAdjudikasiModal('${d.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i>View</button>`
-        : `<button class="btn btn-gold btn-sm" onclick="openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i>Kelola</button>`}</td>
+      <td class="text-sm">${shortText(d.nama_pk,20)}</td>
+      <td class="text-center whitespace-nowrap">
+        ${status==='Selesai'
+          ? `<button class="btn btn-ghost btn-sm" onclick="openAdjudikasiModal('${d.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat</button>`
+          : `<button class="btn btn-gold btn-sm" onclick="openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i> Kelola</button>`}
+      </td>
     </tr>`;
-  }).join('') : `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada anak teregistrasi untuk ditracking adjudikasinya.</td></tr>`;
+  }).join('') : `<tr><td colspan="7" class="text-center py-12 text-slate-400">
+    <div class="flex flex-col items-center gap-2">
+      <i data-lucide="scale" class="w-8 h-8 opacity-40"></i>
+      <p class="font-semibold">Tidak ada data adjudikasi</p>
+      <p class="text-xs">Pastikan anak sudah teregistrasi, atau longgarkan filter</p>
+    </div>
+  </td></tr>`;
+
   renderPagination('pg-adjudikasi', 'adjudikasi', pg.total, pg.pages, pg.page);
   lucide.createIcons();
+}
+
+function exportAdjudikasiCSV(){
+  const rows = getFilteredAdjudikasi();
+  if(!rows.length){ showToast('Tidak ada data untuk diekspor','error'); return; }
+  const headers = ['nomor_registrasi','nama_anak','jalur','tahap','status','jenis_litmas','wilayah_asal','nama_pk','jenis_perkara'];
+  const esc = v => {
+    const s = v==null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+  const lines = [headers.join(',')].concat(rows.map(d=>[
+    esc(d.registrasi?.nomor), esc(d.nama_anak), esc(d.adjudikasi?.jalur||'Belum'),
+    esc(getAdjTahapLabel(d)), esc(getAdjStatus(d)), esc(d.jenis_litmas),
+    esc(d.wilayah_asal), esc(d.nama_pk), esc(d.jenis_perkara)
+  ].join(',')));
+  const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tracking-adjudikasi-'+toYMD(new Date())+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('CSV adjudikasi diunduh','success');
 }
 
 function openAdjudikasiModal(id){
@@ -1168,39 +1780,387 @@ function renderPascaTable(){
 }
 
 // ==================== 5-7. MASTER DATA (PK / WILAYAH / KEPOLISIAN) ====================
+// ==================== DATA PK — VERSI MASIF ====================
+function pkInitials(name){
+  if(!name) return '?';
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+}
+function pkAvatarColor(name){
+  const palette = ['#1e3a5f','#0f766e','#7c3aed','#b45309','#be185d','#0369a1','#15803d','#9a3412'];
+  let h = 0;
+  for(let i=0;i<(name||'').length;i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
+}
+function getPkStats(name){
+  const casesForPk = allData.filter(d=>d.nama_pk===name);
+  const int = casesForPk.filter(d=>d.jenis_litmas==='Litmas Integrasi').length;
+  const pnd = casesForPk.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length;
+  const proses = casesForPk.filter(d=>d.status_jenis==='Proses').length;
+  const selesai = casesForPk.filter(d=>d.status_jenis==='Selesai').length;
+  const adjBerjalan = casesForPk.filter(d=>d.registrasi && typeof getAdjStatus==='function' && getAdjStatus(d)==='Berjalan').length;
+  return { int, pnd, total: casesForPk.length, proses, selesai, adjBerjalan, cases: casesForPk };
+}
+function bebanLevel(total){
+  if(total >= 8) return { key:'tinggi', label:'Tinggi', cls:'badge-pink', bar:'bg-rose-500' };
+  if(total >= 3) return { key:'sedang', label:'Sedang', cls:'badge-amber', bar:'bg-amber-500' };
+  return { key:'rendah', label:'Rendah', cls:'badge-green', bar:'bg-emerald-500' };
+}
+function bebanBarPct(total, maxTotal){
+  if(!maxTotal) return 0;
+  return Math.min(100, Math.round((total / maxTotal) * 100));
+}
+function getPkRows(){
+  const maxTotal = Math.max(1, ...PK_MASTER.map(p=>getPkStats(p.name).total));
+  return PK_MASTER.map(p=>{
+    const st = getPkStats(p.name);
+    const bl = bebanLevel(st.total);
+    return {
+      ...p,
+      int: st.int, pnd: st.pnd, total: st.total,
+      proses: st.proses, selesai: st.selesai, adjBerjalan: st.adjBerjalan,
+      bebanKey: bl.key, bebanLabel: bl.label, bebanCls: bl.cls, bebanBar: bl.bar,
+      bebanPct: bebanBarPct(st.total, maxTotal)
+    };
+  });
+}
+function onPkFilterChange(){ pageState.pk = 1; renderPkTable(); }
+function resetPkFilters(){
+  const q = document.getElementById('q-pk'); if(q) q.value = '';
+  const s = document.getElementById('f-pk-status'); if(s) s.value = '';
+  const b = document.getElementById('f-pk-beban'); if(b) b.value = '';
+  pageState.pk = 1; renderPkTable();
+}
+function filterPkRows(rows){
+  const q = (document.getElementById('q-pk')?.value||'').trim().toLowerCase();
+  const st = document.getElementById('f-pk-status')?.value||'';
+  const bb = document.getElementById('f-pk-beban')?.value||'';
+  return rows.filter(r=>{
+    if(st && r.status !== st) return false;
+    if(bb && r.bebanKey !== bb) return false;
+    if(q){
+      const hay = [r.name, r.nip, r.jabatan, r.wilayah_fokus, r.email, r.telepon, r.catatan]
+        .map(x=>String(x||'').toLowerCase()).join(' ');
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
 function openPkModal(oldName){
   if(guardWrite())return;
-  openModal(`<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">${oldName?'Edit':'Tambah'} PK</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-  <div><label class="fl">Nama PK</label><input class="form-input" id="pk-name" value="${oldName||''}"></div>
-  <div class="flex justify-end gap-2 pt-4"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="savePk('${oldName||''}')">Simpan</button></div>`);
+  const item = oldName ? PK_MASTER.find(p=>p.name===oldName) : null;
+  const wilOpts = ['', ...WILAYAH].map(w=>`<option value="${w}" ${item&&item.wilayah_fokus===w?'selected':''}>${w||'— Tidak ditentukan —'}</option>`).join('');
+  const jabatanList = ['PK Ahli Pertama','PK Ahli Muda','PK Ahli Madya','PK Ahli Utama','PK','Kepala Subseksi Bimbingan Klien','Staf PK'];
+  const jabOpts = jabatanList.map(j=>`<option ${item&&item.jabatan===j?'selected':''}>${j}</option>`).join('');
+  openModal(`
+    <div class="flex justify-between items-start mb-4 gap-3">
+      <div>
+        <h3 class="font-bold text-lg">${oldName?'Edit Profil PK':'Tambah Pembimbing Kemasyarakatan'}</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Lengkapi profil agar analisis beban kerja & rekomendasi AI lebih akurat.</p>
+      </div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="sm:col-span-2"><label class="fl">Nama Lengkap *</label>
+        <input class="form-input" id="pk-name" value="${item?item.name:''}" placeholder="Contoh: Firman Syahri"></div>
+      <div><label class="fl">NIP</label>
+        <input class="form-input" id="pk-nip" value="${item?item.nip:''}" placeholder="NIP (opsional)"></div>
+      <div><label class="fl">Jabatan</label>
+        <select class="form-input" id="pk-jabatan">${jabOpts}<option value="__custom__">Lainnya…</option></select>
+        <input class="form-input mt-2 hidden" id="pk-jabatan-custom" placeholder="Tulis jabatan"></div>
+      <div><label class="fl">Status</label>
+        <select class="form-input" id="pk-status">
+          <option value="Aktif" ${!item||item.status==='Aktif'?'selected':''}>Aktif</option>
+          <option value="Nonaktif" ${item&&item.status==='Nonaktif'?'selected':''}>Nonaktif</option>
+        </select></div>
+      <div><label class="fl">Wilayah Fokus</label>
+        <select class="form-input" id="pk-wilayah">${wilOpts}</select></div>
+      <div><label class="fl">Telepon / WA</label>
+        <input class="form-input" id="pk-telepon" value="${item?item.telepon:''}" placeholder="08…"></div>
+      <div><label class="fl">Email</label>
+        <input class="form-input" id="pk-email" type="email" value="${item?item.email:''}" placeholder="nama@email.com"></div>
+      <div><label class="fl">Tanggal Masuk</label>
+        <input class="form-input" id="pk-tanggal" type="date" value="${item?item.tanggal_masuk:''}"></div>
+      <div class="sm:col-span-2"><label class="fl">Catatan</label>
+        <textarea class="form-input" id="pk-catatan" rows="2" placeholder="Catatan internal (opsional)">${item?item.catatan:''}</textarea></div>
+    </div>
+    <div class="flex justify-end gap-2 pt-5">
+      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="savePk('${(oldName||'').replace(/'/g,"\\\\'")}')"><i data-lucide="save" class="w-4 h-4"></i> Simpan</button>
+    </div>
+  `);
+  const jabSel = document.getElementById('pk-jabatan');
+  const jabCustom = document.getElementById('pk-jabatan-custom');
+  if(item && item.jabatan && !jabatanList.includes(item.jabatan)){
+    jabSel.value = '__custom__';
+    jabCustom.classList.remove('hidden');
+    jabCustom.value = item.jabatan;
+  }
+  jabSel.addEventListener('change', ()=>{
+    if(jabSel.value==='__custom__'){ jabCustom.classList.remove('hidden'); jabCustom.focus(); }
+    else jabCustom.classList.add('hidden');
+  });
 }
 function savePk(oldName){
   if(guardWrite())return;
-  const name = val('pk-name'); if(!name) return;
-  if(oldName){ const i = PK_LIST.indexOf(oldName); if(i>-1) PK_LIST[i]=name; allData.forEach(d=>{ if(d.nama_pk===oldName) d.nama_pk=name; }); }
-  else PK_LIST.push(name);
-  saveMaster(); saveAll(); closeModal(); renderAllViews(); showToast('Data PK disimpan','success');
+  const name = (document.getElementById('pk-name')?.value||'').trim();
+  if(!name){ showToast('Nama PK wajib diisi','error'); return; }
+  const jabSel = document.getElementById('pk-jabatan')?.value;
+  const jabatan = jabSel==='__custom__'
+    ? (document.getElementById('pk-jabatan-custom')?.value||'').trim() || 'PK'
+    : (jabSel || 'PK');
+  const payload = {
+    name,
+    nip: (document.getElementById('pk-nip')?.value||'').trim(),
+    jabatan,
+    status: document.getElementById('pk-status')?.value || 'Aktif',
+    wilayah_fokus: document.getElementById('pk-wilayah')?.value || '',
+    telepon: (document.getElementById('pk-telepon')?.value||'').trim(),
+    email: (document.getElementById('pk-email')?.value||'').trim(),
+    tanggal_masuk: document.getElementById('pk-tanggal')?.value || '',
+    catatan: (document.getElementById('pk-catatan')?.value||'').trim()
+  };
+  if(oldName){
+    const i = PK_MASTER.findIndex(p=>p.name===oldName);
+    if(i>-1) PK_MASTER[i] = payload;
+    if(oldName !== name){
+      allData.forEach(d=>{ if(d.nama_pk===oldName) d.nama_pk=name; });
+      allData.forEach(d=>{
+        if(d.pasca_adjudikasi && d.pasca_adjudikasi.pk_pembimbing===oldName){
+          d.pasca_adjudikasi.pk_pembimbing = name;
+        }
+      });
+    }
+  } else {
+    if(PK_MASTER.some(p=>p.name.toLowerCase()===name.toLowerCase())){
+      showToast('Nama PK sudah ada','error'); return;
+    }
+    PK_MASTER.push(payload);
+  }
+  saveMaster(); saveAll(); closeModal(); renderAllViews(); showSuccessPopup('Data PK disimpan');
 }
-function deletePk(name){ if(guardWrite())return; if(!confirm('Hapus PK '+name+'?')) return; PK_LIST = PK_LIST.filter(p=>p!==name); saveMaster(); renderAllViews(); }
+function deletePk(name){
+  if(guardWrite())return;
+  const st = getPkStats(name);
+  const msg = st.total
+    ? `Hapus PK "${name}"?\nMasih terhubung ke ${st.total} kasus. Nama di kasus tidak diubah otomatis.`
+    : `Hapus PK "${name}"?`;
+  if(!confirm(msg)) return;
+  PK_MASTER = PK_MASTER.filter(p=>p.name!==name);
+  saveMaster(); renderAllViews(); showToast('PK dihapus','success');
+}
+function togglePkStatus(name){
+  if(guardWrite())return;
+  const p = PK_MASTER.find(x=>x.name===name);
+  if(!p) return;
+  p.status = p.status==='Aktif' ? 'Nonaktif' : 'Aktif';
+  saveMaster(); renderAllViews();
+  showToast(`Status ${name} → ${p.status}`,'success');
+}
+function showPkDetail(name){
+  const p = PK_MASTER.find(x=>x.name===name);
+  if(!p) return;
+  const st = getPkStats(name);
+  const bl = bebanLevel(st.total);
+  const cases = st.cases.slice().sort((a,b)=>String(b.tanggal_diterima||'').localeCompare(String(a.tanggal_diterima||'')));
+  const rows = cases.length ? cases.map(d=>`
+    <tr>
+      <td class="font-medium">${d.nama_anak||'-'}</td>
+      <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${(d.jenis_litmas||'-').replace('Litmas ','')}</span></td>
+      <td>${d.wilayah_asal||'-'}</td>
+      <td><span class="badge ${d.status_jenis==='Selesai'?'badge-green':d.status_jenis==='Proses'?'badge-blue':'badge-amber'}">${d.status_jenis||'-'}</span></td>
+      <td class="text-xs text-slate-500">${fmtDate(d.tanggal_diterima)}</td>
+    </tr>`).join('') : `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada kasus.</td></tr>`;
+  openModal(`
+    <div class="flex justify-between items-start mb-4 gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-extrabold text-lg shadow-lg" style="background:${pkAvatarColor(p.name)}">${pkInitials(p.name)}</div>
+        <div>
+          <h3 class="font-bold text-lg leading-tight">${p.name}</h3>
+          <p class="text-xs text-slate-500">${p.jabatan||'PK'}${p.nip?` · NIP ${p.nip}`:''}</p>
+          <div class="flex flex-wrap gap-1.5 mt-1.5">
+            <span class="badge ${p.status==='Aktif'?'badge-green':'badge-slate'}">${p.status}</span>
+            <span class="badge ${bl.cls}">Beban ${bl.label}</span>
+            ${p.wilayah_fokus?`<span class="badge badge-blue">${p.wilayah_fokus}</span>`:''}
+          </div>
+        </div>
+      </div>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+      <div class="rounded-xl bg-slate-50 dark:bg-white/5 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Total</p><p class="text-xl font-extrabold">${st.total}</p></div>
+      <div class="rounded-xl bg-blue-50 dark:bg-blue-500/10 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Integrasi</p><p class="text-xl font-extrabold text-blue-600 dark:text-blue-400">${st.int}</p></div>
+      <div class="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Pendampingan</p><p class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">${st.pnd}</p></div>
+      <div class="rounded-xl bg-amber-50 dark:bg-amber-500/10 p-3 text-center"><p class="text-[10px] uppercase font-bold text-slate-400">Adj. Berjalan</p><p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">${st.adjBerjalan}</p></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-4">
+      <p><span class="text-slate-400 text-xs font-semibold uppercase">Telepon</span><br>${p.telepon||'-'}</p>
+      <p><span class="text-slate-400 text-xs font-semibold uppercase">Email</span><br>${p.email||'-'}</p>
+      <p><span class="text-slate-400 text-xs font-semibold uppercase">Tanggal Masuk</span><br>${fmtDate(p.tanggal_masuk)}</p>
+      <p><span class="text-slate-400 text-xs font-semibold uppercase">Catatan</span><br>${p.catatan||'-'}</p>
+    </div>
+    <h4 class="font-bold text-sm mb-2">Daftar Kasus (${cases.length})</h4>
+    <div class="table-wrap rounded-xl max-h-[40vh] overflow-y-auto">
+      <table>
+        <thead><tr><th>Anak</th><th>Jenis</th><th>Wilayah</th><th>Status</th><th>Diterima</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="flex flex-wrap justify-end gap-2 pt-4">
+      ${isAdmin()?`<button class="btn btn-ghost btn-sm" onclick="closeModal(); openPkModal('${p.name.replace(/'/g,"\\\\'")}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit</button>`:''}
+      <button class="btn btn-primary btn-sm" onclick="closeModal()">Tutup</button>
+    </div>
+  `);
+}
+function exportPkCSV(){
+  const rows = getPkRows();
+  let csv = 'No,Nama,NIP,Jabatan,Status,Wilayah Fokus,Telepon,Email,Tanggal Masuk,Integrasi,Pendampingan,Total,Beban,Catatan\n';
+  rows.forEach((r,i)=>{
+    const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+    csv += [i+1,r.name,r.nip,r.jabatan,r.status,r.wilayah_fokus,r.telepon,r.email,r.tanggal_masuk,r.int,r.pnd,r.total,r.bebanLabel,r.catatan].map(esc).join(',') + '\n';
+  });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`DIGIT-CICL_DataPK_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV Data PK diunduh','success');
+}
+function renderPkKpi(){
+  const rows = getPkRows();
+  const aktif = rows.filter(r=>r.status==='Aktif').length;
+  const non = rows.length - aktif;
+  const totalKasus = rows.reduce((s,r)=>s+r.total,0);
+  const avg = rows.length ? (totalKasus / rows.length) : 0;
+  const top = rows.slice().sort((a,b)=>b.total-a.total)[0];
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('pkkpi-total', rows.length);
+  set('pkkpi-aktif', aktif);
+  set('pkkpi-nonaktif', non);
+  set('pkkpi-kasus', totalKasus);
+  set('pkkpi-avg', avg.toFixed(1));
+  set('pkkpi-top', top ? `${top.name.split(' ')[0]} (${top.total})` : '-');
+}
+function renderPkCharts(){
+  if(typeof Chart === 'undefined') return;
+  if(typeof charts === 'undefined') window.charts = window.charts || {};
+  const rows = getPkRows().slice().sort((a,b)=>b.total-a.total);
+  const isDark = document.documentElement.classList.contains('dark');
+  const tick = isDark ? '#94a3b8' : '#64748b';
+  const grid = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)';
+
+  const ctx1 = document.getElementById('ch-pk-beban');
+  if(ctx1){
+    if(charts['ch-pk-beban']) charts['ch-pk-beban'].destroy();
+    const labels = rows.map(r=>r.name.length>18?r.name.slice(0,16)+'…':r.name);
+    charts['ch-pk-beban'] = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'Integrasi', data: rows.map(r=>r.int), backgroundColor:'#3b82f6', borderRadius:4, stack:'s' },
+          { label:'Pendampingan', data: rows.map(r=>r.pnd), backgroundColor:'#6366f1', borderRadius:4, stack:'s' }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position:'bottom', labels:{ color:tick, boxWidth:12, font:{size:11} } } },
+        scales: {
+          x: { stacked:true, ticks:{ color:tick }, grid:{ color:grid } },
+          y: { stacked:true, ticks:{ color:tick, font:{size:10} }, grid:{ display:false } }
+        },
+        onClick: (evt, els) => {
+          if(!els.length) return;
+          const r = rows[els[0].index];
+          if(r) showPkDetail(r.name);
+        }
+      }
+    });
+  }
+
+  const ctx2 = document.getElementById('ch-pk-status');
+  if(ctx2){
+    if(charts['ch-pk-status']) charts['ch-pk-status'].destroy();
+    const aktif = rows.filter(r=>r.status==='Aktif').length;
+    const non = rows.length - aktif;
+    charts['ch-pk-status'] = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Aktif','Nonaktif'],
+        datasets: [{ data:[aktif, non], backgroundColor:['#10b981','#94a3b8'], borderWidth:0, hoverOffset:6 }]
+      },
+      options: {
+        cutout: '62%',
+        plugins: { legend: { position:'bottom', labels:{ color:tick, boxWidth:12, font:{size:11} } } }
+      }
+    });
+  }
+
+  const leg = document.getElementById('pk-workload-legend');
+  if(leg){
+    const tinggi = rows.filter(r=>r.bebanKey==='tinggi').length;
+    const sedang = rows.filter(r=>r.bebanKey==='sedang').length;
+    const rendah = rows.filter(r=>r.bebanKey==='rendah').length;
+    leg.innerHTML = `
+      <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Beban Tinggi (≥8)</span><b>${tinggi}</b></div>
+      <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Beban Sedang (3–7)</span><b>${sedang}</b></div>
+      <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Beban Rendah (0–2)</span><b>${rendah}</b></div>`;
+  }
+}
 function renderPkTable(){
   const tbody = document.getElementById('tb-pk'); if(!tbody) return;
-  let rows = PK_LIST.map(p=>{
-    const casesForPk = allData.filter(d=>d.nama_pk===p);
-    return {
-      name: p,
-      int: casesForPk.filter(d=>d.jenis_litmas==='Litmas Integrasi').length,
-      pnd: casesForPk.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length,
-      total: casesForPk.length
-    };
+  renderPkKpi();
+  renderPkCharts();
+
+  let rows = filterPkRows(getPkRows());
+  rows = sortByTable(rows, 'pk', (r,key)=>{
+    if(key==='status') return r.status;
+    if(key==='jabatan') return r.jabatan;
+    return r[key];
   });
-  rows = sortByTable(rows, 'pk', (r,key)=>r[key]);
+  const countEl = document.getElementById('pk-count');
+  if(countEl) countEl.textContent = `${rows.length} PK ditampilkan`;
+
   const pg = paginate(rows, 'pk');
-  tbody.innerHTML = pg.slice.map((r,i)=>`<tr><td>${pg.start+i+1}</td><td>${r.name}</td>
-    <td class="text-center"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('Litmas Integrasi — PK ${r.name}', allData.filter(d=>d.nama_pk==='${r.name}' && d.jenis_litmas==='Litmas Integrasi'))">${r.int}</span></td>
-    <td class="text-center"><span class="badge badge-indigo" style="cursor:pointer" onclick="showStatDetail('Litmas Pendampingan ABH — PK ${r.name}', allData.filter(d=>d.nama_pk==='${r.name}' && d.jenis_litmas==='Litmas Pendampingan ABH'))">${r.pnd}</span></td>
-    <td class="font-bold text-center">${r.total}</td>
-    <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openPkModal('${r.name}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-    <button class="btn btn-danger btn-sm" onclick="deletePk('${r.name}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-400 text-xs">-</span>`}</td></tr>`).join('');
+  tbody.innerHTML = pg.slice.length ? pg.slice.map((r,i)=>{
+    const safeName = r.name.replace(/'/g,"\\\\'");
+    return `<tr>
+      <td class="text-slate-400 text-xs">${pg.start+i+1}</td>
+      <td>
+        <button type="button" class="flex items-center gap-2.5 text-left group" onclick="showPkDetail('${safeName}')">
+          <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm" style="background:${pkAvatarColor(r.name)}">${pkInitials(r.name)}</span>
+          <span>
+            <span class="block font-semibold text-sm group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">${r.name}</span>
+            <span class="block text-[11px] text-slate-400">${r.wilayah_fokus||'Wilayah belum diisi'}${r.nip?` · ${r.nip}`:''}</span>
+          </span>
+        </button>
+      </td>
+      <td class="text-sm">${r.jabatan||'-'}</td>
+      <td><span class="badge ${r.status==='Aktif'?'badge-green':'badge-slate'}">${r.status}</span></td>
+      <td class="text-center"><span class="badge badge-blue" style="cursor:pointer" onclick="showStatDetail('Litmas Integrasi — PK ${safeName}', allData.filter(d=>d.nama_pk==='${safeName}' && d.jenis_litmas==='Litmas Integrasi'))">${r.int}</span></td>
+      <td class="text-center"><span class="badge badge-indigo" style="cursor:pointer" onclick="showStatDetail('Litmas Pendampingan ABH — PK ${safeName}', allData.filter(d=>d.nama_pk==='${safeName}' && d.jenis_litmas==='Litmas Pendampingan ABH'))">${r.pnd}</span></td>
+      <td class="font-extrabold text-center">${r.total}</td>
+      <td style="min-width:110px">
+        <div class="flex items-center gap-2">
+          <div class="flex-1 h-2 rounded-full bg-slate-200/80 dark:bg-white/10 overflow-hidden">
+            <div class="h-full rounded-full ${r.bebanBar}" style="width:${r.bebanPct}%"></div>
+          </div>
+          <span class="badge ${r.bebanCls} text-[10px]">${r.bebanLabel}</span>
+        </div>
+      </td>
+      <td class="text-center whitespace-nowrap">
+        <button class="btn btn-ghost btn-sm" title="Detail" onclick="showPkDetail('${safeName}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+        ${isAdmin() ? `
+          <button class="btn btn-ghost btn-sm" title="Edit" onclick="openPkModal('${safeName}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button class="btn btn-ghost btn-sm" title="Toggle status" onclick="togglePkStatus('${safeName}')"><i data-lucide="${r.status==='Aktif'?'user-x':'user-check'}" class="w-3.5 h-3.5"></i></button>
+          <button class="btn btn-danger btn-sm" title="Hapus" onclick="deletePk('${safeName}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        ` : ''}
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="9" class="text-center py-10 text-slate-400">Tidak ada data PK sesuai filter.</td></tr>`;
+
   renderPagination('pg-pk', 'pk', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
@@ -1293,7 +2253,114 @@ function exportCSV(){
 }
 
 // ==================== 9. STATISTIK & DASHBOARD CHARTS ====================
+
 let charts = {};
+
+// ==================== GLOBAL DATE FILTER ====================
+// Filter berdasarkan tanggal_diterima (fallback tanggal_surat / registrasi).
+let dateFilter = { from: null, to: null, preset: 'all' };
+
+function toYMD(d){
+  if(!(d instanceof Date) || isNaN(d)) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function parseDay(s){
+  if(!s) return null;
+  const d = new Date(s);
+  if(isNaN(d)) return null;
+  d.setHours(0,0,0,0);
+  return d;
+}
+function itemDate(d){
+  return parseDay(d.tanggal_diterima) || parseDay(d.tanggal_surat) || parseDay(d.tanggal_registrasi);
+}
+/** Data aktif untuk KPI + grafik (menghormati filter tanggal global). */
+function getScopedData(){
+  if(!dateFilter.from && !dateFilter.to) return allData;
+  return allData.filter(d=>{
+    const dt = itemDate(d);
+    if(!dt) return false;
+    if(dateFilter.from && dt < dateFilter.from) return false;
+    if(dateFilter.to){
+      const end = new Date(dateFilter.to);
+      end.setHours(23,59,59,999);
+      if(dt > end) return false;
+    }
+    return true;
+  });
+}
+function syncDateInputs(){
+  const fromVal = dateFilter.from ? toYMD(dateFilter.from) : '';
+  const toVal = dateFilter.to ? toYMD(dateFilter.to) : '';
+  ['df-from','df-from-st'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value = fromVal; });
+  ['df-to','df-to-st'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value = toVal; });
+  document.querySelectorAll('.df-preset').forEach(btn=>{
+    btn.classList.toggle('active', btn.getAttribute('data-preset') === dateFilter.preset);
+  });
+  const n = getScopedData().length;
+  let summary = 'Menampilkan semua data';
+  if(dateFilter.from || dateFilter.to){
+    summary = `Periode ${fromVal || '…'} s/d ${toVal || '…'} · ${n} dari ${allData.length} data`;
+  } else {
+    summary = `Menampilkan semua data · ${allData.length} data`;
+  }
+  const s1 = document.getElementById('df-summary');
+  if(s1) s1.textContent = summary;
+  document.querySelectorAll('.df-summary-st').forEach(el=>{ el.textContent = summary; });
+}
+function applyDatePreset(preset){
+  const now = new Date(); now.setHours(0,0,0,0);
+  dateFilter.preset = preset;
+  if(preset === 'all'){
+    dateFilter.from = null; dateFilter.to = null;
+  } else if(preset === 'thisMonth'){
+    dateFilter.from = new Date(now.getFullYear(), now.getMonth(), 1);
+    dateFilter.to = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  } else if(preset === 'lastMonth'){
+    dateFilter.from = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    dateFilter.to = new Date(now.getFullYear(), now.getMonth(), 0);
+  } else if(preset === 'thisYear'){
+    dateFilter.from = new Date(now.getFullYear(), 0, 1);
+    dateFilter.to = new Date(now.getFullYear(), 11, 31);
+  } else if(preset === 'last30'){
+    dateFilter.to = new Date(now);
+    dateFilter.from = new Date(now); dateFilter.from.setDate(dateFilter.from.getDate()-29);
+  } else if(preset === 'last90'){
+    dateFilter.to = new Date(now);
+    dateFilter.from = new Date(now); dateFilter.from.setDate(dateFilter.from.getDate()-89);
+  }
+  syncDateInputs();
+  renderKpi();
+  renderAllCharts();
+  if(typeof lucide !== 'undefined') lucide.createIcons();
+}
+function onDateRangeChange(){
+  const fromEl = document.getElementById('df-from');
+  const toEl = document.getElementById('df-to');
+  dateFilter.from = fromEl && fromEl.value ? parseDay(fromEl.value) : null;
+  dateFilter.to = toEl && toEl.value ? parseDay(toEl.value) : null;
+  dateFilter.preset = 'custom';
+  syncDateInputs();
+  renderKpi();
+  renderAllCharts();
+}
+function syncDateFromStat(which){
+  const fromSt = document.getElementById('df-from-st');
+  const toSt = document.getElementById('df-to-st');
+  if(which === 'from' && fromSt){
+    const main = document.getElementById('df-from');
+    if(main) main.value = fromSt.value;
+  }
+  if(which === 'to' && toSt){
+    const main = document.getElementById('df-to');
+    if(main) main.value = toSt.value;
+  }
+  onDateRangeChange();
+}
+
 const JENIS_LITMAS_LIST = ['Litmas Integrasi','Litmas Pendampingan ABH'];
 const JENIS_COLORS = {'Litmas Integrasi':'#1e3a5f','Litmas Pendampingan ABH':'#8b5cf6'};
 
@@ -1330,144 +2397,432 @@ function clickedEl(evt, chart){
 }
 
 function renderAllCharts(){
+  const data = getScopedData();
   const isDark = document.documentElement.classList.contains('dark');
   const tc = isDark ? '#e2e8f0' : '#334155';
-  const mk = (id,type,data,opts={})=>{
-    const ctx = document.getElementById(id)?.getContext('2d'); if(!ctx) return;
-    if(charts[id]) charts[id].destroy();
-    ctx.canvas.style.cursor = 'pointer';
-    charts[id] = new Chart(ctx,{type,data,options:Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc}}},scales:type==='bar'||type==='line'?{x:{ticks:{color:tc}},y:{ticks:{color:tc}}}:{}},opts)});
+  const gridC = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.2)';
+  const palette = ['#0f2744','#c9a227','#10b981','#3b82f6','#8b5cf6','#ec4899','#f59e0b','#14b8a6','#6366f1','#ef4444'];
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 750, easing: 'easeOutQuart' },
+    plugins: {
+      legend: {
+        labels: { color: tc, usePointStyle: true, pointStyle: 'circle', padding: 14, font: { size: 11, weight: '600' } }
+      },
+      tooltip: {
+        backgroundColor: isDark ? 'rgba(15,28,48,0.95)' : 'rgba(15,39,68,0.92)',
+        titleFont: { weight: '700', size: 12 },
+        bodyFont: { size: 12 },
+        padding: 12,
+        cornerRadius: 10,
+        displayColors: true
+      }
+    }
+  };
+  const scaleOpts = {
+    x: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gridC, drawBorder: false } },
+    y: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gridC, drawBorder: false } }
   };
 
-  // --- Distribusi Wilayah (klik untuk detail per wilayah) ---
-  mk('ch-wil','doughnut',{labels:WILAYAH,datasets:[{data:WILAYAH.map(w=>allData.filter(d=>d.wilayah_asal===w).length),backgroundColor:['#1e3a5f','#d4a843','#10b981','#3b82f6','#8b5cf6','#ec4899']}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const wil = WILAYAH[el.index];
-      showStatDetail(`Wilayah: ${wil}`, allData.filter(d=>d.wilayah_asal===wil)); }
+  const mk = (id, type, data, opts = {}) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const ctx = el.getContext('2d');
+    if (charts[id]) charts[id].destroy();
+    el.style.cursor = 'pointer';
+    const merged = {
+      ...baseOpts,
+      ...opts,
+      plugins: { ...baseOpts.plugins, ...(opts.plugins || {}) },
+      scales: (type === 'bar' || type === 'line')
+        ? { ...scaleOpts, ...(opts.scales || {}) }
+        : opts.scales
+    };
+    charts[id] = new Chart(ctx, { type, data, options: merged });
+  };
+
+  // Shared aggregates
+  const divCount = data.filter(d => d.adjudikasi?.jalur === 'Diversi').length;
+  const sidCount = data.filter(d => d.adjudikasi?.jalur === 'Persidangan').length;
+  const belumJalur = data.filter(d => d.registrasi && !d.adjudikasi?.jalur).length;
+  const adjSelesai = data.filter(d => d.registrasi && getAdjStatus(d) === 'Selesai').length;
+  const adjBerjalan = data.filter(d => d.registrasi && getAdjStatus(d) === 'Berjalan').length;
+  const jkL = data.filter(d => (d.jenis_kelamin || '').toLowerCase().includes('laki')).length;
+  const jkP = data.filter(d => (d.jenis_kelamin || '').toLowerCase().includes('perempuan')).length;
+  const statusLabels = ['Proses', 'Selesai', 'Pending'];
+  const statusData = statusLabels.map(s => data.filter(d => d.status_jenis === s).length);
+  const trendByJenis = { 'Litmas Integrasi': new Array(12).fill(0), 'Litmas Pendampingan ABH': new Array(12).fill(0) };
+  data.forEach(d => {
+    if (d.tanggal_diterima && trendByJenis[d.jenis_litmas]) {
+      const m = new Date(d.tanggal_diterima).getMonth();
+      if (m >= 0 && m < 12) trendByJenis[d.jenis_litmas][m]++;
+    }
+  });
+  const trendTotal = months.map((_, i) =>
+    (trendByJenis['Litmas Integrasi'][i] || 0) + (trendByJenis['Litmas Pendampingan ABH'][i] || 0)
+  );
+  const pkRanked = PK_LIST.map(p => ({
+    name: p,
+    total: data.filter(d => d.nama_pk === p).length,
+    int: data.filter(d => d.nama_pk === p && d.jenis_litmas === 'Litmas Integrasi').length,
+    pnd: data.filter(d => d.nama_pk === p && d.jenis_litmas === 'Litmas Pendampingan ABH').length
+  })).sort((a, b) => b.total - a.total);
+  const topPk = pkRanked.slice(0, 8);
+
+  // ===== DASHBOARD CHARTS =====
+  mk('ch-jenis', 'doughnut', {
+    labels: JENIS_LITMAS_LIST,
+    datasets: [{
+      data: JENIS_LITMAS_LIST.map(j => data.filter(d => d.jenis_litmas === j).length),
+      backgroundColor: [JENIS_COLORS['Litmas Integrasi'], JENIS_COLORS['Litmas Pendampingan ABH']],
+      borderWidth: 0, hoverOffset: 8
+    }]
+  }, {
+    cutout: '62%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const jenis = JENIS_LITMAS_LIST[el.index];
+      showStatDetail(jenis, data.filter(d => d.jenis_litmas === jenis));
+    }
   });
 
-  // --- Jalur Adjudikasi (klik untuk detail per jalur) ---
-  const divCount = allData.filter(d=>d.adjudikasi?.jalur==='Diversi').length;
-  const sidCount = allData.filter(d=>d.adjudikasi?.jalur==='Persidangan').length;
-  const belumCount = allData.filter(d=>d.registrasi && !d.adjudikasi?.jalur).length;
-  const jalurLabels = ['Diversi','Persidangan','Belum Ditentukan'];
-  mk('ch-jalur','pie',{labels:jalurLabels,datasets:[{data:[divCount,sidCount,belumCount],backgroundColor:['#3b82f6','#ec4899','#94a3b8']}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const label = jalurLabels[el.index];
-      const list = label==='Belum Ditentukan' ? allData.filter(d=>d.registrasi && !d.adjudikasi?.jalur) : allData.filter(d=>d.adjudikasi?.jalur===label);
-      showStatDetail(`Jalur Adjudikasi: ${label}`, list); }
+  const jalurLabels = ['Diversi', 'Persidangan', 'Belum Ditentukan'];
+  mk('ch-jalur', 'doughnut', {
+    labels: jalurLabels,
+    datasets: [{ data: [divCount, sidCount, belumJalur], backgroundColor: ['#3b82f6', '#ec4899', '#94a3b8'], borderWidth: 0, hoverOffset: 8 }]
+  }, {
+    cutout: '58%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const label = jalurLabels[el.index];
+      const list = label === 'Belum Ditentukan'
+        ? data.filter(d => d.registrasi && !d.adjudikasi?.jalur)
+        : data.filter(d => d.adjudikasi?.jalur === label);
+      showStatDetail('Jalur: ' + label, list);
+    }
   });
 
-  // --- Beban Kerja PK, dipisah per Jenis Litmas ---
-  mk('st-pk','bar',{labels:PK_LIST,datasets:JENIS_LITMAS_LIST.map(jenis=>({
-    label:jenis,
-    data:PK_LIST.map(p=>allData.filter(d=>d.nama_pk===p && d.jenis_litmas===jenis).length),
-    backgroundColor:JENIS_COLORS[jenis],
-    borderRadius:6
-  }))},{
-    indexAxis:'y',
-    scales:{x:{stacked:true,ticks:{color:tc}},y:{stacked:true,ticks:{color:tc}}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const pk = PK_LIST[el.index]; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
-      showStatDetail(`${jenis} — PK ${pk}`, allData.filter(d=>d.nama_pk===pk && d.jenis_litmas===jenis)); }
+  mk('ch-status', 'doughnut', {
+    labels: statusLabels,
+    datasets: [{ data: statusData, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0, hoverOffset: 8 }]
+  }, {
+    cutout: '58%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const s = statusLabels[el.index];
+      showStatDetail('Status Litmas: ' + s, data.filter(d => d.status_jenis === s));
+    }
   });
 
-  // --- Tren Bulanan Permintaan, dipisah per Jenis Litmas ---
-  const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  const trendByJenis = {'Litmas Integrasi': new Array(12).fill(0), 'Litmas Pendampingan ABH': new Array(12).fill(0)};
-  allData.forEach(d=>{ if(d.tanggal_diterima && trendByJenis[d.jenis_litmas]){ const m=new Date(d.tanggal_diterima).getMonth(); if(m>=0&&m<12) trendByJenis[d.jenis_litmas][m]++; } });
-  mk('st-trend','line',{labels:months,datasets:[
-    {label:'Litmas Integrasi',data:trendByJenis['Litmas Integrasi'],borderColor:JENIS_COLORS['Litmas Integrasi'],backgroundColor:'rgba(30,58,95,.15)',fill:true,tension:.3},
-    {label:'Litmas Pendampingan ABH',data:trendByJenis['Litmas Pendampingan ABH'],borderColor:JENIS_COLORS['Litmas Pendampingan ABH'],backgroundColor:'rgba(139,92,246,.15)',fill:true,tension:.3}
-  ]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const monthIdx = el.index; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
-      const list = allData.filter(d=>d.jenis_litmas===jenis && d.tanggal_diterima && new Date(d.tanggal_diterima).getMonth()===monthIdx);
-      showStatDetail(`${jenis} — Bulan ${months[monthIdx]}`, list); }
+  mk('ch-trend', 'line', {
+    labels: months,
+    datasets: [
+      {
+        label: 'Total',
+        data: trendTotal,
+        borderColor: '#c9a227',
+        backgroundColor: 'rgba(201,162,39,0.12)',
+        fill: true, tension: 0.35, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2.5
+      },
+      {
+        label: 'Integrasi',
+        data: trendByJenis['Litmas Integrasi'],
+        borderColor: JENIS_COLORS['Litmas Integrasi'],
+        backgroundColor: 'transparent',
+        fill: false, tension: 0.35, pointRadius: 2, borderWidth: 2
+      },
+      {
+        label: 'Pendampingan ABH',
+        data: trendByJenis['Litmas Pendampingan ABH'],
+        borderColor: JENIS_COLORS['Litmas Pendampingan ABH'],
+        backgroundColor: 'transparent',
+        fill: false, tension: 0.35, pointRadius: 2, borderWidth: 2
+      }
+    ]
+  }, {
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const m = el.index;
+      showStatDetail('Permintaan — ' + months[m], data.filter(d => d.tanggal_diterima && new Date(d.tanggal_diterima).getMonth() === m));
+    }
   });
 
-  // --- Jenis Litmas (klik untuk detail) ---
-  mk('st-jenis','pie',{labels:JENIS_LITMAS_LIST,datasets:[{data:JENIS_LITMAS_LIST.map(j=>allData.filter(d=>d.jenis_litmas===j).length),backgroundColor:[JENIS_COLORS['Litmas Integrasi'],JENIS_COLORS['Litmas Pendampingan ABH']]}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const jenis = JENIS_LITMAS_LIST[el.index];
-      showStatDetail(jenis, allData.filter(d=>d.jenis_litmas===jenis)); }
+  mk('ch-wil', 'bar', {
+    labels: WILAYAH.map(w => w.replace('Kabupaten ', 'Kab. ').replace('Kota ', '')),
+    datasets: [{
+      label: 'Kasus',
+      data: WILAYAH.map(w => data.filter(d => d.wilayah_asal === w).length),
+      backgroundColor: palette,
+      borderRadius: 8, borderSkipped: false
+    }]
+  }, {
+    plugins: { legend: { display: false } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const wil = WILAYAH[el.index];
+      showStatDetail('Wilayah: ' + wil, data.filter(d => d.wilayah_asal === wil));
+    }
   });
 
-  // --- Status Adjudikasi (klik untuk detail) ---
-  const adjSelesai = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Selesai').length;
-  const adjBerjalan = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
-  const adjLabels = ['Selesai','Berjalan'];
-  mk('st-adj','doughnut',{labels:adjLabels,datasets:[{data:[adjSelesai,adjBerjalan],backgroundColor:['#10b981','#f59e0b']}]},{
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const label = adjLabels[el.index];
-      showStatDetail(`Adjudikasi ${label}`, allData.filter(d=>d.registrasi && getAdjStatus(d)===label)); }
+  mk('ch-pk', 'bar', {
+    labels: topPk.map(p => p.name.split(' ')[0] + (p.name.split(' ').length > 1 ? '…' : '')),
+    datasets: [
+      { label: 'Integrasi', data: topPk.map(p => p.int), backgroundColor: JENIS_COLORS['Litmas Integrasi'], borderRadius: 5 },
+      { label: 'Pendampingan', data: topPk.map(p => p.pnd), backgroundColor: JENIS_COLORS['Litmas Pendampingan ABH'], borderRadius: 5 }
+    ]
+  }, {
+    indexAxis: 'y',
+    scales: { x: { stacked: true, ticks: { color: tc }, grid: { color: gridC } }, y: { stacked: true, ticks: { color: tc }, grid: { display: false } } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const pk = topPk[el.index].name;
+      showStatDetail('PK: ' + pk, data.filter(d => d.nama_pk === pk));
+    }
   });
 
-  // --- Statistik Jenis Tindak Pidana (berdasarkan field Jenis Perkara) ---
+  mk('ch-jk', 'doughnut', {
+    labels: ['Laki-laki', 'Perempuan'],
+    datasets: [{ data: [jkL, jkP], backgroundColor: ['#3b82f6', '#ec4899'], borderWidth: 0, hoverOffset: 10 }]
+  }, {
+    cutout: '55%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const labels = ['Laki-laki', 'Perempuan'];
+      const key = labels[el.index];
+      showStatDetail('JK: ' + key, data.filter(d => (d.jenis_kelamin || '').includes(key.includes('Laki') ? 'Laki' : 'Perempuan')));
+    }
+  });
+
+  // ===== STATISTIK PAGE =====
+  mk('st-pk', 'bar', {
+    labels: PK_LIST,
+    datasets: JENIS_LITMAS_LIST.map(jenis => ({
+      label: jenis,
+      data: PK_LIST.map(p => data.filter(d => d.nama_pk === p && d.jenis_litmas === jenis).length),
+      backgroundColor: JENIS_COLORS[jenis],
+      borderRadius: 5
+    }))
+  }, {
+    indexAxis: 'y',
+    scales: { x: { stacked: true, ticks: { color: tc }, grid: { color: gridC } }, y: { stacked: true, ticks: { color: tc, font: { size: 10 } }, grid: { display: false } } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const pk = PK_LIST[el.index]; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
+      showStatDetail(jenis + ' — PK ' + pk, data.filter(d => d.nama_pk === pk && d.jenis_litmas === jenis));
+    }
+  });
+
+  mk('st-trend', 'line', {
+    labels: months,
+    datasets: [
+      { label: 'Litmas Integrasi', data: trendByJenis['Litmas Integrasi'], borderColor: JENIS_COLORS['Litmas Integrasi'], backgroundColor: 'rgba(30,58,95,.12)', fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3 },
+      { label: 'Litmas Pendampingan ABH', data: trendByJenis['Litmas Pendampingan ABH'], borderColor: JENIS_COLORS['Litmas Pendampingan ABH'], backgroundColor: 'rgba(139,92,246,.12)', fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3 }
+    ]
+  }, {
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const monthIdx = el.index; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
+      showStatDetail(jenis + ' — ' + months[monthIdx], data.filter(d => d.jenis_litmas === jenis && d.tanggal_diterima && new Date(d.tanggal_diterima).getMonth() === monthIdx));
+    }
+  });
+
+  mk('st-jenis', 'doughnut', {
+    labels: JENIS_LITMAS_LIST,
+    datasets: [{ data: JENIS_LITMAS_LIST.map(j => data.filter(d => d.jenis_litmas === j).length), backgroundColor: [JENIS_COLORS['Litmas Integrasi'], JENIS_COLORS['Litmas Pendampingan ABH']], borderWidth: 0, hoverOffset: 8 }]
+  }, {
+    cutout: '60%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const jenis = JENIS_LITMAS_LIST[el.index];
+      showStatDetail(jenis, data.filter(d => d.jenis_litmas === jenis));
+    }
+  });
+
+  mk('st-adj', 'doughnut', {
+    labels: ['Selesai', 'Berjalan'],
+    datasets: [{ data: [adjSelesai, adjBerjalan], backgroundColor: ['#10b981', '#f59e0b'], borderWidth: 0, hoverOffset: 8 }]
+  }, {
+    cutout: '60%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const label = ['Selesai', 'Berjalan'][el.index];
+      showStatDetail('Adjudikasi ' + label, data.filter(d => d.registrasi && getAdjStatus(d) === label));
+    }
+  });
+
   const perkaraMap = {};
-  allData.forEach(d=>{ const p = (d.jenis_perkara||'').trim(); if(!p) return; (perkaraMap[p] = perkaraMap[p]||[]).push(d); });
-  const perkaraLabels = Object.keys(perkaraMap).sort((a,b)=> perkaraMap[b].length - perkaraMap[a].length);
-  mk('st-perkara','bar',{labels:perkaraLabels,datasets:[{label:'Jumlah Kasus',data:perkaraLabels.map(p=>perkaraMap[p].length),backgroundColor:'#d4a843',borderRadius:6}]},{
-    indexAxis:'y',
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const p = perkaraLabels[el.index];
-      showStatDetail(`Jenis Tindak Pidana: ${p}`, perkaraMap[p]); }
+  data.forEach(d => {
+    let p = (d.jenis_perkara || '').trim();
+    if (!p) return;
+    if (p.length > 42) p = p.slice(0, 40) + '…';
+    (perkaraMap[p] = perkaraMap[p] || []).push(d);
+  });
+  const perkaraLabels = Object.keys(perkaraMap).sort((a, b) => perkaraMap[b].length - perkaraMap[a].length).slice(0, 15);
+  mk('st-perkara', 'bar', {
+    labels: perkaraLabels,
+    datasets: [{ label: 'Jumlah', data: perkaraLabels.map(p => perkaraMap[p].length), backgroundColor: '#c9a227', borderRadius: 6, borderSkipped: false }]
+  }, {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const p = perkaraLabels[el.index];
+      showStatDetail('Perkara: ' + p, perkaraMap[p]);
+    }
   });
 
-  // --- Jumlah Sidang per Bulan (dari seluruh jadwal sidang persidangan) ---
-  const sidangByMonth = new Array(12).fill(0).map(()=>[]);
-  allData.forEach(d=>{ (d.adjudikasi?.persidangan?.sidang||[]).forEach(s=>{
-    if(!s.tanggal) return; const m = new Date(s.tanggal).getMonth(); if(m>=0&&m<12) sidangByMonth[m].push(d);
-  }); });
-  mk('st-sidang','bar',{labels:months,datasets:[{label:'Jumlah Sidang',data:sidangByMonth.map(l=>l.length),backgroundColor:'#3b82f6',borderRadius:6}]},{
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const m = el.index;
-      const uniq = Array.from(new Map(sidangByMonth[m].map(d=>[d.id,d])).values());
-      showStatDetail(`Sidang — Bulan ${months[m]}`, uniq); }
-  });
-
-  // --- Jumlah Putusan per Bulan ---
-  const putusanByMonth = new Array(12).fill(0).map(()=>[]);
-  allData.forEach(d=>{ const tgl = d.adjudikasi?.persidangan?.putusan?.tanggal; if(!tgl) return; const m = new Date(tgl).getMonth(); if(m>=0&&m<12) putusanByMonth[m].push(d); });
-  mk('st-putusan','bar',{labels:months,datasets:[{label:'Jumlah Putusan',data:putusanByMonth.map(l=>l.length),backgroundColor:'#ec4899',borderRadius:6}]},{
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const m = el.index;
-      showStatDetail(`Putusan — Bulan ${months[m]}`, putusanByMonth[m]); }
-  });
-
-  // --- Jumlah Diversi Berhasil per Bulan (dari tingkat kepolisian/kejaksaan/pengadilan) ---
-  const diversiOkByMonth = new Array(12).fill(0).map(()=>[]);
-  allData.forEach(d=>{
-    const dv = d.adjudikasi?.diversi; if(!dv) return;
-    ['kepolisian','kejaksaan','pengadilan'].forEach(tier=>{
-      const t = dv[tier]; if(t && t.hasil==='Berhasil' && t.tanggal){ const m = new Date(t.tanggal).getMonth(); if(m>=0&&m<12) diversiOkByMonth[m].push(d); }
+  const sidangByMonth = new Array(12).fill(0).map(() => []);
+  data.forEach(d => {
+    (d.adjudikasi?.persidangan?.sidang || []).forEach(s => {
+      if (!s.tanggal) return;
+      const m = new Date(s.tanggal).getMonth();
+      if (m >= 0 && m < 12) sidangByMonth[m].push(d);
     });
   });
-  mk('st-diversi-berhasil','bar',{labels:months,datasets:[{label:'Diversi Berhasil',data:diversiOkByMonth.map(l=>l.length),backgroundColor:'#10b981',borderRadius:6}]},{
-    plugins:{legend:{display:false}},
-    onClick:(evt,els,chart)=>{ const el = els[0]||clickedEl(evt,chart); if(!el) return; const m = el.index;
-      const uniq = Array.from(new Map(diversiOkByMonth[m].map(d=>[d.id,d])).values());
-      showStatDetail(`Diversi Berhasil — Bulan ${months[m]}`, uniq); }
+  mk('st-sidang', 'bar', {
+    labels: months,
+    datasets: [{ label: 'Sidang', data: sidangByMonth.map(l => l.length), backgroundColor: '#3b82f6', borderRadius: 8, borderSkipped: false }]
+  }, {
+    plugins: { legend: { display: false } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const uniq = Array.from(new Map(sidangByMonth[el.index].map(d => [d.id, d])).values());
+      showStatDetail('Sidang — ' + months[el.index], uniq);
+    }
+  });
+
+  const putusanByMonth = new Array(12).fill(0).map(() => []);
+  data.forEach(d => {
+    const tgl = d.adjudikasi?.persidangan?.putusan?.tanggal;
+    if (!tgl) return;
+    const m = new Date(tgl).getMonth();
+    if (m >= 0 && m < 12) putusanByMonth[m].push(d);
+  });
+  mk('st-putusan', 'bar', {
+    labels: months,
+    datasets: [{ label: 'Putusan', data: putusanByMonth.map(l => l.length), backgroundColor: '#ec4899', borderRadius: 8, borderSkipped: false }]
+  }, {
+    plugins: { legend: { display: false } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      showStatDetail('Putusan — ' + months[el.index], putusanByMonth[el.index]);
+    }
+  });
+
+  const diversiOkByMonth = new Array(12).fill(0).map(() => []);
+  data.forEach(d => {
+    const dv = d.adjudikasi?.diversi; if (!dv) return;
+    ['kepolisian', 'kejaksaan', 'pengadilan'].forEach(tier => {
+      const t = dv[tier];
+      if (t && t.hasil === 'Berhasil' && t.tanggal) {
+        const m = new Date(t.tanggal).getMonth();
+        if (m >= 0 && m < 12) diversiOkByMonth[m].push(d);
+      }
+    });
+  });
+  mk('st-diversi-berhasil', 'bar', {
+    labels: months,
+    datasets: [{ label: 'Diversi OK', data: diversiOkByMonth.map(l => l.length), backgroundColor: '#10b981', borderRadius: 8, borderSkipped: false }]
+  }, {
+    plugins: { legend: { display: false } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const uniq = Array.from(new Map(diversiOkByMonth[el.index].map(d => [d.id, d])).values());
+      showStatDetail('Diversi Berhasil — ' + months[el.index], uniq);
+    }
+  });
+
+  mk('st-jk', 'pie', {
+    labels: ['Laki-laki', 'Perempuan'],
+    datasets: [{ data: [jkL, jkP], backgroundColor: ['#3b82f6', '#ec4899'], borderWidth: 0, hoverOffset: 8 }]
+  }, {
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const key = el.index === 0 ? 'Laki' : 'Perempuan';
+      showStatDetail('JK: ' + (el.index === 0 ? 'Laki-laki' : 'Perempuan'), data.filter(d => (d.jenis_kelamin || '').includes(key)));
+    }
+  });
+
+  mk('st-status-litmas', 'doughnut', {
+    labels: statusLabels,
+    datasets: [{ data: statusData, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0, hoverOffset: 8 }]
+  }, {
+    cutout: '55%',
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const s = statusLabels[el.index];
+      showStatDetail('Status: ' + s, data.filter(d => d.status_jenis === s));
+    }
+  });
+
+  mk('st-wilayah', 'bar', {
+    labels: WILAYAH.map(w => w.replace('Kabupaten ', 'Kab. ').replace('Kota ', '')),
+    datasets: [{ label: 'Kasus', data: WILAYAH.map(w => data.filter(d => d.wilayah_asal === w).length), backgroundColor: palette, borderRadius: 8, borderSkipped: false }]
+  }, {
+    plugins: { legend: { display: false } },
+    onClick: (evt, els, chart) => {
+      const el = els[0] || clickedEl(evt, chart); if (!el) return;
+      const wil = WILAYAH[el.index];
+      showStatDetail('Wilayah: ' + wil, data.filter(d => d.wilayah_asal === wil));
+    }
   });
 }
 
 function fmtDate(s){ if(!s) return '-'; const d = new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
 
-// ==================== GOOGLE SHEET SYNC (opsional) ====================
+// ==================== GOOGLE SHEET SYNC ====================
+// Penting: Apps Script Web App TIDAK mendukung preflight CORS.
+// Selalu kirim body sebagai text/plain (bukan application/json) agar request
+// tetap "simple request" dan response JSON bisa dibaca di browser.
+
+function normalizeGasUrl(url){
+  if(!url) return '';
+  url = String(url).trim();
+  // Pastikan pakai /exec (bukan /dev) untuk deployment produksi
+  return url.replace(/\/dev$/, '/exec');
+}
+
 async function sendToSheet(action, payload){
   if(!gsheetUrl) return;
   try{
-    await fetch(gsheetUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
-  }catch(e){ console.error('Gagal sinkron ke sheet',e); }
+    await postToSheetJSON(action, payload);
+  }catch(e){
+    console.error('Gagal sinkron ke sheet:', e);
+    // Jangan ganggu UX dengan toast di setiap write; status dot diganti merah
+    const dot = document.getElementById('sheet-status-dot');
+    const text = document.getElementById('sheet-status-text');
+    if(dot){ dot.classList.remove('bg-emerald-500'); dot.classList.add('bg-red-500'); }
+    if(text) text.textContent = 'Gagal tulis ke Google Sheet';
+  }
 }
-// Sama seperti sendToSheet, tapi RESPONSNYA BISA DIBACA (dipakai saat perlu URL hasil
-// unggah berkas dari Drive). Content-Type text/plain dipakai agar tidak memicu
-// preflight CORS yang tidak didukung Apps Script Web App.
+
 async function postToSheetJSON(action, payload){
-  if(!gsheetUrl) throw new Error('URL Google Apps Script belum diisi di menu Pengaturan.');
-  const res = await fetch(gsheetUrl, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action, ...payload})
+  const url = normalizeGasUrl(gsheetUrl);
+  if(!url) throw new Error('URL Google Apps Script belum diisi di menu Pengaturan.');
+  const res = await fetch(url, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, ...payload })
   });
-  const json = await res.json();
-  if(json.status === 'error') throw new Error(json.message || 'Gagal memproses permintaan di server.');
+  // Apps Script kadang mengembalikan HTML error page (401/403/404)
+  const raw = await res.text();
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch (parseErr) {
+    throw new Error(
+      'Server tidak mengembalikan JSON. Cek: (1) Web App di-deploy ulang, ' +
+      '(2) akses "Anyone", (3) URL /exec benar. Respons: ' + raw.slice(0, 120)
+    );
+  }
+  if (json.status === 'error') throw new Error(json.message || 'Gagal memproses di server.');
   return json;
 }
+
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     const reader = new FileReader();
@@ -1476,39 +2831,76 @@ function fileToBase64(file){
     reader.readAsDataURL(file);
   });
 }
-// Mengunggah berkas ke folder Google Drive tertentu lewat Apps Script, mengembalikan { url, fileId, fileName }.
+
 async function uploadFileToDrive(file, folderId){
   const base64 = await fileToBase64(file);
-  return postToSheetJSON('upload_file', { fileData: base64, fileName: file.name, mimeType: file.type || 'application/octet-stream', folderId });
+  return postToSheetJSON('upload_file', {
+    fileData: base64,
+    fileName: file.name,
+    mimeType: file.type || 'application/octet-stream',
+    folderId
+  });
 }
+
 async function syncDataFromSheets(manual){
-  const dot = document.getElementById('sheet-status-dot'); const text = document.getElementById('sheet-status-text');
-  if(!gsheetUrl){ if(manual) showToast('Isi URL Google Apps Script dulu di menu Pengaturan','error'); return; }
+  const dot = document.getElementById('sheet-status-dot');
+  const text = document.getElementById('sheet-status-text');
+  const url = normalizeGasUrl(gsheetUrl);
+  if(!url){
+    if(manual) showToast('Isi URL Google Apps Script dulu di menu Pengaturan','error');
+    return;
+  }
   try{
     if(text) text.textContent = 'Menyinkronkan...';
-    const res = await fetch(gsheetUrl); const data = await res.json();
-    if(Array.isArray(data)){
-      allData = data.map(d=>({
-        ...d,
-        registrasi: d.nomor_registrasi ? {nomor:d.nomor_registrasi, tanggal:d.tanggal_registrasi, tahun:new Date(d.tanggal_registrasi).getFullYear()} : null,
-        adjudikasi: d.adjudikasi || {jalur:null,status:'Berjalan',diversi:{kepolisian:{},kejaksaan:{},pengadilan:{}},persidangan:{sidang:[],putusan:{}}},
-        pasca_adjudikasi: d.pasca_adjudikasi || null
-      }));
-      saveAll();
-      if(dot) dot.classList.remove('bg-red-500'); if(dot) dot.classList.add('bg-emerald-500');
-      if(text) text.textContent = 'Sinkron dengan Google Sheet';
-      if(manual) showToast('Data berhasil disinkronkan','success');
-      renderAllViews();
+    const res = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+    const raw = await res.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      throw new Error(
+        'Respons bukan JSON. Biasanya Web App belum di-deploy sebagai "Anyone" ' +
+        'atau URL salah. Cuplikan: ' + raw.slice(0, 100)
+      );
     }
+    if(!Array.isArray(data)){
+      throw new Error(
+        data && data.message
+          ? ('Server error: ' + data.message)
+          : 'Format data tidak valid (bukan array).'
+      );
+    }
+    allData = data.map(d=>({
+      ...d,
+      registrasi: d.nomor_registrasi
+        ? {
+            nomor: d.nomor_registrasi,
+            tanggal: d.tanggal_registrasi,
+            tahun: d.tanggal_registrasi ? new Date(d.tanggal_registrasi).getFullYear() : null
+          }
+        : null,
+      adjudikasi: d.adjudikasi || {
+        jalur: null,
+        status: 'Berjalan',
+        diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
+        persidangan: { sidang:[], putusan:{} }
+      },
+      pasca_adjudikasi: d.pasca_adjudikasi || null
+    }));
+    saveAll();
+    if(dot){ dot.classList.remove('bg-red-500'); dot.classList.add('bg-emerald-500'); }
+    if(text) text.textContent = 'Sinkron dengan Google Sheet (' + allData.length + ' data)';
+    if(manual) showToast('Data berhasil disinkronkan (' + allData.length + ' baris)','success');
+    renderAllViews();
   }catch(e){
-    console.error(e);
+    console.error('syncDataFromSheets:', e);
     if(dot){ dot.classList.remove('bg-emerald-500'); dot.classList.add('bg-red-500'); }
     if(text) text.textContent = 'Gagal sinkron ke Google Sheet';
-    if(manual) showToast('Gagal sinkron ke Google Sheet','error');
+    if(manual) showToast('Gagal sinkron: ' + (e.message || e), 'error');
   }
 }
 
-// ==================== RUNNING TEXT (info ticker) ====================
+// ==================== LIVE STATUS TICKER ====================
 function updateRunningText(){
   const track = document.getElementById('running-text-track'); if(!track) return;
   const total = allData.length;
@@ -1516,39 +2908,52 @@ function updateRunningText(){
   const sudahReg = allData.filter(d=>d.registrasi).length;
   const dalamAdj = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
   const adjSelesai = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Selesai').length;
-  const bimbinganPasca = getPascaList().filter(d=>d.pasca_adjudikasi.status==='Dalam Bimbingan').length;
+  const bimbinganPasca = getPascaList().filter(d=>d.pasca_adjudikasi && d.pasca_adjudikasi.status==='Dalam Bimbingan').length;
   const divCount = allData.filter(d=>d.adjudikasi?.jalur==='Diversi').length;
   const sidCount = allData.filter(d=>d.adjudikasi?.jalur==='Persidangan').length;
   const litInt = allData.filter(d=>d.jenis_litmas==='Litmas Integrasi').length;
   const litPnd = allData.filter(d=>d.jenis_litmas==='Litmas Pendampingan ABH').length;
   const sidangBerjalan = getSidangBerjalanList().length;
   const now = new Date();
-  const tgl = now.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const tgl = now.toLocaleDateString('id-ID',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  const jam = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 
+  // tone: info | warn | ok | accent | neutral
   const items = [
-    {label:`📅 ${tgl}`},
-    {label:`📊 Total Permintaan Litmas: ${total}`, key:'total'},
-    {label:`📥 Litmas Integrasi: ${litInt}`, key:'litInt'},
-    {label:`🧭 Litmas Pendampingan ABH: ${litPnd}`, key:'litPnd'},
-    {label:`⏳ Belum Registrasi: ${belumReg}`, key:'belumReg'},
-    {label:`🔢 Sudah Registrasi: ${sudahReg}`, key:'sudahReg'},
-    {label:`⚖️ Dalam Proses Adjudikasi: ${dalamAdj}`, key:'dalamAdj'},
-    {label:`✅ Adjudikasi Selesai: ${adjSelesai}`, key:'adjSelesai'},
-    {label:`🤝 Jalur Diversi: ${divCount}`, key:'divCount'},
-    {label:`🏛️ Jalur Persidangan: ${sidCount}`, key:'sidCount'},
-    {label:`🧑‍⚖️ Sidang Sedang Berjalan: ${sidangBerjalan}`, key:'sidangBerjalan'},
-    {label:`❤️ Bimbingan Pasca Adjudikasi (Aktif): ${bimbinganPasca}`, key:'bimbinganPasca'},
-    {label:`🏢 Wilayah Kerja: ${WILAYAH.length}`, key:'wilayah'},
-    {label:`👥 Total PK: ${PK_LIST.length}`, key:'pk'},
-    {label:`DIGIT-CICL — Sistem Litmas, Registrasi & Tracking Adjudikasi Anak, Bapas Kelas II Lahat`}
+    { icon:'calendar', label: tgl, value: jam, tone:'neutral' },
+    { icon:'folder-open', label:'Total Litmas', value: total, key:'total', tone:'info' },
+    { icon:'layers', label:'Integrasi', value: litInt, key:'litInt', tone:'info' },
+    { icon:'compass', label:'Pendampingan ABH', value: litPnd, key:'litPnd', tone:'accent' },
+    { icon:'clock', label:'Belum Registrasi', value: belumReg, key:'belumReg', tone: belumReg>0?'warn':'ok' },
+    { icon:'badge-check', label:'Teregistrasi', value: sudahReg, key:'sudahReg', tone:'ok' },
+    { icon:'scale', label:'Adjudikasi Berjalan', value: dalamAdj, key:'dalamAdj', tone: dalamAdj>0?'warn':'ok' },
+    { icon:'check-circle', label:'Adjudikasi Selesai', value: adjSelesai, key:'adjSelesai', tone:'ok' },
+    { icon:'handshake', label:'Jalur Diversi', value: divCount, key:'divCount', tone:'info' },
+    { icon:'landmark', label:'Jalur Persidangan', value: sidCount, key:'sidCount', tone:'accent' },
+    { icon:'gavel', label:'Sidang Berjalan', value: sidangBerjalan, key:'sidangBerjalan', tone: sidangBerjalan>0?'warn':'neutral' },
+    { icon:'heart-handshake', label:'Bimbingan Aktif', value: bimbinganPasca, key:'bimbinganPasca', tone: bimbinganPasca>0?'ok':'neutral' },
+    { icon:'map-pin', label:'Wilayah', value: WILAYAH.length, key:'wilayah', tone:'neutral' },
+    { icon:'users', label:'PK Aktif', value: PK_LIST.length, key:'pk', tone:'neutral' }
   ];
-  const groupHtml = items.map(t=> t.key
-    ? `<button type="button" class="running-text-item" onclick="showRunningTextDetail('${t.key}')">${t.label}<span class="rt-dot"></span></button>`
-    : `<span class="running-text-item">${t.label}<span class="rt-dot"></span></span>`
-  ).join('');
-  // Konten digandakan 2x agar animasi scroll berputar mulus tanpa jeda (seamless loop).
-  track.innerHTML = `<span class="running-text-group">${groupHtml}</span><span class="running-text-group">${groupHtml}</span>`;
+
+  const pill = (t) => {
+    const clickable = t.key ? `type="button" onclick="showRunningTextDetail('${t.key}')"` : 'type="button" tabindex="-1"';
+    const cls = t.key ? 'rt-pill rt-pill-click' : 'rt-pill';
+    return `<button ${clickable} class="${cls} rt-tone-${t.tone||'neutral'}">
+      <i data-lucide="${t.icon}" class="rt-pill-icon"></i>
+      <span class="rt-pill-label">${t.label}</span>
+      <span class="rt-pill-value">${t.value}</span>
+    </button>`;
+  };
+
+  const group = items.map(pill).join('');
+  // Duplikasi untuk seamless infinite scroll
+  track.innerHTML = `<div class="rt-group">${group}</div><div class="rt-group" aria-hidden="true">${group}</div>`;
   lucide.createIcons();
+
+  // Durasi proporsional dengan jumlah item (lebih banyak = lebih lambat)
+  const secs = Math.max(28, items.length * 3.2);
+  track.style.setProperty('--rt-duration', secs + 's');
 }
 
 // Kasus jalur Persidangan yang sudah punya minimal 1 jadwal sidang tapi putusan hakim belum terbit.
@@ -1602,11 +3007,21 @@ function showRunningTextDetail(key){
 
 // ==================== RENDER ALL ====================
 function renderKpi(){
-  document.getElementById('k-total').textContent = allData.length;
-  document.getElementById('k-belumreg').textContent = allData.filter(d=>!d.registrasi).length;
-  document.getElementById('k-reg').textContent = allData.filter(d=>d.registrasi).length;
-  document.getElementById('k-adj').textContent = allData.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
-  document.getElementById('k-pasca').textContent = getPascaList().filter(d=>d.pasca_adjudikasi.status==='Dalam Bimbingan').length;
+  const el = (id) => document.getElementById(id);
+  const data = getScopedData();
+  if (el('k-total')) el('k-total').textContent = data.length;
+  if (el('k-belumreg')) el('k-belumreg').textContent = data.filter(d=>!d.registrasi).length;
+  if (el('k-reg')) el('k-reg').textContent = data.filter(d=>d.registrasi).length;
+  if (el('k-adj')) el('k-adj').textContent = data.filter(d=>d.registrasi && getAdjStatus(d)==='Berjalan').length;
+  const pascaScoped = data.filter(d=>d.pasca_adjudikasi && d.pasca_adjudikasi.status==='Dalam Bimbingan');
+  if (el('k-pasca')) el('k-pasca').textContent = pascaScoped.length;
+  const upd = el('dash-updated');
+  if (upd) {
+    const now = new Date();
+    const scopeNote = (dateFilter.from || dateFilter.to) ? (` · filter ${data.length}/${allData.length}`) : '';
+    upd.textContent = 'Diperbarui ' + now.toLocaleString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) + ' · ' + data.length + ' data' + scopeNote;
+  }
+  syncDateInputs();
 }
 function renderAllViews(){
   initDropdowns();

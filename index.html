@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1e3a5f">
+<meta name="theme-color" content="#0b1c33">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIGIT-CICL">
@@ -31,29 +31,28 @@
 <!-- ==================== LOGIN OVERLAY ==================== -->
 <div id="login-overlay">
   <div class="login-card" id="login-card">
-    <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-[#d4a843] to-amber-200 flex items-center justify-center text-[#1e3a5f] font-extrabold text-2xl shadow-md mb-3">C</div>
-    <h1 class="text-lg font-bold mb-0.5">DIGIT-CICL</h1>
-    <p class="text-xs text-slate-500 mb-6">Bapas Kelas II Lahat &mdash; Silakan masuk untuk melanjutkan</p>
+    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#e8c547] to-[#b8922e] flex items-center justify-center text-[#0b1c33] font-extrabold text-3xl shadow-xl shadow-amber-900/20 mb-4">C</div>
+    <h1 class="text-xl font-extrabold tracking-tight mb-1">DIGIT-CICL</h1>
+    <p class="text-[11px] font-semibold tracking-widest uppercase text-amber-600/80 mb-1">Bapas Kelas II Lahat</p>
+    <p class="text-xs text-slate-500 mb-7">Sistem Litmas &amp; Tracking Adjudikasi Anak</p>
 
-    <!-- Step 1: pilih peran -->
     <div id="login-step-role" class="space-y-3">
       <button type="button" class="role-btn" onclick="showAdminLoginForm()">
-        <span class="role-icon bg-[#1e3a5f]/10 text-[#1e3a5f]"><i data-lucide="shield-check" class="w-5 h-5"></i></span>
-        <span><span class="block font-bold text-sm">Admin</span><span class="block text-[11px] text-slate-500">Akses penuh &mdash; kelola & edit data</span></span>
+        <span class="role-icon bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300"><i data-lucide="shield-check" class="w-5 h-5"></i></span>
+        <span><span class="block font-bold text-sm">Admin</span><span class="block text-[11px] text-slate-500">Akses penuh — kelola &amp; edit data</span></span>
       </button>
       <button type="button" class="role-btn" onclick="loginAsGuest()">
-        <span class="role-icon bg-slate-200 text-slate-600"><i data-lucide="eye" class="w-5 h-5"></i></span>
+        <span class="role-icon bg-slate-100 text-slate-500"><i data-lucide="eye" class="w-5 h-5"></i></span>
         <span><span class="block font-bold text-sm">Tamu (Guest)</span><span class="block text-[11px] text-slate-500">Hanya lihat data (view only)</span></span>
       </button>
     </div>
 
-    <!-- Step 2: form login admin -->
     <form id="login-step-admin" class="space-y-3 text-left hidden" onsubmit="event.preventDefault(); submitAdminLogin();">
       <button type="button" onclick="showRoleStep()" class="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 mb-1"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>Kembali</button>
       <div><label class="fl">Username</label><input class="form-input" id="login-username" placeholder="Username" autocomplete="username"></div>
       <div><label class="fl">Password</label><input type="password" class="form-input" id="login-password" placeholder="Password" autocomplete="current-password"></div>
       <p id="login-error" class="text-xs text-red-500 hidden">Username atau password salah.</p>
-      <button type="submit" class="btn btn-primary w-full justify-center mt-1">Masuk sebagai Admin</button>
+      <button type="submit" class="btn btn-primary w-full justify-center mt-2">Masuk sebagai Admin</button>
     </form>
   </div>
 </div>
@@ -61,179 +60,498 @@
 
 <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeSidebar()"></div>
 
-<aside class="sidebar fixed left-0 top-0 bottom-0 w-[260px] bg-[#0f1a2e] flex flex-col z-50 transition-transform duration-300 -translate-x-full md:translate-x-0 border-r border-slate-800/80" id="sidebar">
-  <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+<aside class="sidebar fixed left-0 top-0 bottom-0 flex flex-col z-50 transition-transform duration-300 -translate-x-full md:translate-x-0" id="sidebar" style="width:var(--sidebar-w)">
+  <div class="p-5 border-b border-white/5 flex items-center justify-between relative z-10">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#d4a843] to-amber-200 flex items-center justify-center text-[#1e3a5f] font-extrabold text-xl shadow-md">C</div>
-      <div><h1 class="text-base font-bold text-white tracking-wide">DIGIT-CICL</h1><p class="text-[11px] text-amber-400 font-medium">Bapas Kelas II Lahat</p></div>
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#e8c547] to-[#b8922e] flex items-center justify-center text-[#0b1c33] font-extrabold text-xl shadow-lg shadow-amber-900/30">C</div>
+      <div>
+        <h1 class="text-base font-extrabold text-white tracking-tight">DIGIT-CICL</h1>
+        <p class="text-[10px] text-amber-400/90 font-semibold tracking-wider uppercase">Bapas II Lahat</p>
+      </div>
     </div>
-    <button onclick="closeSidebar()" class="md:hidden text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <button onclick="closeSidebar()" class="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
   </div>
-  <nav class="flex-1 p-3 space-y-1 overflow-y-auto" id="sidebar-nav">
+  <nav class="flex-1 p-3 overflow-y-auto relative z-10" id="sidebar-nav">
+    <div class="nav-section-label">Utama</div>
     <div class="sidebar-link active" data-page="dashboard" onclick="navigateTo('dashboard')"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span></div>
+    <div class="nav-section-label">Operasional</div>
     <div class="sidebar-link" data-page="permintaan" onclick="navigateTo('permintaan')"><i data-lucide="file-input" class="w-4 h-4"></i><span>Permintaan Litmas</span></div>
     <div class="sidebar-link" data-page="registrasi" onclick="navigateTo('registrasi')"><i data-lucide="hash" class="w-4 h-4"></i><span>Registrasi Anak</span></div>
     <div class="sidebar-link" data-page="adjudikasi" onclick="navigateTo('adjudikasi')"><i data-lucide="scale" class="w-4 h-4"></i><span>Tracking Adjudikasi</span></div>
     <div class="sidebar-link" data-page="pasca" onclick="navigateTo('pasca')"><i data-lucide="heart-handshake" class="w-4 h-4"></i><span>Pasca Adjudikasi</span></div>
+    <div class="nav-section-label">Master Data</div>
     <div class="sidebar-link" data-page="pk" onclick="navigateTo('pk')"><i data-lucide="users" class="w-4 h-4"></i><span>Data PK</span></div>
     <div class="sidebar-link" data-page="wilayah" onclick="navigateTo('wilayah')"><i data-lucide="map-pin" class="w-4 h-4"></i><span>Wilayah</span></div>
     <div class="sidebar-link" data-page="kepolisian" onclick="navigateTo('kepolisian')"><i data-lucide="shield" class="w-4 h-4"></i><span>Data Kepolisian</span></div>
+    <div class="nav-section-label">Laporan</div>
     <div class="sidebar-link" data-page="rekap" onclick="navigateTo('rekap')"><i data-lucide="table" class="w-4 h-4"></i><span>Rekapitulasi PK</span></div>
     <div class="sidebar-link" data-page="statistik" onclick="navigateTo('statistik')"><i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Statistik</span></div>
-    <div class="pt-3 mt-3 border-t border-slate-800/80 admin-only">
-      <div class="sidebar-link text-blue-400" onclick="openSettingsModal()"><i data-lucide="settings" class="w-4 h-4 text-blue-400"></i><span>Pengaturan (AI & Sheet)</span></div>
+    <div class="pt-3 mt-3 border-t border-white/5 admin-only">
+      <div class="sidebar-link" onclick="openSettingsModal()"><i data-lucide="settings" class="w-4 h-4"></i><span>Pengaturan</span></div>
     </div>
   </nav>
-  <div class="p-3 border-t border-slate-800 space-y-2">
-    <div id="logged-badge" class="flex items-center justify-between bg-slate-800/80 rounded-lg px-3 py-2 text-slate-300 border border-slate-700/50">
-      <span class="flex items-center gap-1.5"><i data-lucide="user-circle" class="w-3.5 h-3.5"></i><span id="logged-user-label">-</span></span>
-      <button onclick="logoutUser()" class="text-red-400 hover:text-red-300 flex items-center gap-1"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Keluar</button>
+  <div class="p-3 border-t border-white/5 space-y-2 relative z-10">
+    <div id="logged-badge" class="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2.5 text-slate-300 border border-white/5">
+      <span class="flex items-center gap-1.5"><i data-lucide="user-circle" class="w-3.5 h-3.5 text-amber-400"></i><span id="logged-user-label">-</span></span>
+      <button onclick="logoutUser()" class="text-red-400/90 hover:text-red-300 flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Keluar</button>
     </div>
-    <button onclick="syncDataFromSheets(true)" class="w-full bg-slate-800 hover:bg-slate-700 text-xs text-amber-300 py-2 px-3 rounded-lg flex items-center justify-center gap-2">
+    <button onclick="syncDataFromSheets(true)" class="w-full bg-gradient-to-r from-amber-600/20 to-amber-500/10 hover:from-amber-600/30 hover:to-amber-500/20 text-xs text-amber-300 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 border border-amber-500/20 font-semibold transition">
       <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Sinkron Google Sheet</span>
     </button>
-    <div class="bg-slate-800/80 rounded-lg p-2.5 flex items-center gap-2.5 text-xs text-slate-300 border border-slate-700/50">
-      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" id="sheet-status-dot"></span>
+    <div class="bg-white/5 rounded-xl p-2.5 flex items-center gap-2.5 text-xs text-slate-400 border border-white/5">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" id="sheet-status-dot"></span>
       <span class="truncate font-medium text-[11px]" id="sheet-status-text">Mode Lokal (Belum Sinkron)</span>
     </div>
   </div>
 </aside>
 
-<div class="md:ml-[260px] min-h-screen flex flex-col">
-  <header class="glass-header sticky top-0 z-40 px-5 py-3.5 flex items-center justify-between">
+<div class="main-shell min-h-screen flex flex-col">
+  <header class="glass-header sticky top-0 z-40 px-5 sm:px-6 py-3.5 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <button onclick="toggleSidebar()" class="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5"><i data-lucide="menu" class="w-5 h-5"></i></button>
-      <h2 class="font-bold text-slate-800 dark:text-slate-100 text-base tracking-tight" id="nav-title">Dashboard Monitoring</h2>
+      <button onclick="toggleSidebar()" class="md:hidden p-2.5 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5"><i data-lucide="menu" class="w-5 h-5"></i></button>
+      <div>
+        <p class="text-[10px] font-semibold tracking-widest uppercase text-slate-400 hidden sm:block">DIGIT-CICL</p>
+        <h2 class="font-extrabold text-slate-800 dark:text-slate-100 text-base tracking-tight leading-tight" id="nav-title">Dashboard Monitoring</h2>
+      </div>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 transition" title="Mode Gelap/Terang"><i data-lucide="moon" class="w-4 h-4"></i></button>
+      <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 transition border border-transparent hover:border-slate-200/50 dark:hover:border-white/10" title="Mode Gelap/Terang"><i data-lucide="moon" class="w-4 h-4"></i></button>
     </div>
   </header>
 
-  <div class="running-text-bar" id="running-text-bar">
-    <div class="running-text-track" id="running-text-track"></div>
+  <!-- Live status ticker -->
+  <div class="rt-ticker" id="running-text-bar" aria-label="Status operasional langsung">
+    <div class="rt-live">
+      <span class="rt-live-dot"></span>
+      <span>LIVE</span>
+    </div>
+    <div class="rt-viewport">
+      <div class="rt-track" id="running-text-track"></div>
+    </div>
   </div>
 
-  <main class="p-4 sm:p-6 flex-1 space-y-6">
+  <main class="p-4 sm:p-6 lg:p-8 flex-1 space-y-6">
 
   <!-- ================= DASHBOARD ================= -->
   <section class="page active" id="page-dashboard">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-      <div class="stat-card bg-[#1e3a5f] text-white shadow-lg"><p class="text-xs font-semibold text-slate-300 uppercase">Total Permintaan</p><p class="text-3xl font-extrabold mt-2" id="k-total">0</p></div>
-      <div class="stat-card bg-[#5a4a1e] text-white shadow-lg"><p class="text-xs font-semibold text-slate-300 uppercase">Belum Registrasi</p><p class="text-3xl font-extrabold mt-2" id="k-belumreg">0</p></div>
-      <div class="stat-card bg-[#1e3a5f] text-white shadow-lg"><p class="text-xs font-semibold text-slate-300 uppercase">Sudah Registrasi</p><p class="text-3xl font-extrabold mt-2" id="k-reg">0</p></div>
-      <div class="stat-card bg-[#5a3d1e] text-white shadow-lg"><p class="text-xs font-semibold text-slate-300 uppercase">Dalam Adjudikasi</p><p class="text-3xl font-extrabold mt-2" id="k-adj">0</p></div>
-      <div class="stat-card bg-[#2d5a3f] text-white shadow-lg"><p class="text-xs font-semibold text-slate-300 uppercase">Bimbingan Pasca</p><p class="text-3xl font-extrabold mt-2" id="k-pasca">0</p></div>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Ringkasan Operasional</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Monitoring Litmas &amp; Adjudikasi</h3>
+      </div>
+      <p class="text-[11px] text-slate-400" id="dash-updated">Memuat data…</p>
     </div>
+
+    <div class="card-panel p-3 sm:p-4 mb-5 date-filter-bar" id="date-filter-bar">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
+          <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Periode
+        </span>
+        <div class="flex flex-wrap gap-1.5" id="date-presets">
+          <button type="button" class="df-preset active" data-preset="all" onclick="applyDatePreset('all')">Semua</button>
+          <button type="button" class="df-preset" data-preset="thisMonth" onclick="applyDatePreset('thisMonth')">Bulan ini</button>
+          <button type="button" class="df-preset" data-preset="lastMonth" onclick="applyDatePreset('lastMonth')">Bulan lalu</button>
+          <button type="button" class="df-preset" data-preset="thisYear" onclick="applyDatePreset('thisYear')">Tahun ini</button>
+          <button type="button" class="df-preset" data-preset="last30" onclick="applyDatePreset('last30')">30 hari</button>
+          <button type="button" class="df-preset" data-preset="last90" onclick="applyDatePreset('last90')">90 hari</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
+          <input type="date" class="form-input df-input" id="df-from" onchange="onDateRangeChange()">
+          <span class="text-xs text-slate-400">s/d</span>
+          <input type="date" class="form-input df-input" id="df-to" onchange="onDateRangeChange()">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="applyDatePreset('all')" title="Reset">Reset</button>
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-2" id="df-summary">Menampilkan semua data</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div class="stat-card text-white" style="background:linear-gradient(145deg,#0f2744,#1a3d66)">
+        <div class="stat-icon"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
+        <p class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Total Permintaan</p>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-total">0</p>
+      </div>
+      <div class="stat-card text-white" style="background:linear-gradient(145deg,#5c4a1a,#8a6f28)">
+        <div class="stat-icon"><i data-lucide="clock" class="w-5 h-5"></i></div>
+        <p class="text-[11px] font-semibold text-amber-100/80 uppercase tracking-wider">Belum Registrasi</p>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-belumreg">0</p>
+      </div>
+      <div class="stat-card text-white" style="background:linear-gradient(145deg,#1e3a5f,#2d5a8a)">
+        <div class="stat-icon"><i data-lucide="badge-check" class="w-5 h-5"></i></div>
+        <p class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Sudah Registrasi</p>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-reg">0</p>
+      </div>
+      <div class="stat-card text-white" style="background:linear-gradient(145deg,#5a3a18,#8a5a28)">
+        <div class="stat-icon"><i data-lucide="scale" class="w-5 h-5"></i></div>
+        <p class="text-[11px] font-semibold text-amber-100/80 uppercase tracking-wider">Dalam Adjudikasi</p>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-adj">0</p>
+      </div>
+      <div class="stat-card text-white" style="background:linear-gradient(145deg,#1a4a32,#2d6b4a)">
+        <div class="stat-icon"><i data-lucide="heart-handshake" class="w-5 h-5"></i></div>
+        <p class="text-[11px] font-semibold text-emerald-100/80 uppercase tracking-wider">Bimbingan Pasca</p>
+        <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-pasca">0</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+      <div class="card-panel p-5 lg:col-span-1">
+        <h4 class="font-bold text-sm mb-0.5">Jenis Litmas</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Integrasi vs Pendampingan ABH</p>
+        <div class="relative h-56"><canvas id="ch-jenis"></canvas></div>
+      </div>
+      <div class="card-panel p-5 lg:col-span-1">
+        <h4 class="font-bold text-sm mb-0.5">Jalur Adjudikasi</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Diversi · Persidangan · Belum</p>
+        <div class="relative h-56"><canvas id="ch-jalur"></canvas></div>
+      </div>
+      <div class="card-panel p-5 lg:col-span-1">
+        <h4 class="font-bold text-sm mb-0.5">Status Litmas</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Proses · Selesai · Pending</p>
+        <div class="relative h-56"><canvas id="ch-status"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Tren Permintaan per Bulan</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Berdasarkan tanggal diterima</p>
+        <div class="relative h-64"><canvas id="ch-trend"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Distribusi Wilayah</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Klik segmen untuk detail</p>
+        <div class="relative h-64"><canvas id="ch-wil"></canvas></div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Distribusi Wilayah <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="ch-wil"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jalur Adjudikasi (Diversi vs Persidangan) <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="ch-jalur"></canvas></div></div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Top 8 Beban Kerja PK</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Kasus per pembimbing kemasyarakatan</p>
+        <div class="relative h-72"><canvas id="ch-pk"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Jenis Kelamin Anak</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Proporsi Laki-laki &amp; Perempuan</p>
+        <div class="relative h-72"><canvas id="ch-jk"></canvas></div>
+      </div>
     </div>
   </section>
 
   <!-- ================= 1. PERMINTAAN LITMAS ================= -->
   <section class="page" id="page-permintaan">
-    <div class="card-panel p-5 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div><h3 class="font-bold text-base">Permintaan Litmas (Litmas Integrasi & Pendampingan ABH)</h3>
-        <p class="text-xs text-slate-500">Input manual atau pindai berkas surat permintaan dengan AI Gemini.</p></div>
-        <div class="flex items-center gap-2">
-          <button onclick="openLitmasModal(null,true)" class="btn btn-ai btn-sm font-bold admin-only"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI Scan (Gemini)</button>
-          <button onclick="openLitmasModal(null,false)" class="btn btn-primary btn-sm admin-only"><i data-lucide="plus-circle" class="w-4 h-4"></i>Input Manual</button>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Operasional</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Permintaan Litmas</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Kelola surat permintaan Litmas Integrasi &amp; Pendampingan ABH</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 admin-only">
+        <button onclick="openLitmasModal(null,true)" class="btn btn-ai btn-sm font-bold"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI Scan</button>
+        <button onclick="openLitmasModal(null,false)" class="btn btn-primary btn-sm"><i data-lucide="plus-circle" class="w-4 h-4"></i>Input Manual</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" id="permintaan-kpi">
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-800/90 text-amber-300 flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</p><p class="text-xl font-extrabold leading-tight" id="pkpi-total">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0"><i data-lucide="loader" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Proses</p><p class="text-xl font-extrabold leading-tight" id="pkpi-proses">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Selesai</p><p class="text-xl font-extrabold leading-tight" id="pkpi-selesai">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Belum Reg.</p><p class="text-xl font-extrabold leading-tight" id="pkpi-belumreg">0</p></div>
+      </div>
+    </div>
+
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input pl-10" style="padding-left:2.5rem" placeholder="Cari no surat, nama anak, perkara, PK…" id="q-permintaan" oninput="onPermintaanFilterChange()">
         </div>
+        <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1">
+          <button type="button" class="df-preset active" id="pv-table" onclick="setPermintaanView('table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
+          <button type="button" class="df-preset" id="pv-card" onclick="setPermintaanView('card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="exportPermintaanCSV()" title="Export hasil filter"><i data-lucide="download" class="w-3.5 h-3.5"></i> CSV</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetPermintaanFilters()" title="Reset filter"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <input class="form-input" placeholder="Cari no surat / nama anak..." id="q-permintaan" onkeyup="renderPermintaanTable()">
-        <select class="form-input" id="f-jenislitmas" onchange="renderPermintaanTable()">
-          <option value="">Semua Jenis Litmas</option><option>Litmas Integrasi</option><option>Litmas Pendampingan ABH</option>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
+        <select class="form-input" id="f-jenislitmas" onchange="onPermintaanFilterChange()">
+          <option value="">Semua Jenis Litmas</option>
+          <option>Litmas Integrasi</option>
+          <option>Litmas Pendampingan ABH</option>
         </select>
-        <select class="form-input" id="f-wilayah-p" onchange="renderPermintaanTable()"><option value="">Semua Wilayah</option></select>
-        <select class="form-input" id="f-status-p" onchange="renderPermintaanTable()">
-          <option value="">Semua Status</option><option>Proses</option><option>Selesai</option><option>Pending</option>
+        <select class="form-input" id="f-wilayah-p" onchange="onPermintaanFilterChange()"><option value="">Semua Wilayah</option></select>
+        <select class="form-input" id="f-status-p" onchange="onPermintaanFilterChange()">
+          <option value="">Semua Status</option>
+          <option>Proses</option>
+          <option>Selesai</option>
+          <option>Pending</option>
         </select>
+        <select class="form-input" id="f-reg-p" onchange="onPermintaanFilterChange()">
+          <option value="">Semua Registrasi</option>
+          <option value="sudah">Sudah Registrasi</option>
+          <option value="belum">Belum Registrasi</option>
+        </select>
+        <select class="form-input" id="f-jk-p" onchange="onPermintaanFilterChange()">
+          <option value="">Semua JK</option>
+          <option value="Laki-laki">Laki-laki</option>
+          <option value="Perempuan">Perempuan</option>
+        </select>
+        <select class="form-input" id="f-pk-p" onchange="onPermintaanFilterChange()"><option value="">Semua PK</option></select>
       </div>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
-        <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
-          <th class="sortable" data-table="permintaan" data-key="nomor_surat">No Surat<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="tanggal_surat">Tgl Surat<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="tanggal_diterima">Diterima<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="nama_anak">Nama Anak<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="jenis_kelamin">JK<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="jenis_litmas">Jenis Litmas<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="jenis_perkara">Perkara<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="wilayah_asal">Wilayah<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="kepolisian">Kepolisian<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="status_jenis">Status<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="permintaan" data-key="registrasi">Reg.<span class="sort-arrow"></span></th>
-          <th class="text-center">Aksi</th>
-        </tr></thead><tbody id="tb-permintaan"></tbody></table>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tanggal diterima</span>
+        <input type="date" class="form-input df-input" id="f-from-p" onchange="onPermintaanFilterChange()">
+        <span class="text-xs text-slate-400">s/d</span>
+        <input type="date" class="form-input df-input" id="f-to-p" onchange="onPermintaanFilterChange()">
+        <span class="text-[11px] text-slate-400 ml-auto" id="permintaan-count"></span>
       </div>
+
+      <!-- TABLE VIEW -->
+      <div id="permintaan-table-wrap" class="table-wrap rounded-xl">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" data-table="permintaan" data-key="nama_anak">Anak / Surat<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="tanggal_diterima">Diterima<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="jenis_litmas">Jenis<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="jenis_perkara">Perkara<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="wilayah_asal">Wilayah / Polsek<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="status_jenis">Status<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="permintaan" data-key="registrasi">Registrasi<span class="sort-arrow"></span></th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tb-permintaan"></tbody>
+        </table>
+      </div>
+
+      <!-- CARD VIEW -->
+      <div id="permintaan-card-wrap" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="permintaan-cards"></div>
+      </div>
+
       <div class="pagination" id="pg-permintaan"></div>
     </div>
   </section>
 
   <!-- ================= 2. REGISTRASI ================= -->
   <section class="page" id="page-registrasi">
-    <div class="card-panel p-5 space-y-4">
-      <div><h3 class="font-bold text-base">Registrasi Anak</h3>
-      <p class="text-xs text-slate-500">Memberi nomor registrasi resmi pada anak yang telah diinput, format: 0001/AN/Bulan-Romawi/Tahun.</p></div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input class="form-input" placeholder="Cari nama anak / nomor registrasi..." id="q-registrasi" onkeyup="renderRegistrasiTables()">
-        <select class="form-input" id="f-reg-status" onchange="renderRegistrasiTables()">
-          <option value="">Semua</option><option value="belum">Belum Registrasi</option><option value="sudah">Sudah Registrasi</option>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Operasional</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Registrasi Anak</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Nomor resmi format <span class="font-semibold text-amber-600">0001/AN/Bulan-Romawi/Tahun</span></p>
+      </div>
+      <div class="card-panel px-4 py-2.5 flex items-center gap-3" id="reg-next-preview">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor berikutnya</div>
+        <div class="font-extrabold text-amber-600 text-sm" id="reg-next-nomor">—</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" id="reg-kpi">
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-800/90 text-amber-300 flex items-center justify-center shrink-0"><i data-lucide="users" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Anak</p><p class="text-xl font-extrabold leading-tight" id="rkpi-total">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Menunggu</p><p class="text-xl font-extrabold leading-tight" id="rkpi-belum">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0"><i data-lucide="badge-check" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Teregistrasi</p><p class="text-xl font-extrabold leading-tight" id="rkpi-sudah">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0"><i data-lucide="calendar" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tahun ini</p><p class="text-xl font-extrabold leading-tight" id="rkpi-tahun">0</p></div>
+      </div>
+    </div>
+
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, no surat, no registrasi, PK…" id="q-registrasi" oninput="onRegFilterChange()">
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="exportRegistrasiCSV()" title="Export"><i data-lucide="download" class="w-3.5 h-3.5"></i> CSV</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetRegFilters()" title="Reset"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        <select class="form-input" id="f-reg-jenis" onchange="onRegFilterChange()">
+          <option value="">Semua Jenis Litmas</option>
+          <option>Litmas Integrasi</option>
+          <option>Litmas Pendampingan ABH</option>
+        </select>
+        <select class="form-input" id="f-reg-wilayah" onchange="onRegFilterChange()"><option value="">Semua Wilayah</option></select>
+        <select class="form-input" id="f-reg-pk" onchange="onRegFilterChange()"><option value="">Semua PK</option></select>
+        <select class="form-input" id="f-reg-tahun" onchange="onRegFilterChange()">
+          <option value="">Semua Tahun Reg.</option>
         </select>
       </div>
-      <h4 class="font-semibold text-sm text-amber-600">Menunggu Registrasi</h4>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
-        <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
-          <th class="sortable" data-table="reg-belum" data-key="nomor_surat">No Surat<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-belum" data-key="nama_anak">Nama Anak<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-belum" data-key="jenis_kelamin">JK<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-belum" data-key="jenis_litmas">Jenis Litmas<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-belum" data-key="wilayah_asal">Wilayah<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-belum" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
-          <th class="text-center">Aksi</th></tr></thead>
-        <tbody id="tb-reg-belum"></tbody></table>
+
+      <!-- Tabs -->
+      <div class="flex flex-wrap gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-white/5 w-fit">
+        <button type="button" class="df-preset active" id="rtab-belum" onclick="setRegTab('belum')">
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i> Menunggu <span class="rt-pill-value ml-1" id="rtab-belum-n">0</span>
+        </button>
+        <button type="button" class="df-preset" id="rtab-sudah" onclick="setRegTab('sudah')">
+          <i data-lucide="badge-check" class="w-3.5 h-3.5"></i> Teregistrasi <span class="rt-pill-value ml-1" id="rtab-sudah-n">0</span>
+        </button>
+        <button type="button" class="df-preset" id="rtab-all" onclick="setRegTab('all')">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i> Semua
+        </button>
       </div>
-      <div class="pagination" id="pg-reg-belum"></div>
-      <h4 class="font-semibold text-sm text-emerald-600 pt-2">Sudah Teregistrasi</h4>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
-        <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
-          <th class="sortable" data-table="reg-sudah" data-key="reg_nomor">No Registrasi<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-sudah" data-key="reg_tanggal">Tgl Registrasi<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-sudah" data-key="nama_anak">Nama Anak<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-sudah" data-key="jenis_kelamin">JK<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-sudah" data-key="jenis_litmas">Jenis Litmas<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-sudah" data-key="wilayah_asal">Wilayah<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="reg-sudah" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
-          <th class="text-center">Aksi</th></tr></thead>
-        <tbody id="tb-reg-sudah"></tbody></table>
+
+      <!-- BELUM -->
+      <div id="reg-panel-belum">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-bold text-amber-600 flex items-center gap-1.5"><i data-lucide="hourglass" class="w-4 h-4"></i> Menunggu Registrasi</h4>
+          <span class="text-[11px] text-slate-400" id="reg-belum-count"></span>
+        </div>
+        <div class="table-wrap rounded-xl">
+          <table>
+            <thead>
+              <tr>
+                <th class="sortable" data-table="reg-belum" data-key="nama_anak">Anak / Surat<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-belum" data-key="tanggal_diterima">Diterima<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-belum" data-key="jenis_litmas">Jenis<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-belum" data-key="wilayah_asal">Wilayah<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-belum" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
+                <th class="text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tb-reg-belum"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pg-reg-belum"></div>
       </div>
-      <div class="pagination" id="pg-reg-sudah"></div>
+
+      <!-- SUDAH -->
+      <div id="reg-panel-sudah" class="hidden">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-bold text-emerald-600 flex items-center gap-1.5"><i data-lucide="badge-check" class="w-4 h-4"></i> Sudah Teregistrasi</h4>
+          <span class="text-[11px] text-slate-400" id="reg-sudah-count"></span>
+        </div>
+        <div class="table-wrap rounded-xl">
+          <table>
+            <thead>
+              <tr>
+                <th class="sortable" data-table="reg-sudah" data-key="reg_nomor">No. Registrasi<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-sudah" data-key="reg_tanggal">Tgl Reg.<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-sudah" data-key="nama_anak">Anak<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-sudah" data-key="jenis_litmas">Jenis<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-sudah" data-key="wilayah_asal">Wilayah<span class="sort-arrow"></span></th>
+                <th class="sortable" data-table="reg-sudah" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
+                <th class="text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tb-reg-sudah"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pg-reg-sudah"></div>
+      </div>
     </div>
   </section>
 
   <!-- ================= 3. ADJUDIKASI ================= -->
   <section class="page" id="page-adjudikasi">
-    <div class="card-panel p-5 space-y-4">
-      <div><h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="scale" class="w-5 h-5 text-amber-500"></i>Tracking Adjudikasi</h3>
-      <p class="text-xs text-slate-500">Diversi berjenjang (Kepolisian → Kejaksaan → Pengadilan, gagal berlanjut ke Persidangan) atau langsung Persidangan hingga putusan hakim.</p></div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <input class="form-input" placeholder="Cari nama anak / no registrasi..." id="q-adjudikasi" onkeyup="renderAdjudikasiTable()">
-        <select class="form-input" id="f-adj-jalur" onchange="renderAdjudikasiTable()"><option value="">Semua Jalur</option><option value="Diversi">Diversi</option><option value="Persidangan">Persidangan</option><option value="Belum">Belum Ditentukan</option></select>
-        <select class="form-input" id="f-adj-status" onchange="renderAdjudikasiTable()"><option value="">Semua Status</option><option value="Berjalan">Berjalan</option><option value="Selesai">Selesai</option></select>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Operasional</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Tracking Adjudikasi</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Diversi berjenjang (Polisi → Jaksa → Pengadilan) atau Persidangan hingga putusan</p>
       </div>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
-        <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
-          <th class="sortable" data-table="adjudikasi" data-key="reg_nomor">No Registrasi<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="adjudikasi" data-key="nama_anak">Nama Anak<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="adjudikasi" data-key="jalur">Jalur<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="adjudikasi" data-key="tahap">Tahap Saat Ini<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="adjudikasi" data-key="status">Status<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="adjudikasi" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
-          <th class="text-center">Kelola</th></tr></thead>
-        <tbody id="tb-adjudikasi"></tbody></table>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5" id="adj-kpi">
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-800/90 text-amber-300 flex items-center justify-center shrink-0"><i data-lucide="scale" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Teregistrasi</p><p class="text-xl font-extrabold leading-tight" id="akpi-total">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="loader" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Berjalan</p><p class="text-xl font-extrabold leading-tight" id="akpi-berjalan">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Selesai</p><p class="text-xl font-extrabold leading-tight" id="akpi-selesai">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-500 flex items-center justify-center shrink-0"><i data-lucide="handshake" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Diversi</p><p class="text-xl font-extrabold leading-tight" id="akpi-diversi">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-pink-500/15 text-pink-500 flex items-center justify-center shrink-0"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Persidangan</p><p class="text-xl font-extrabold leading-tight" id="akpi-sidang">0</p></div>
+      </div>
+    </div>
+
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, no registrasi, PK, wilayah…" id="q-adjudikasi" oninput="onAdjFilterChange()">
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="exportAdjudikasiCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> CSV</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetAdjFilters()"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        <select class="form-input" id="f-adj-jalur" onchange="onAdjFilterChange()">
+          <option value="">Semua Jalur</option>
+          <option value="Diversi">Diversi</option>
+          <option value="Persidangan">Persidangan</option>
+          <option value="Belum">Belum Ditentukan</option>
+        </select>
+        <select class="form-input" id="f-adj-status" onchange="onAdjFilterChange()">
+          <option value="">Semua Status</option>
+          <option value="Berjalan">Berjalan</option>
+          <option value="Selesai">Selesai</option>
+        </select>
+        <select class="form-input" id="f-adj-wilayah" onchange="onAdjFilterChange()"><option value="">Semua Wilayah</option></select>
+        <select class="form-input" id="f-adj-pk" onchange="onAdjFilterChange()"><option value="">Semua PK</option></select>
+      </div>
+
+      <div class="flex flex-wrap gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-white/5 w-fit">
+        <button type="button" class="df-preset active" id="atab-all" onclick="setAdjTab('all')">Semua <span class="rt-pill-value ml-1" id="atab-all-n">0</span></button>
+        <button type="button" class="df-preset" id="atab-belum" onclick="setAdjTab('belum')">Belum Jalur <span class="rt-pill-value ml-1" id="atab-belum-n">0</span></button>
+        <button type="button" class="df-preset" id="atab-berjalan" onclick="setAdjTab('berjalan')">Berjalan <span class="rt-pill-value ml-1" id="atab-berjalan-n">0</span></button>
+        <button type="button" class="df-preset" id="atab-selesai" onclick="setAdjTab('selesai')">Selesai <span class="rt-pill-value ml-1" id="atab-selesai-n">0</span></button>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] text-slate-400" id="adj-count"></span>
+      </div>
+
+      <div class="table-wrap rounded-xl">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" data-table="adjudikasi" data-key="nama_anak">Anak / Registrasi<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="adjudikasi" data-key="jalur">Jalur<span class="sort-arrow"></span></th>
+              <th>Progres</th>
+              <th class="sortable" data-table="adjudikasi" data-key="tahap">Tahap Saat Ini<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="adjudikasi" data-key="status">Status<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="adjudikasi" data-key="nama_pk">PK<span class="sort-arrow"></span></th>
+              <th class="text-center">Kelola</th>
+            </tr>
+          </thead>
+          <tbody id="tb-adjudikasi"></tbody>
+        </table>
       </div>
       <div class="pagination" id="pg-adjudikasi"></div>
     </div>
@@ -270,18 +588,98 @@
 
   <!-- ================= 5. DATA PK ================= -->
   <section class="page" id="page-pk">
-    <div class="card-panel p-5">
-      <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-base">Data Pembimbing Kemasyarakatan (PK)</h3>
-      <button onclick="openPkModal()" class="btn btn-primary btn-sm admin-only"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah PK</button></div>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
-        <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
-          <th class="w-10">No</th>
-          <th class="sortable" data-table="pk" data-key="name">Nama PK<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="pk" data-key="int">Litmas Integrasi<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="pk" data-key="pnd">Litmas Pendampingan ABH<span class="sort-arrow"></span></th>
-          <th class="sortable" data-table="pk" data-key="total">Total Kasus<span class="sort-arrow"></span></th>
-          <th class="text-center w-28">Aksi</th></tr></thead>
-        <tbody id="tb-pk"></tbody></table>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Master Data</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Pembimbing Kemasyarakatan (PK)</h3>
+        <p class="text-xs text-slate-500 mt-1">Profil, beban kerja, status aktif, dan distribusi kasus per PK</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="exportPkCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
+        <button type="button" class="btn btn-primary btn-sm admin-only" onclick="openPkModal()"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah PK</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5" id="pk-kpi-row">
+      <div class="card-panel p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0"><i data-lucide="users" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total PK</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-total">0</p></div>
+      </div>
+      <div class="card-panel p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Aktif</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-aktif">0</p></div>
+      </div>
+      <div class="card-panel p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-500/15 text-slate-500 flex items-center justify-center shrink-0"><i data-lucide="user-x" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nonaktif</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-nonaktif">0</p></div>
+      </div>
+      <div class="card-panel p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0"><i data-lucide="briefcase" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Kasus</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-kasus">0</p></div>
+      </div>
+      <div class="card-panel p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-500 flex items-center justify-center shrink-0"><i data-lucide="gauge" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rata-rata/PK</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-avg">0</p></div>
+      </div>
+      <div class="card-panel p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0"><i data-lucide="flame" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Beban Tertinggi</p><p class="text-sm font-extrabold leading-tight truncate" id="pkkpi-top">-</p></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+      <div class="card-panel p-5 lg:col-span-2">
+        <h4 class="font-bold text-sm mb-0.5">Distribusi Beban Kerja PK</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Kasus aktif per PK (klik bar untuk detail)</p>
+        <div class="relative h-72"><canvas id="ch-pk-beban"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Komposisi Status</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Aktif vs Nonaktif</p>
+        <div class="relative h-56"><canvas id="ch-pk-status"></canvas></div>
+        <div class="mt-3 space-y-2" id="pk-workload-legend"></div>
+      </div>
+    </div>
+
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, NIP, jabatan, wilayah fokus…" id="q-pk" oninput="onPkFilterChange()">
+        </div>
+        <select class="form-input" style="width:auto;min-width:140px" id="f-pk-status" onchange="onPkFilterChange()">
+          <option value="">Semua Status</option>
+          <option value="Aktif">Aktif</option>
+          <option value="Nonaktif">Nonaktif</option>
+        </select>
+        <select class="form-input" style="width:auto;min-width:160px" id="f-pk-beban" onchange="onPkFilterChange()">
+          <option value="">Semua Beban</option>
+          <option value="tinggi">Beban Tinggi (≥8)</option>
+          <option value="sedang">Beban Sedang (3–7)</option>
+          <option value="rendah">Beban Rendah (0–2)</option>
+        </select>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetPkFilters()" title="Reset filter"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] text-slate-400" id="pk-count"></span>
+      </div>
+      <div class="table-wrap rounded-xl">
+        <table>
+          <thead>
+            <tr>
+              <th class="w-10">No</th>
+              <th class="sortable" data-table="pk" data-key="name">PK / Profil<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="pk" data-key="jabatan">Jabatan<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="pk" data-key="status">Status<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="pk" data-key="int">Integrasi<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="pk" data-key="pnd">Pendampingan<span class="sort-arrow"></span></th>
+              <th class="sortable" data-table="pk" data-key="total">Total<span class="sort-arrow"></span></th>
+              <th>Beban</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tb-pk"></tbody>
+        </table>
       </div>
       <div class="pagination" id="pg-pk"></div>
     </div>
@@ -335,15 +733,88 @@
 
   <!-- ================= 9. STATISTIK ================= -->
   <section class="page" id="page-statistik">
+    <div class="mb-5">
+      <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Analitik Lengkap</p>
+      <h3 class="text-lg font-extrabold tracking-tight">Statistik &amp; Visualisasi</h3>
+      <p class="text-xs text-slate-400 mt-1">Filter tanggal mengikuti periode global · klik grafik untuk detail</p>
+    </div>
+    <div class="card-panel p-3 sm:p-4 mb-5 date-filter-bar">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
+          <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Periode
+        </span>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" class="df-preset" data-preset="all" onclick="applyDatePreset('all')">Semua</button>
+          <button type="button" class="df-preset" data-preset="thisMonth" onclick="applyDatePreset('thisMonth')">Bulan ini</button>
+          <button type="button" class="df-preset" data-preset="lastMonth" onclick="applyDatePreset('lastMonth')">Bulan lalu</button>
+          <button type="button" class="df-preset" data-preset="thisYear" onclick="applyDatePreset('thisYear')">Tahun ini</button>
+          <button type="button" class="df-preset" data-preset="last30" onclick="applyDatePreset('last30')">30 hari</button>
+          <button type="button" class="df-preset" data-preset="last90" onclick="applyDatePreset('last90')">90 hari</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
+          <input type="date" class="form-input df-input" id="df-from-st" onchange="syncDateFromStat('from')">
+          <span class="text-xs text-slate-400">s/d</span>
+          <input type="date" class="form-input df-input" id="df-to-st" onchange="syncDateFromStat('to')">
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-2 df-summary-st">Menampilkan semua data</p>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Beban Kerja PK per Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-pk"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Tren Bulanan per Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-trend"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jenis Litmas <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-jenis"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Status Adjudikasi <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-adj"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Statistik Jenis Tindak Pidana <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-perkara"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jumlah Sidang per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-sidang"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jumlah Putusan per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-putusan"></canvas></div></div>
-      <div class="card-panel p-5"><h4 class="font-bold text-sm mb-3">Jumlah Diversi Berhasil per Bulan <span class="text-[10px] font-normal text-slate-400">(klik untuk detail)</span></h4><div class="relative h-64"><canvas id="st-diversi-berhasil"></canvas></div></div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Beban Kerja PK per Jenis Litmas</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Stacked horizontal bar</p>
+        <div class="relative h-80"><canvas id="st-pk"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Tren Bulanan per Jenis Litmas</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Permintaan masuk per bulan</p>
+        <div class="relative h-80"><canvas id="st-trend"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Jenis Litmas</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Proporsi integrasi &amp; pendampingan</p>
+        <div class="relative h-64"><canvas id="st-jenis"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Status Adjudikasi</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Selesai vs masih berjalan</p>
+        <div class="relative h-64"><canvas id="st-adj"></canvas></div>
+      </div>
+      <div class="card-panel p-5 lg:col-span-2">
+        <h4 class="font-bold text-sm mb-0.5">Jenis Tindak Pidana</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Peringkat perkara (klik untuk detail)</p>
+        <div class="relative h-96"><canvas id="st-perkara"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Sidang per Bulan</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Jumlah jadwal sidang</p>
+        <div class="relative h-64"><canvas id="st-sidang"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Putusan per Bulan</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Putusan hakim terbit</p>
+        <div class="relative h-64"><canvas id="st-putusan"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Diversi Berhasil per Bulan</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Semua tingkat (Polsek–PN)</p>
+        <div class="relative h-64"><canvas id="st-diversi-berhasil"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Jenis Kelamin</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Distribusi gender anak</p>
+        <div class="relative h-64"><canvas id="st-jk"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Status Litmas</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Proses · Selesai · Pending</p>
+        <div class="relative h-64"><canvas id="st-status-litmas"></canvas></div>
+      </div>
+      <div class="card-panel p-5">
+        <h4 class="font-bold text-sm mb-0.5">Wilayah Kerja</h4>
+        <p class="text-[11px] text-slate-400 mb-3">Volume kasus per wilayah</p>
+        <div class="relative h-64"><canvas id="st-wilayah"></canvas></div>
+      </div>
     </div>
   </section>
 
