@@ -137,6 +137,7 @@ function syncPkListFromMaster(){
 }
 
 let allData = JSON.parse(localStorage.getItem('CICL_DATA')||'[]');
+let arsipData = JSON.parse(localStorage.getItem('CICL_ARSIP')||'[]');
 let gsheetUrl = localStorage.getItem('CICL_GAS_URL') || 'https://script.google.com/macros/s/AKfycbxtFxetSm7wc7poQF7bzxYRQ2wfl0buyAer3XvYqeahYhphkUZ7HqJzeN5SAJTSp5F1FA/exec';
 let geminiKey = localStorage.getItem('CICL_GEMINI_KEY') || '';
 const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
@@ -351,6 +352,8 @@ let pageState = {
   'reg-sudah': 1,
   adjudikasi: 1,
   pasca: 1,
+  integrasi: 1,
+  arsip: 1,
   pk: 1,
   wilayah: 1,
   kepolisian: 1
@@ -517,6 +520,7 @@ function initAuth(){
 }
 
 function saveAll(){ localStorage.setItem('CICL_DATA', JSON.stringify(allData)); }
+function saveArsip(){ localStorage.setItem('CICL_ARSIP', JSON.stringify(arsipData)); }
 function saveMaster(){
   localStorage.setItem('CICL_WILAYAH', JSON.stringify(WILAYAH_MASTER));
   localStorage.setItem('CICL_POLISI', JSON.stringify(KEPOLISIAN_MASTER));
@@ -650,7 +654,7 @@ function navigateTo(pageId){
     t.classList.add('active');
   }
   document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-page')===pageId));
-  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', pasca:'Pasca Adjudikasi (Bimbingan)', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
+  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', pasca:'Pasca Adjudikasi (Bimbingan)', integrasi:'Litmas Integrasi', arsip:'Arsip LPKA / Luar Wilayah', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
   const titleEl = document.getElementById('nav-title');
   if(titleEl){
     titleEl.style.animation = 'none';
@@ -2110,7 +2114,8 @@ function saveEditPutusan(id){
   };
   markLuarWilayahIfNeeded(item);
   if (isKlienLuarWilayah(item)) {
-    sendToSheet('update', { id: item.id, status_jenis: item.status_jenis || 'Selesai', status_klien: 'luar_wilayah' });
+    // Pindahkan ke sheet ArsipLuarWilayah (bukan hapus; tetap bisa diedit di menu Arsip)
+    archiveToLuarWilayah(item, 'Pidana Penjara LPKA — luar wilayah Bapas Lahat');
   }
   editPutusanState = null;
   persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim diperbarui','success');
@@ -2137,13 +2142,174 @@ function savePutusan(id){
   };
   markLuarWilayahIfNeeded(item);
   if (isKlienLuarWilayah(item)) {
-    sendToSheet('update', { id: item.id, status_jenis: item.status_jenis || 'Selesai', status_klien: 'luar_wilayah' });
+    // Pindahkan ke sheet ArsipLuarWilayah (bukan hapus; tetap bisa diedit di menu Arsip)
+    archiveToLuarWilayah(item, 'Pidana Penjara LPKA — luar wilayah Bapas Lahat');
   }
   persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim disimpan, adjudikasi selesai','success');
 }
 
 // ==================== 4. PASCA ADJUDIKASI ====================
-function eligibleForPasca(){ return allData.filter(d=>d.registrasi && getAdjStatus(d)==='Selesai'); }
+
+async function archiveToLuarWilayah(item, alasan){
+  if (!item || !item.id) return;
+  try {
+    if (typeof postToSheetJSON === 'function' && gsheetUrl) {
+      await postToSheetJSON('archive_luar_wilayah', {
+        id: item.id,
+        alasan: alasan || 'Pidana Penjara LPKA — luar wilayah Bapas Lahat'
+      });
+    }
+  } catch (e) {
+    console.error('archiveToLuarWilayah', e);
+    showToast('Gagal pindah ke arsip Sheet: ' + (e.message || e) + ' — data tetap di lokal sebagai arsip', 'error');
+  }
+  // Lokal: pindah dari allData → arsipData
+  const mapped = (typeof mapLitmasRows === 'function') ? mapLitmasRows([item])[0] : item;
+  mapped.status_klien = 'luar_wilayah';
+  mapped.tanggal_arsip = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  mapped.alasan_arsip = alasan || '';
+  arsipData = (arsipData || []).filter(d => String(d.id) !== String(item.id));
+  arsipData.unshift(mapped);
+  allData = allData.filter(d => String(d.id) !== String(item.id));
+  saveAll();
+  saveArsip();
+  if (typeof closeModal === 'function') closeModal();
+  if (typeof renderAllViews === 'function') renderAllViews();
+  showToast('Data dipindah ke Arsip LPKA / Luar Wilayah (tetap bisa diedit di menu Arsip)', 'success');
+}
+
+async function restoreFromArsip(id){
+  if (guardWrite()) return;
+  if (!confirm('Kembalikan data ini ke daftar aktif (DataLitmas)?')) return;
+  try {
+    if (typeof postToSheetJSON === 'function' && gsheetUrl) {
+      await postToSheetJSON('restore_arsip', { id });
+    }
+  } catch (e) {
+    showToast('Gagal restore di Sheet: ' + (e.message || e), 'error');
+    return;
+  }
+  const item = (arsipData || []).find(d => String(d.id) === String(id));
+  if (item) {
+    delete item.status_klien;
+    delete item.bukan_klien_bapas;
+    delete item.tanggal_arsip;
+    delete item.alasan_arsip;
+    allData.unshift(item);
+    arsipData = arsipData.filter(d => String(d.id) !== String(id));
+    saveAll();
+    saveArsip();
+    renderAllViews();
+    showToast('Data dikembalikan ke daftar aktif', 'success');
+  }
+}
+
+function renderIntegrasiTable(){
+  const tbody = document.getElementById('tb-integrasi');
+  if (!tbody) return;
+  const q = (document.getElementById('q-integrasi')?.value || '').toLowerCase().trim();
+  let list = allData.filter(d => isLitmasIntegrasi(d));
+  if (q) {
+    list = list.filter(d => {
+      const hay = [d.nama_anak, d.nomor_surat, d.nama_pk, d.wilayah_asal, d.registrasi?.nomor, d.jenis_perkara]
+        .map(x => String(x || '').toLowerCase()).join(' ');
+      return hay.includes(q);
+    });
+  }
+  list = sortByTable(list, 'integrasi', (d, key) => {
+    if (key === 'reg') return d.registrasi?.nomor || '';
+    return d[key] || '';
+  });
+  const pg = paginate(list, 'integrasi');
+  const countEl = document.getElementById('integrasi-count');
+  if (countEl) countEl.textContent = list.length + ' data Litmas Integrasi';
+
+  tbody.innerHTML = pg.slice.length ? pg.slice.map(d => `
+    <tr>
+      <td class="font-semibold">${d.nama_anak || '-'}</td>
+      <td class="text-xs">${d.registrasi?.nomor || '<span class="text-amber-600">Belum reg.</span>'}</td>
+      <td class="text-xs">${d.nomor_surat || '-'}</td>
+      <td class="text-xs">${shortText(d.jenis_perkara, 40)}</td>
+      <td class="text-xs">${shortText(d.wilayah_asal, 24)}</td>
+      <td class="text-xs">${shortText(d.nama_pk, 20)}</td>
+      <td><span class="badge ${d.registrasi ? 'badge-green' : 'badge-amber'}">${d.registrasi ? 'Teregistrasi' : 'Belum'}</span></td>
+      <td class="text-center whitespace-nowrap">
+        ${isAdmin() && d.registrasi && !d.pasca_adjudikasi ? `<button class="btn btn-gold btn-sm" onclick="openAddPascaFromIntegrasi('${d.id}')"><i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i> Bimbingan</button>` : ''}
+        ${d.pasca_adjudikasi ? `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>` : ''}
+      </td>
+    </tr>
+  `).join('') : `<tr><td colspan="8" class="text-center py-10 text-slate-400">Belum ada data Litmas Integrasi.</td></tr>`;
+  renderPagination('pg-integrasi', 'integrasi', pg.total, pg.pages, pg.page);
+  lucide.createIcons();
+}
+
+function openAddPascaFromIntegrasi(id){
+  const item = allData.find(d => String(d.id) === String(id));
+  if (!item) return;
+  if (!item.registrasi) {
+    showToast('Registrasi dulu sebelum menambah bimbingan', 'error');
+    return;
+  }
+  if (!item.pasca_adjudikasi) {
+    item.pasca_adjudikasi = {
+      jenis: 'Pembebasan Bersyarat (PB)',
+      asal_lpka: '',
+      tanggal_mulai: '',
+      tanggal_selesai: '',
+      pk_pembimbing: item.nama_pk || '',
+      status: 'Dalam Bimbingan',
+      keterangan: 'Dari Litmas Integrasi'
+    };
+    saveAll();
+  }
+  openPascaModal(id);
+}
+
+function renderArsipTable(){
+  const tbody = document.getElementById('tb-arsip');
+  if (!tbody) return;
+  const q = (document.getElementById('q-arsip')?.value || '').toLowerCase().trim();
+  let list = (arsipData || []).slice();
+  if (q) {
+    list = list.filter(d => {
+      const hay = [d.nama_anak, d.nomor_surat, d.nama_pk, d.wilayah_asal, d.registrasi?.nomor || d.nomor_registrasi, d.alasan_arsip]
+        .map(x => String(x || '').toLowerCase()).join(' ');
+      return hay.includes(q);
+    });
+  }
+  const pg = paginate(list, 'arsip');
+  const countEl = document.getElementById('arsip-count');
+  if (countEl) countEl.textContent = list.length + ' data arsip';
+
+  tbody.innerHTML = pg.slice.length ? pg.slice.map(d => {
+    const reg = d.registrasi?.nomor || d.nomor_registrasi || '-';
+    return `<tr>
+      <td class="font-semibold">${d.nama_anak || '-'}</td>
+      <td class="text-xs">${reg}</td>
+      <td class="text-xs">${shortText(d.jenis_perkara, 36)}</td>
+      <td class="text-xs">${shortText(d.wilayah_asal, 20)}</td>
+      <td class="text-xs">${d.tanggal_arsip || '-'}</td>
+      <td class="text-xs max-w-[180px]">${shortText(d.alasan_arsip, 48)}</td>
+      <td class="text-center whitespace-nowrap">
+        ${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="restoreFromArsip('${d.id}')" title="Kembalikan ke aktif"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i> Restore</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="text-center py-10 text-slate-400">Belum ada data arsip LPKA / luar wilayah.</td></tr>`;
+  renderPagination('pg-arsip', 'arsip', pg.total, pg.pages, pg.page);
+  lucide.createIcons();
+}
+
+
+function eligibleForPasca(){
+  return allData.filter(d=>{
+    if (!d.registrasi) return false;
+    if (isKlienLuarWilayah(d)) return false;
+    // Litmas Integrasi: setelah registrasi langsung bisa bimbingan (proses sidang sudah selesai)
+    if (isLitmasIntegrasi(d)) return true;
+    // Pendampingan ABH: hanya setelah adjudikasi selesai
+    return getAdjStatus(d) === 'Selesai';
+  });
+}
 function getPascaList(){ return allData.filter(d=>d.pasca_adjudikasi); }
 function openPascaModal(id){
   const item = allData.find(d=>d.id===id); if(!item) return;
@@ -3900,6 +4066,21 @@ async function syncDataFromSheets(manual){
 
     allData = mapLitmasRows(litmas);
     saveAll();
+    // Muat arsip LPKA (sheet terpisah)
+    try {
+      const aUrl = normalizeGasUrl(gsheetUrl);
+      if (aUrl) {
+        const sep = aUrl.includes('?') ? '&' : '?';
+        const aRes = await fetch(aUrl + sep + 'resource=arsip', { method:'GET', redirect:'follow', cache:'no-store' });
+        const aRaw = await aRes.text();
+        let aJson = null;
+        try { aJson = JSON.parse(aRaw); } catch(_){}
+        if (Array.isArray(aJson)) arsipData = mapLitmasRows(aJson);
+        else if (aJson && Array.isArray(aJson.data)) arsipData = mapLitmasRows(aJson.data);
+        saveArsip();
+      }
+    } catch (ae) { console.warn('sync arsip', ae); }
+
 
     const masterNote = await applyMasterFromRemote(pkRemote, wilRemote, polRemote, manual);
     const ms = Math.round(performance.now() - t0);
@@ -4048,6 +4229,8 @@ function renderAllViews(){
   renderRegistrasiTables();
   renderAdjudikasiTable();
   renderPascaTable();
+  try { renderIntegrasiTable(); } catch(e) {}
+  try { renderArsipTable(); } catch(e) {}
   renderPkTable();
   renderWilayahTable();
   renderKepolisianTable();
