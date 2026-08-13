@@ -235,7 +235,7 @@ function renderTrackKategoriStats(){
   const summary = document.getElementById('track-kat-summary');
   if (!grid) return;
   // Hitung dari data yang sudah registrasi (sama seperti tracking)
-  const base = (allData || []).filter(d => d.registrasi);
+  const base = (allData || []).filter(d => isTrackingEligible(d));
   const counts = { "1":0, "2":0, "3":0, "4":0, "5":0, "6":0, "lain":0 };
   base.forEach(d=>{
     let k = String(d.kategori_tindak_pidana || '').trim();
@@ -266,6 +266,70 @@ function renderTrackKategoriStats(){
       : 'Belum ada data teregistrasi';
   }
 }
+
+
+// ==================== ATURAN BISNIS KLIEN & TRACKING ====================
+/**
+ * Litmas Integrasi = anak sudah melalui proses peradilan (untuk integrasi).
+ * Tidak perlu dilacak di menu Tracking adjudikasi.
+ */
+function isLitmasIntegrasi(d){
+  return /integrasi/i.test(String(d?.jenis_litmas || ''));
+}
+
+/**
+ * Deteksi putusan yang menempatkan anak di LPKA / pidana penjara
+ * → bukan lagi klien aktif Bapas Lahat (di luar wilayah kerja).
+ */
+function isKlienLuarWilayah(d){
+  if (!d) return false;
+  if (d.status_klien === 'luar_wilayah' || d.bukan_klien_bapas === true) return true;
+  const a = d.adjudikasi || {};
+  const put = a.persidangan?.putusan || {};
+  if (put.jenis_putusan === 'LPKA' || put.jenis_putusan === 'Pidana Penjara LPKA') return true;
+  if (put.tempat === 'LPKA') return true;
+  const hay = [
+    put.isi, put.jenis, put.jenis_putusan, put.amar, put.catatan,
+    a.hasil_adjudikasi, a.detail_putusan
+  ].map(x => String(x || '').toLowerCase()).join(' ');
+  if (!hay.trim()) return false;
+  const diLpkA = /\blpka\b/.test(hay) || /lembaga pembinaan khusus anak/.test(hay);
+  const pidanaPenjara = /pidana\s*penjara/.test(hay) || /\bpenjara\b/.test(hay) || /pemidanaan/.test(hay);
+  // Putusan LPKA atau pidana penjara (di LPKA) → luar wilayah
+  if (diLpkA) return true;
+  if (pidanaPenjara && (diLpkA || /lpka|anak/.test(hay))) return true;
+  return false;
+}
+
+/** Layak tampil di menu Tracking (bukan Integrasi, sudah registrasi). */
+function isTrackingEligible(d){
+  if (!d || !d.registrasi) return false;
+  if (isLitmasIntegrasi(d)) return false;
+  return true;
+}
+
+/** Masih klien aktif Bapas Lahat (untuk KPI bimbingan, beban PK aktif, dll). */
+function isKlienAktifBapas(d){
+  if (!d) return false;
+  if (isKlienLuarWilayah(d)) return false;
+  const st = String(d.status_jenis || '').toLowerCase();
+  if (st === 'selesai' || st === 'dibatalkan' || st === 'batal') return false;
+  return true;
+}
+
+function markLuarWilayahIfNeeded(item){
+  if (!item) return item;
+  if (isKlienLuarWilayah(item)) {
+    item.status_klien = 'luar_wilayah';
+    item.bukan_klien_bapas = true;
+    // Status operasional
+    if (!item.status_jenis || item.status_jenis === 'Proses') {
+      item.status_jenis = 'Selesai';
+    }
+  }
+  return item;
+}
+
 
 
 // ID folder Google Drive tujuan unggahan berkas (dikelola lewat Code.gs / Apps Script).
@@ -1654,7 +1718,7 @@ function getFilteredAdjudikasi(){
   const wl = document.getElementById('f-adj-wilayah')?.value||'';
   const pk = document.getElementById('f-adj-pk')?.value||'';
   const kat = document.getElementById('f-adj-kategori')?.value||'';
-  return allData.filter(d=>d.registrasi).filter(d=>{
+  return allData.filter(d=>isTrackingEligible(d)).filter(d=>{
     if (kat) {
       let k = String(d.kategori_tindak_pidana || '').trim();
       if (!k) k = inferKategoriFromPerkara(d.jenis_perkara);
@@ -1732,7 +1796,7 @@ function renderAdjudikasiTable(){
   const tbody = document.getElementById('tb-adjudikasi'); if(!tbody) return;
 
   // KPI from all registered (ignore tab, respect light search filters except tab)
-  const base = allData.filter(d=>d.registrasi);
+  const base = allData.filter(d=>isTrackingEligible(d));
   const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
   set('akpi-total', base.length);
   set('akpi-berjalan', base.filter(d=>d.adjudikasi?.jalur && getAdjStatus(d)==='Berjalan').length);
@@ -1764,14 +1828,16 @@ function renderAdjudikasiTable(){
     const tahap = getAdjTahapLabel(d);
     const status = getAdjStatus(d);
     const jalur = d.adjudikasi?.jalur || '';
-    return `<tr class="align-top">
+    const luar = isKlienLuarWilayah(d);
+    return `<tr class="align-top ${luar ? 'opacity-70' : ''}">
       <td>
         <div class="flex items-start gap-2.5 min-w-[200px]">
           <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
           <div class="min-w-0">
-            <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
-            <p class="text-[11px] font-semibold text-amber-600/90 truncate">${d.registrasi?.nomor||'-'}</p>
+            <p class="font-bold text-sm leading-snug truncate ${luar ? 'line-through text-slate-400' : ''}">${d.nama_anak||'-'}</p>
+            <p class="text-[11px] font-semibold text-amber-600/90 truncate ${luar ? 'line-through' : ''}">${d.registrasi?.nomor||'-'}</p>
             <p class="text-[10px] text-slate-400 truncate">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '),28)}</p>
+            ${luar ? '<p class="text-[10px] font-bold text-red-500 mt-0.5">Bukan klien Bapas Lahat · LPKA / luar wilayah</p>' : ''}
           </div>
         </div>
       </td>
@@ -1953,7 +2019,19 @@ function renderPersidanganForm(item){
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div><label class="fl">Tanggal Putusan</label><input type="date" class="form-input" id="pt-tgl"></div>
         <div><label class="fl">Nomor Putusan</label><input class="form-input" id="pt-nomor"></div>
-        <div><label class="fl">Isi Putusan Singkat</label><input class="form-input" id="pt-isi"></div>
+        <div><label class="fl">Jenis Putusan</label>
+          <select class="form-input" id="pt-jenis">
+            <option value="">Pilih jenis…</option>
+            <option value="Pidana Penjara LPKA">Pidana Penjara (LPKA) — luar wilayah Bapas</option>
+            <option value="Pidana Bersyarat">Pidana Bersyarat / Percobaan</option>
+            <option value="Pelatihan Kerja">Pelatihan Kerja</option>
+            <option value="Pembinaan Lain">Pembinaan di Bapas / Lainnya</option>
+            <option value="Dilepas">Dilepas / Tidak Pidana</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="sm:col-span-3"><label class="fl">Isi Putusan Singkat</label><input class="form-input" id="pt-isi" placeholder="Ringkasan amar putusan"></div>
+        <p class="sm:col-span-3 text-[11px] text-slate-500">Jika pilih <b>Pidana Penjara (LPKA)</b>, anak ditandai <b>bukan klien Bapas Lahat</b> (di luar wilayah kerja) dan namanya dicoret di daftar Tracking.</p>
       </div>
       <button class="btn btn-gold btn-sm mt-2" onclick="savePutusan('${item.id}')">Simpan Putusan</button>
     </div>` : (!putusanDone ? `<p class="text-sm text-slate-500">Putusan belum tersedia.</p>` : (editingPutusan ? `
@@ -1962,7 +2040,18 @@ function renderPersidanganForm(item){
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div><label class="fl">Tanggal Putusan</label><input type="date" class="form-input" id="ept-tgl" value="${p.putusan.tanggal||''}"></div>
         <div><label class="fl">Nomor Putusan</label><input class="form-input" id="ept-nomor" value="${p.putusan.nomor||''}"></div>
-        <div><label class="fl">Isi Putusan Singkat</label><input class="form-input" id="ept-isi" value="${p.putusan.isi||''}"></div>
+        <div><label class="fl">Jenis Putusan</label>
+          <select class="form-input" id="ept-jenis">
+            <option value="">Pilih jenis…</option>
+            <option value="Pidana Penjara LPKA" ${p.putusan.jenis_putusan==='Pidana Penjara LPKA'?'selected':''}>Pidana Penjara (LPKA) — luar wilayah Bapas</option>
+            <option value="Pidana Bersyarat" ${p.putusan.jenis_putusan==='Pidana Bersyarat'?'selected':''}>Pidana Bersyarat / Percobaan</option>
+            <option value="Pelatihan Kerja" ${p.putusan.jenis_putusan==='Pelatihan Kerja'?'selected':''}>Pelatihan Kerja</option>
+            <option value="Pembinaan Lain" ${p.putusan.jenis_putusan==='Pembinaan Lain'?'selected':''}>Pembinaan di Bapas / Lainnya</option>
+            <option value="Dilepas" ${p.putusan.jenis_putusan==='Dilepas'?'selected':''}>Dilepas / Tidak Pidana</option>
+            <option value="Lainnya" ${p.putusan.jenis_putusan==='Lainnya'?'selected':''}>Lainnya</option>
+          </select>
+        </div>
+        <div class="sm:col-span-3"><label class="fl">Isi Putusan Singkat</label><input class="form-input" id="ept-isi" value="${p.putusan.isi||''}"></div>
       </div>
       <div class="flex gap-2 mt-2">
         <button class="btn btn-gold btn-sm" onclick="saveEditPutusan('${item.id}')">Simpan Perubahan</button>
@@ -1970,7 +2059,11 @@ function renderPersidanganForm(item){
       </div>
     </div>` : `<div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-sm">
       <div class="flex justify-between items-start gap-2">
-        <div><b>Putusan Hakim:</b> ${p.putusan.nomor||'-'} tanggal ${fmtDate(p.putusan.tanggal)}<br>${p.putusan.isi||''}</div>
+        <div><b>Putusan Hakim:</b> ${p.putusan.nomor||'-'} tanggal ${fmtDate(p.putusan.tanggal)}
+        ${p.putusan.jenis_putusan ? `<br><span class="badge ${p.putusan.jenis_putusan==='Pidana Penjara LPKA'?'badge-pink':'badge-slate'}">${p.putusan.jenis_putusan}</span>` : ''}
+        <br>${p.putusan.isi||''}
+        ${isKlienLuarWilayah(item) ? '<br><span class="text-[11px] font-bold text-red-500">Bukan klien Bapas Lahat — berada di LPKA / luar wilayah kerja</span>' : ''}
+      </div>
         ${isAdmin() ? `<button class="btn btn-ghost btn-sm shrink-0" onclick="toggleEditPutusan('${item.id}')" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>` : ''}
       </div>
     </div>`))}
@@ -2009,7 +2102,16 @@ function saveEditPutusan(id){
   const item = allData.find(d=>d.id===id);
   const tgl = document.getElementById('ept-tgl').value;
   if(!tgl){ showToast('Isi tanggal putusan','error'); return; }
-  item.adjudikasi.persidangan.putusan = { tanggal: tgl, nomor: document.getElementById('ept-nomor').value, isi: document.getElementById('ept-isi').value };
+  item.adjudikasi.persidangan.putusan = {
+    tanggal: tgl,
+    nomor: document.getElementById('ept-nomor').value,
+    isi: document.getElementById('ept-isi').value,
+    jenis_putusan: document.getElementById('ept-jenis')?.value || ''
+  };
+  markLuarWilayahIfNeeded(item);
+  if (isKlienLuarWilayah(item)) {
+    sendToSheet('update', { id: item.id, status_jenis: item.status_jenis || 'Selesai', status_klien: 'luar_wilayah' });
+  }
   editPutusanState = null;
   persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim diperbarui','success');
 }
@@ -2027,7 +2129,16 @@ function savePutusan(id){
   const item = allData.find(d=>d.id===id);
   const tgl = document.getElementById('pt-tgl').value;
   if(!tgl){ showToast('Isi tanggal putusan','error'); return; }
-  item.adjudikasi.persidangan.putusan = { tanggal: tgl, nomor: document.getElementById('pt-nomor').value, isi: document.getElementById('pt-isi').value };
+  item.adjudikasi.persidangan.putusan = {
+    tanggal: tgl,
+    nomor: document.getElementById('pt-nomor').value,
+    isi: document.getElementById('pt-isi').value,
+    jenis_putusan: document.getElementById('pt-jenis')?.value || ''
+  };
+  markLuarWilayahIfNeeded(item);
+  if (isKlienLuarWilayah(item)) {
+    sendToSheet('update', { id: item.id, status_jenis: item.status_jenis || 'Selesai', status_klien: 'luar_wilayah' });
+  }
   persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim disimpan, adjudikasi selesai','success');
 }
 
