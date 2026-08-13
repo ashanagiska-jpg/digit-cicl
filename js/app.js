@@ -303,6 +303,39 @@ function isKlienLuarWilayah(d){
 }
 
 /** Layak tampil di menu Tracking (bukan Integrasi, sudah registrasi). */
+/**
+ * Gabungkan data aktif + arsip LPKA agar tetap tampil di Permintaan/Registrasi/Tracking (dicoret).
+ * Tidak menghitung ganda jika id sudah ada di allData.
+ */
+function getAllIncludingArsip(){
+  const active = Array.isArray(allData) ? allData : [];
+  const ids = new Set(active.map(d => String(d.id)));
+  const archived = (Array.isArray(arsipData) ? arsipData : [])
+    .filter(d => d && !ids.has(String(d.id)))
+    .map(d => ({
+      ...d,
+      status_klien: d.status_klien || 'luar_wilayah',
+      bukan_klien_bapas: true,
+      _from_arsip: true,
+      // Pastikan objek registrasi ada untuk tampilan
+      registrasi: d.registrasi || (d.nomor_registrasi
+        ? { nomor: String(d.nomor_registrasi), tanggal: d.tanggal_registrasi || null, tahun: null }
+        : null)
+    }));
+  return active.concat(archived);
+}
+
+function rowArsipClass(d){
+  return isKlienLuarWilayah(d) || d?._from_arsip ? 'opacity-70' : '';
+}
+function nameArsipClass(d){
+  return isKlienLuarWilayah(d) || d?._from_arsip ? 'line-through text-slate-400' : '';
+}
+function arsipBadgeHtml(d){
+  if (!(isKlienLuarWilayah(d) || d?._from_arsip)) return '';
+  return '<span class="badge badge-pink" style="font-size:9px;padding:1px 6px" title="Arsip LPKA / luar wilayah">Arsip LPKA</span>';
+}
+
 function isTrackingEligible(d){
   if (!d || !d.registrasi) return false;
   if (isLitmasIntegrasi(d)) return false;
@@ -1168,7 +1201,7 @@ function getFilteredPermintaan(){
   const pk = document.getElementById('f-pk-p')?.value||'';
   const from = parseDay(document.getElementById('f-from-p')?.value);
   const to = parseDay(document.getElementById('f-to-p')?.value);
-  return allData.filter(d=>{
+  return getAllIncludingArsip().filter(d=>{
     if(q){
       const hay = [d.nama_anak,d.nomor_surat,d.jenis_perkara,d.nama_pk,d.kepolisian,d.wilayah_asal,d.keterangan]
         .map(x=>(x||'').toLowerCase()).join(' ');
@@ -1296,13 +1329,13 @@ function renderPermintaanTable(){
   document.getElementById('pv-card')?.classList.toggle('active', permintaanView==='card');
 
   if(tbody){
-    tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>`
-      <tr class="align-top">
+    tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>{ const luar = isKlienLuarWilayah(d)||d._from_arsip; return `
+      <tr class="align-top ${rowArsipClass(d)}">
         <td>
           <div class="flex items-start gap-2.5 min-w-[200px]">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
             <div class="min-w-0">
-              <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+              <p class="font-bold text-sm leading-snug truncate">${luar?`<span class="line-through text-slate-400">${d.nama_anak||'-'}</span> ${arsipBadgeHtml(d)}`:(d.nama_anak||'-')}</p>
               <p class="text-[11px] text-slate-400 truncate">${d.nomor_surat||'-'} · ${d.jenis_kelamin||'-'}</p>
               <p class="text-[10px] text-slate-400">Surat ${fmtDate(d.tanggal_surat)}</p>
             </div>
@@ -1319,7 +1352,7 @@ function renderPermintaanTable(){
         <td><span class="badge ${statusBadge(d.status_jenis)}">${d.status_jenis||'-'}</span></td>
         <td>${d.registrasi?`<span class="badge badge-indigo">${d.registrasi.nomor}</span>`:`<span class="badge badge-slate">Belum</span>`}</td>
         <td class="text-center">${permintaanActionBtns(d)}</td>
-      </tr>`).join('') : `<tr><td colspan="9" class="text-center py-12 text-slate-400">
+      </tr>`}).join('') : `<tr><td colspan="9" class="text-center py-12 text-slate-400">
         <div class="flex flex-col items-center gap-2">
           <i data-lucide="inbox" class="w-8 h-8 opacity-40"></i>
           <p class="font-semibold">Tidak ada data permintaan</p>
@@ -1329,7 +1362,7 @@ function renderPermintaanTable(){
   }
 
   if(cards){
-    cards.innerHTML = pg.slice.length ? pg.slice.map(d=>`
+    cards.innerHTML = pg.slice.length ? pg.slice.map(d=>{ const luar = isKlienLuarWilayah(d)||d._from_arsip; return `
       <div class="card-panel p-4 hover:border-amber-500/30 transition relative overflow-hidden">
         <div class="flex items-start justify-between gap-2 mb-3">
           <div class="flex items-center gap-2.5 min-w-0">
@@ -1353,7 +1386,7 @@ function renderPermintaanTable(){
           ${d.registrasi?`<span class="badge badge-indigo">${d.registrasi.nomor}</span>`:`<span class="badge badge-slate">Belum registrasi</span>`}
           ${permintaanActionBtns(d)}
         </div>
-      </div>`).join('') : `<div class="col-span-full text-center py-12 text-slate-400">
+      </div>`}).join('') : `<div class="col-span-full text-center py-12 text-slate-400">
         <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
         <p class="font-semibold">Tidak ada data permintaan</p>
       </div>`;
@@ -1498,7 +1531,7 @@ function getFilteredRegistrasi(){
   const wl = document.getElementById('f-reg-wilayah')?.value||'';
   const pk = document.getElementById('f-reg-pk')?.value||'';
   const th = document.getElementById('f-reg-tahun')?.value||'';
-  return allData.filter(d=>{
+  return getAllIncludingArsip().filter(d=>{
     if(q){
       const hay = [d.nama_anak, d.nomor_surat, d.registrasi?.nomor, d.nama_pk, d.wilayah_asal, d.kepolisian]
         .map(x=>(x||'').toLowerCase()).join(' ');
@@ -1557,13 +1590,13 @@ function renderRegistrasiTables(){
 
   const tbBelum = document.getElementById('tb-reg-belum');
   if(tbBelum){
-    tbBelum.innerHTML = pgB.slice.length ? pgB.slice.map(d=>`
+    tbBelum.innerHTML = pgB.slice.length ? pgB.slice.map(d=>{ const luar = isKlienLuarWilayah(d)||d._from_arsip; return `
       <tr class="align-top">
         <td>
           <div class="flex items-start gap-2.5 min-w-[200px]">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-amber-400 text-white flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
             <div class="min-w-0">
-              <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+              <p class="font-bold text-sm leading-snug truncate">${luar?`<span class="line-through text-slate-400">${d.nama_anak||'-'}</span> ${arsipBadgeHtml(d)}`:(d.nama_anak||'-')}</p>
               <p class="text-[11px] text-slate-400 truncate">${d.nomor_surat||'-'} · ${d.jenis_kelamin||'-'}</p>
             </div>
           </div>
@@ -1577,7 +1610,7 @@ function renderRegistrasiTables(){
             ? `<button class="btn btn-gold btn-sm" onclick="registrasiAnak('${d.id}')"><i data-lucide="hash" class="w-3.5 h-3.5"></i> Registrasi</button>`
             : `<span class="text-slate-400 text-xs">View</span>`}
         </td>
-      </tr>`).join('') : `<tr><td colspan="6" class="text-center py-12 text-slate-400">
+      </tr>`}).join('') : `<tr><td colspan="6" class="text-center py-12 text-slate-400">
         <div class="flex flex-col items-center gap-2">
           <i data-lucide="check-circle-2" class="w-8 h-8 opacity-40 text-emerald-500"></i>
           <p class="font-semibold">Tidak ada yang menunggu registrasi</p>
@@ -1588,7 +1621,7 @@ function renderRegistrasiTables(){
 
   const tbSudah = document.getElementById('tb-reg-sudah');
   if(tbSudah){
-    tbSudah.innerHTML = pgS.slice.length ? pgS.slice.map(d=>`
+    tbSudah.innerHTML = pgS.slice.length ? pgS.slice.map(d=>{ const luar = isKlienLuarWilayah(d)||d._from_arsip; return `
       <tr class="align-top">
         <td>
           <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400 tracking-tight">${d.registrasi.nomor}</span>
@@ -1598,7 +1631,7 @@ function renderRegistrasiTables(){
           <div class="flex items-start gap-2.5 min-w-[180px]">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials(d.nama_anak)}</div>
             <div class="min-w-0">
-              <p class="font-bold text-sm leading-snug truncate">${d.nama_anak||'-'}</p>
+              <p class="font-bold text-sm leading-snug truncate">${luar?`<span class="line-through text-slate-400">${d.nama_anak||'-'}</span> ${arsipBadgeHtml(d)}`:(d.nama_anak||'-')}</p>
               <p class="text-[11px] text-slate-400 truncate">${d.jenis_kelamin||'-'} · ${d.nomor_surat||'-'}</p>
             </div>
           </div>
@@ -1611,7 +1644,7 @@ function renderRegistrasiTables(){
             ? `<button class="btn btn-danger btn-sm" onclick="batalRegistrasi('${d.id}')" title="Batalkan registrasi"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>`
             : `<span class="text-slate-400 text-xs">View</span>`}
         </td>
-      </tr>`).join('') : `<tr><td colspan="7" class="text-center py-12 text-slate-400">
+      </tr>`}).join('') : `<tr><td colspan="7" class="text-center py-12 text-slate-400">
         <div class="flex flex-col items-center gap-2">
           <i data-lucide="inbox" class="w-8 h-8 opacity-40"></i>
           <p class="font-semibold">Belum ada anak teregistrasi</p>
@@ -1722,7 +1755,15 @@ function getFilteredAdjudikasi(){
   const wl = document.getElementById('f-adj-wilayah')?.value||'';
   const pk = document.getElementById('f-adj-pk')?.value||'';
   const kat = document.getElementById('f-adj-kategori')?.value||'';
-  return allData.filter(d=>isTrackingEligible(d)).filter(d=>{
+  return getAllIncludingArsip().filter(d=>{
+    const arsip = isKlienLuarWilayah(d) || d._from_arsip;
+    if (arsip) {
+      if (!d.registrasi) return false;
+      if (isLitmasIntegrasi(d)) return false;
+    } else if (!isTrackingEligible(d)) {
+      return false;
+    }
+
     if (kat) {
       let k = String(d.kategori_tindak_pidana || '').trim();
       if (!k) k = inferKategoriFromPerkara(d.jenis_perkara);
@@ -1800,7 +1841,7 @@ function renderAdjudikasiTable(){
   const tbody = document.getElementById('tb-adjudikasi'); if(!tbody) return;
 
   // KPI from all registered (ignore tab, respect light search filters except tab)
-  const base = allData.filter(d=>isTrackingEligible(d));
+  const base = getAllIncludingArsip().filter(d=>isTrackingEligible(d) || ((isKlienLuarWilayah(d)||d._from_arsip) && d.registrasi && !isLitmasIntegrasi(d)));
   const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
   set('akpi-total', base.length);
   set('akpi-berjalan', base.filter(d=>d.adjudikasi?.jalur && getAdjStatus(d)==='Berjalan').length);
@@ -1832,7 +1873,7 @@ function renderAdjudikasiTable(){
     const tahap = getAdjTahapLabel(d);
     const status = getAdjStatus(d);
     const jalur = d.adjudikasi?.jalur || '';
-    const luar = isKlienLuarWilayah(d);
+    const luar = isKlienLuarWilayah(d) || d._from_arsip;
     return `<tr class="align-top ${luar ? 'opacity-70' : ''}">
       <td>
         <div class="flex items-start gap-2.5 min-w-[200px]">
