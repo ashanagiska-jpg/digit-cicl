@@ -1887,7 +1887,7 @@ function openPascaModal(id){
   openModal(`
     <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Data Bimbingan Pasca Adjudikasi</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <form class="grid grid-cols-1 sm:grid-cols-2 gap-3" onsubmit="event.preventDefault(); savePasca('${id}')">
-      <div class="sm:col-span-2"><p class="font-semibold">${item.nama_anak}</p></div>
+      <div class="sm:col-span-2"><p class="font-semibold">${item.nama_anak}${(p.dari_pindahan||p.asal_bapas)?` <span class="badge badge-amber" style="font-size:10px">Pindahan${p.asal_bapas?' · '+p.asal_bapas:''}</span>`:''}</p></div>
       <div><label class="fl">Jenis Bimbingan</label><select class="form-input" id="ps-jenis" ${isAdmin()?'':'disabled'}>
         <option value="Pembebasan Bersyarat (PB)" ${p.jenis==='Pembebasan Bersyarat (PB)'?'selected':''}>Pembebasan Bersyarat (PB)</option>
         <option value="Cuti Bersyarat (CB)" ${p.jenis==='Cuti Bersyarat (CB)'?'selected':''}>Cuti Bersyarat (CB)</option>
@@ -1909,9 +1909,11 @@ function openPascaModal(id){
 function savePasca(id){
   if(guardWrite())return;
   const item = allData.find(d=>d.id===id);
+  const prev = item.pasca_adjudikasi || {};
   item.pasca_adjudikasi = {
     jenis: val('ps-jenis'), asal_lpka: val('ps-lpka'), tanggal_mulai: val('ps-mulai'), tanggal_selesai: val('ps-selesai'),
-    pk_pembimbing: val('ps-pk'), status: val('ps-status'), keterangan: val('ps-ket')
+    pk_pembimbing: val('ps-pk'), status: val('ps-status'), keterangan: val('ps-ket'),
+    dari_pindahan: !!prev.dari_pindahan, asal_bapas: prev.asal_bapas || ''
   };
   sendToSheet('update_pasca', {id:item.id, pasca_adjudikasi:item.pasca_adjudikasi});
   saveAll(); closeModal(); renderAllViews();
@@ -1920,15 +1922,131 @@ function savePasca(id){
 function openPascaManualModal(){
   if(guardWrite())return;
   const eligible = eligibleForPasca().filter(d=>!d.pasca_adjudikasi);
+  const pkOpts = PK_LIST.map(x=>`<option>${x}</option>`).join('');
+  const wilOpts = WILAYAH.map(w=>`<option>${w}</option>`).join('');
   openModal(`
-    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Tambah Klien Bimbingan</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    ${eligible.length ? `
-    <p class="text-sm mb-3">Pilih anak yang telah selesai proses adjudikasi:</p>
-    <select class="form-input mb-3" id="ps-pilih-anak">${eligible.map(d=>`<option value="${d.id}">${d.nama_anak} (${d.registrasi.nomor})</option>`).join('')}</select>
-    <div class="flex justify-end gap-2"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="openPascaModal(document.getElementById('ps-pilih-anak').value)">Lanjutkan</button></div>
-    ` : `<p class="text-sm text-slate-500">Belum ada anak dengan status adjudikasi Selesai yang siap dimasukkan ke bimbingan pasca adjudikasi. Selesaikan proses adjudikasi terlebih dahulu di menu Tracking Adjudikasi.</p>
-    <div class="flex justify-end pt-3"><button class="btn btn-ghost" onclick="closeModal()">Tutup</button></div>`}
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-bold text-lg">Tambah Klien Bimbingan</h3>
+      <button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="flex gap-2 mb-4 border-b border-slate-200 pb-2">
+      <button type="button" id="tab-pasca-lokal" class="btn btn-sm btn-primary" onclick="switchPascaAddTab('lokal')">Dari Data Lokal</button>
+      <button type="button" id="tab-pasca-langsung" class="btn btn-sm btn-ghost" onclick="switchPascaAddTab('langsung')">Tambah Langsung (Pindahan)</button>
+    </div>
+    <div id="pasca-add-lokal">
+      ${eligible.length ? `
+      <p class="text-sm mb-3 text-slate-600">Pilih anak yang telah selesai proses adjudikasi di Bapas ini:</p>
+      <select class="form-input mb-3" id="ps-pilih-anak">${eligible.map(d=>`<option value="${d.id}">${d.nama_anak} (${d.registrasi?.nomor||'-'})</option>`).join('')}</select>
+      <div class="flex justify-end gap-2">
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        <button class="btn btn-primary" onclick="openPascaModal(document.getElementById('ps-pilih-anak').value)">Lanjutkan</button>
+      </div>
+      ` : `
+      <p class="text-sm text-slate-500 mb-3">Belum ada anak dengan status adjudikasi <b>Selesai</b> yang siap dimasukkan ke bimbingan. Selesaikan proses adjudikasi di menu Tracking Adjudikasi, atau gunakan tab <b>Tambah Langsung (Pindahan)</b> untuk klien dari Bapas lain.</p>
+      <div class="flex justify-end"><button class="btn btn-ghost" onclick="closeModal()">Tutup</button></div>
+      `}
+    </div>
+    <div id="pasca-add-langsung" class="hidden">
+      <p class="text-sm mb-3 text-slate-600">Input klien yang dilimpahkan / pindahan dari Bapas lain (tanpa melalui adjudikasi lokal).</p>
+      <form class="grid grid-cols-1 sm:grid-cols-2 gap-3" onsubmit="event.preventDefault(); savePascaDirect()">
+        <div class="sm:col-span-2"><label class="fl">Nama Anak <span class="text-red-500">*</span></label><input class="form-input" id="psd-nama" required placeholder="Nama lengkap anak"></div>
+        <div><label class="fl">Jenis Kelamin</label><select class="form-input" id="psd-jk"><option>Laki-laki</option><option>Perempuan</option></select></div>
+        <div><label class="fl">Wilayah Asal</label><select class="form-input" id="psd-wilayah"><option value="">— Pilih —</option>${wilOpts}</select></div>
+        <div><label class="fl">Asal Bapas / Instansi</label><input class="form-input" id="psd-asal-bapas" placeholder="Contoh: Bapas Palembang"></div>
+        <div><label class="fl">No. Registrasi (jika ada)</label><input class="form-input" id="psd-noreg" placeholder="Opsional"></div>
+        <div><label class="fl">Jenis Bimbingan <span class="text-red-500">*</span></label><select class="form-input" id="psd-jenis" required>
+          <option value="Pembebasan Bersyarat (PB)">Pembebasan Bersyarat (PB)</option>
+          <option value="Cuti Bersyarat (CB)">Cuti Bersyarat (CB)</option>
+        </select></div>
+        <div><label class="fl">Asal LPKA</label><input class="form-input" id="psd-lpka" placeholder="Nama LPKA"></div>
+        <div><label class="fl">Tanggal Mulai Bimbingan</label><input type="date" class="form-input" id="psd-mulai"></div>
+        <div><label class="fl">Tanggal Selesai Bimbingan</label><input type="date" class="form-input" id="psd-selesai"></div>
+        <div><label class="fl">PK Pembimbing</label><select class="form-input" id="psd-pk">${pkOpts}</select></div>
+        <div><label class="fl">Status</label><select class="form-input" id="psd-status">
+          <option>Dalam Bimbingan</option>
+          <option>Selesai</option>
+          <option>Dicabut</option>
+        </select></div>
+        <div class="sm:col-span-2"><label class="fl">Keterangan</label><textarea class="form-input" id="psd-ket" rows="2" placeholder="Catatan limpasan / pindahan, dll."></textarea></div>
+        <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Klien Bimbingan</button>
+        </div>
+      </form>
+    </div>
   `);
+  if(window.lucide) lucide.createIcons();
+}
+function switchPascaAddTab(tab){
+  const lokal = document.getElementById('pasca-add-lokal');
+  const langsung = document.getElementById('pasca-add-langsung');
+  const btnLokal = document.getElementById('tab-pasca-lokal');
+  const btnLangsung = document.getElementById('tab-pasca-langsung');
+  if(!lokal||!langsung) return;
+  if(tab==='langsung'){
+    lokal.classList.add('hidden');
+    langsung.classList.remove('hidden');
+    btnLokal?.classList.remove('btn-primary'); btnLokal?.classList.add('btn-ghost');
+    btnLangsung?.classList.remove('btn-ghost'); btnLangsung?.classList.add('btn-primary');
+  } else {
+    langsung.classList.add('hidden');
+    lokal.classList.remove('hidden');
+    btnLangsung?.classList.remove('btn-primary'); btnLangsung?.classList.add('btn-ghost');
+    btnLokal?.classList.remove('btn-ghost'); btnLokal?.classList.add('btn-primary');
+  }
+}
+function savePascaDirect(){
+  if(guardWrite())return;
+  const nama = val('psd-nama');
+  if(!nama){ showToast('Nama anak wajib diisi','error'); return; }
+  const asalBapas = val('psd-asal-bapas');
+  const noreg = val('psd-noreg');
+  let ket = val('psd-ket');
+  if(asalBapas){
+    ket = (ket ? ket + ' | ' : '') + 'Asal Bapas/Instansi: ' + asalBapas;
+  }
+  const item = {
+    id: uid(),
+    nomor_surat: '',
+    tanggal_surat: '',
+    tanggal_diterima: '',
+    nama_anak: nama,
+    jenis_kelamin: val('psd-jk') || 'Laki-laki',
+    jenis_litmas: 'Litmas Pendampingan ABH',
+    jenis_perkara: '',
+    wilayah_asal: val('psd-wilayah') || '',
+    kepolisian: '',
+    nama_pk: val('psd-pk') || '',
+    status_jenis: 'Selesai',
+    keterangan: asalBapas ? ('Klien pindahan dari ' + asalBapas) : 'Klien ditambahkan langsung ke Pasca Adjudikasi',
+    link_surat_permintaan: '',
+    link_berkas_litmas: '',
+    registrasi: noreg ? { nomor: noreg, tanggal: new Date().toISOString().slice(0,10) } : null,
+    adjudikasi: {
+      jalur: null,
+      status: 'Selesai',
+      diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
+      persidangan: { sidang:[], putusan:{} },
+      catatan: asalBapas ? ('Dilimpahkan dari ' + asalBapas) : 'Ditambahkan langsung (tanpa adjudikasi lokal)'
+    },
+    pasca_adjudikasi: {
+      jenis: val('psd-jenis'),
+      asal_lpka: val('psd-lpka'),
+      tanggal_mulai: val('psd-mulai'),
+      tanggal_selesai: val('psd-selesai'),
+      pk_pembimbing: val('psd-pk'),
+      status: val('psd-status') || 'Dalam Bimbingan',
+      keterangan: ket,
+      dari_pindahan: true,
+      asal_bapas: asalBapas || ''
+    }
+  };
+  allData.push(item);
+  sendToSheet('create', item);
+  saveAll();
+  closeModal();
+  renderAllViews();
+  showToast('Klien bimbingan (pindahan) berhasil ditambahkan','success');
 }
 function getFilteredPasca(){
   const q = (document.getElementById('q-pasca')?.value||'').toLowerCase();
@@ -1948,8 +2066,8 @@ function renderPascaTable(){
   let data = getFilteredPasca();
   data = sortByTable(data, 'pasca', pascaGetter);
   const pg = paginate(data, 'pasca');
-  tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>{ const p = d.pasca_adjudikasi; return `
-    <tr><td class="font-semibold">${d.nama_anak}</td><td><span class="badge ${p.jenis.includes('PB')?'badge-blue':'badge-indigo'}">${p.jenis}</span></td>
+  tbody.innerHTML = pg.slice.length ? pg.slice.map(d=>{ const p = d.pasca_adjudikasi; const isPindahan = !!(p.dari_pindahan || p.asal_bapas); return `
+    <tr><td class="font-semibold">${d.nama_anak}${isPindahan?` <span class="badge badge-amber" style="font-size:9px;padding:1px 5px" title="${(p.asal_bapas||'Pindahan').replace(/"/g,'&quot;')}">Pindahan</span>`:''}</td><td><span class="badge ${p.jenis.includes('PB')?'badge-blue':'badge-indigo'}">${p.jenis}</span></td>
     <td>${p.asal_lpka||'-'}</td><td>${fmtDate(p.tanggal_mulai)}</td><td>${fmtDate(p.tanggal_selesai)}</td><td>${p.pk_pembimbing||'-'}</td>
     <td><span class="badge ${p.status==='Selesai'?'badge-green':p.status==='Dicabut'?'badge-amber':'badge-blue'}">${p.status}</span></td>
     <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>` : `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')" title="Lihat"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>`}</td></tr>
