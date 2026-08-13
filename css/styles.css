@@ -1287,3 +1287,18 @@ html, body, .card-panel, .form-input, .btn, header, .sidebar {
 #permintaan-card-wrap .card-panel {
   animation: fadeUp 0.4s var(--ease) both;
 }
+
+
+/* ==================== SEMUA INPUT TEKS HURUF KAPITAL ==================== */
+input.form-input:not([type="password"]):not([type="email"]):not([type="url"]):not([type="number"]):not([type="date"]):not([type="time"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="color"]):not([type="range"]),
+textarea.form-input,
+textarea.form-input,
+select.form-input,
+.force-uppercase {
+  text-transform: uppercase !important;
+}
+/* Placeholder tetap terbaca (browser kadang ikut uppercase) */
+input.form-input::placeholder,
+textarea.form-input::placeholder {
+  text-transform: none;
+}
