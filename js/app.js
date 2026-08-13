@@ -141,6 +141,133 @@ let gsheetUrl = localStorage.getItem('CICL_GAS_URL') || 'https://script.google.c
 let geminiKey = localStorage.getItem('CICL_GEMINI_KEY') || '';
 const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 
+// ==================== KATEGORI TINDAK PIDANA (1–6) ====================
+const KATEGORI_TINDAK_PIDANA = {
+  "1": {
+    label: "Kategori 1",
+    items: ["POLITIK", "TERHADAP NEGARA", "PERDAGANGAN MANUSIA"]
+  },
+  "2": {
+    label: "Kategori 2",
+    items: [
+      "PEMBUNUHAN", "TERORIS", "KDRT", "INFORMASI DAN TRANSAKSI ELEKTRONIK",
+      "MIGAS", "PEMBALAKAN LIAR", "KORUPSI", "PENCUCIAN UANG", "PERBANKAN",
+      "PAJAK", "CUKAI", "TINDAK PIDANA KHUSUS LAINNYA"
+    ]
+  },
+  "3": {
+    label: "Kategori 3",
+    items: [
+      "PENYUAPAN", "MATA UANG", "PEMALSUAN MATERAI/SURAT/LAINNYA", "PENIPUAN",
+      "PENGGELAPAN", "DALAM JABATAN", "PENYELUNDUPAN", "PERIKANAN", "KEIMIGRASIAN",
+      "PANGAN", "KESUSILAAN", "PERAMPOKAN", "PORNOGRAFI", "PERLINDUNGAN ANAK",
+      "NARKOBA", "FARMASI"
+    ]
+  },
+  "4": {
+    label: "Kategori 4",
+    items: [
+      "LAKA LANTAS", "PENCULIKAN", "PENGEROYOKAN", "PENGANIAYAAN",
+      "PENGRUSAKAN", "SENJATA API", "SENJATA TAJAM"
+    ]
+  },
+  "5": {
+    label: "Kategori 5",
+    items: [
+      "KETERTIBAN", "PEMBAKARAN", "PENCURIAN", "PEMERASAN", "PENGANCAMAN"
+    ]
+  },
+  "6": {
+    label: "Kategori 6",
+    items: ["PENADAHAN"]
+  }
+};
+
+function getKategoriOptionsHtml(selected){
+  selected = String(selected || '');
+  let html = '<option value="">Pilih Kategori</option>';
+  Object.keys(KATEGORI_TINDAK_PIDANA).forEach(k=>{
+    const lab = KATEGORI_TINDAK_PIDANA[k].label;
+    html += `<option value="${k}" ${selected===k?'selected':''}>${lab}</option>`;
+  });
+  return html;
+}
+
+function getPerkaraOptionsHtml(kategori, selected){
+  selected = String(selected || '');
+  const items = (KATEGORI_TINDAK_PIDANA[String(kategori)] || {}).items || [];
+  let html = '<option value="">Pilih Jenis Perkara</option>';
+  items.forEach(name=>{
+    html += `<option value="${name}" ${selected===name?'selected':''}>${name}</option>`;
+  });
+  // Jika nilai lama tidak ada di list, tetap tampilkan agar tidak hilang
+  if (selected && !items.includes(selected)) {
+    html += `<option value="${selected}" selected>${selected} (lama)</option>`;
+  }
+  return html;
+}
+
+function inferKategoriFromPerkara(perkara){
+  const p = String(perkara || '').trim().toUpperCase();
+  if (!p) return '';
+  for (const [k, v] of Object.entries(KATEGORI_TINDAK_PIDANA)) {
+    if (v.items.some(it => it === p || p.includes(it) || it.includes(p))) return k;
+  }
+  return '';
+}
+
+function onKategoriPerkaraChange(prefix){
+  prefix = prefix || 'fm';
+  const katEl = document.getElementById(prefix + '-kategori');
+  const perEl = document.getElementById(prefix + '-perkara');
+  if (!katEl || !perEl) return;
+  const kat = katEl.value;
+  const cur = perEl.value;
+  perEl.innerHTML = getPerkaraOptionsHtml(kat, '');
+  // restore if still valid
+  if (cur && (KATEGORI_TINDAK_PIDANA[kat]?.items || []).includes(cur)) {
+    perEl.value = cur;
+  }
+}
+
+function renderTrackKategoriStats(){
+  const grid = document.getElementById('track-kat-grid');
+  const summary = document.getElementById('track-kat-summary');
+  if (!grid) return;
+  // Hitung dari data yang sudah registrasi (sama seperti tracking)
+  const base = (allData || []).filter(d => d.registrasi);
+  const counts = { "1":0, "2":0, "3":0, "4":0, "5":0, "6":0, "lain":0 };
+  base.forEach(d=>{
+    let k = String(d.kategori_tindak_pidana || '').trim();
+    if (!k) k = inferKategoriFromPerkara(d.jenis_perkara);
+    if (counts[k] !== undefined) counts[k]++;
+    else counts.lain++;
+  });
+  const colors = {
+    "1": "from-orange-500 to-orange-600",
+    "2": "from-emerald-500 to-emerald-700",
+    "3": "from-sky-500 to-blue-600",
+    "4": "from-red-500 to-red-700",
+    "5": "from-yellow-400 to-amber-500",
+    "6": "from-violet-500 to-purple-700"
+  };
+  grid.innerHTML = Object.keys(KATEGORI_TINDAK_PIDANA).map(k=>{
+    const n = counts[k] || 0;
+    const pct = base.length ? Math.round(n / base.length * 100) : 0;
+    return `<div class="rounded-xl p-3 text-white bg-gradient-to-br ${colors[k]} shadow-sm">
+      <p class="text-[10px] font-bold uppercase tracking-wider opacity-90">Kat. ${k}</p>
+      <p class="text-2xl font-extrabold leading-tight mt-0.5">${n}</p>
+      <p class="text-[10px] opacity-80">${pct}% · ${(KATEGORI_TINDAK_PIDANA[k].items||[]).length} jenis</p>
+    </div>`;
+  }).join('');
+  if (summary) {
+    summary.textContent = base.length
+      ? `${base.length} anak teregistrasi · ${counts.lain ? counts.lain + ' tanpa kategori' : 'semua terkategori'}`
+      : 'Belum ada data teregistrasi';
+  }
+}
+
+
 // ID folder Google Drive tujuan unggahan berkas (dikelola lewat Code.gs / Apps Script).
 const GDRIVE_FOLDER_SURAT = '1FXq_GhLqSBtPraAJ79k7cAfRtJYEClbg';
 const GDRIVE_FOLDER_LITMAS_INTEGRASI = '1uKYValz8FE97rqPGpsP_iPxBRHw_-Zbn';
@@ -459,7 +586,7 @@ function navigateTo(pageId){
     t.classList.add('active');
   }
   document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-page')===pageId));
-  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking Adjudikasi', pasca:'Pasca Adjudikasi (Bimbingan)', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
+  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', pasca:'Pasca Adjudikasi (Bimbingan)', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
   const titleEl = document.getElementById('nav-title');
   if(titleEl){
     titleEl.style.animation = 'none';
@@ -573,7 +700,21 @@ function openLitmasModal(id, useAI){
       <div><label class="fl">Tanggal Diterima</label><input type="date" class="form-input" id="fm-tglditerima" value="${item?item.tanggal_diterima||'':''}" required></div>
       <div><label class="fl">Nama Anak</label><input class="form-input" id="fm-nama" value="${item?item.nama_anak||'':''}" required></div>
       <div><label class="fl">Jenis Kelamin</label><select class="form-input" id="fm-jk"><option ${item&&item.jenis_kelamin==='Laki-laki'?'selected':''}>Laki-laki</option><option ${item&&item.jenis_kelamin==='Perempuan'?'selected':''}>Perempuan</option></select></div>
-      <div><label class="fl">Jenis Perkara</label><input class="form-input" id="fm-perkara" value="${item?item.jenis_perkara||'':''}"></div>
+      <div>
+        <label class="fl">Kategori Tindak Pidana</label>
+        <select class="form-input" id="fm-kategori" onchange="onKategoriPerkaraChange('fm')">
+          ${getKategoriOptionsHtml(item ? (item.kategori_tindak_pidana || inferKategoriFromPerkara(item.jenis_perkara)) : '')}
+        </select>
+      </div>
+      <div>
+        <label class="fl">Jenis Perkara</label>
+        <select class="form-input" id="fm-perkara">
+          ${getPerkaraOptionsHtml(
+            item ? (item.kategori_tindak_pidana || inferKategoriFromPerkara(item.jenis_perkara)) : '',
+            item ? (item.jenis_perkara || '') : ''
+          )}
+        </select>
+      </div>
       <div><label class="fl">Wilayah</label><select class="form-input" id="fm-wilayah" onchange="updatePolisiOptionsIn('fm')"><option value="">Pilih Wilayah</option>${wilOpts}</select></div>
       <div><label class="fl">Instansi Pengirim (Kepolisian)</label><select class="form-input" id="fm-polisi"><option value="">Pilih Kepolisian</option></select></div>
       <div><label class="fl">PK Pembimbing</label><select class="form-input" id="fm-pk"><option value="">Pilih PK</option>${pkOpts}</select>
@@ -918,7 +1059,7 @@ async function saveLitmas(id){
     const data = {
       nomor_surat: val('fm-nosurat'), tanggal_surat: val('fm-tglsurat'), tanggal_diterima: val('fm-tglditerima'),
       nama_anak: val('fm-nama'), jenis_kelamin: val('fm-jk'), jenis_litmas: jenisLitmas,
-      jenis_perkara: val('fm-perkara'), wilayah_asal: val('fm-wilayah'), kepolisian: val('fm-polisi'),
+      jenis_perkara: val('fm-perkara'), kategori_tindak_pidana: val('fm-kategori'), wilayah_asal: val('fm-wilayah'), kepolisian: val('fm-polisi'),
       nama_pk: val('fm-pk'), status_jenis: status, keterangan: val('fm-ket'),
       link_surat_permintaan: linkSurat, link_berkas_litmas: linkBerkas
     };
@@ -1512,7 +1653,13 @@ function getFilteredAdjudikasi(){
   const st = document.getElementById('f-adj-status')?.value||'';
   const wl = document.getElementById('f-adj-wilayah')?.value||'';
   const pk = document.getElementById('f-adj-pk')?.value||'';
+  const kat = document.getElementById('f-adj-kategori')?.value||'';
   return allData.filter(d=>d.registrasi).filter(d=>{
+    if (kat) {
+      let k = String(d.kategori_tindak_pidana || '').trim();
+      if (!k) k = inferKategoriFromPerkara(d.jenis_perkara);
+      if (k !== kat) return false;
+    }
     if(q){
       const hay = [d.nama_anak, d.registrasi?.nomor, d.nama_pk, d.wilayah_asal, d.kepolisian, d.jenis_perkara]
         .map(x=>(x||'').toLowerCase()).join(' ');
@@ -1580,6 +1727,7 @@ function jalurBadge(jalur){
 }
 
 function renderAdjudikasiTable(){
+  try { renderTrackKategoriStats(); } catch(e) {}
   populateAdjFilterOptions();
   const tbody = document.getElementById('tb-adjudikasi'); if(!tbody) return;
 
@@ -1692,7 +1840,7 @@ function openAdjudikasiModal(id){
   }
   openModal(`
     <div class="flex justify-between items-center mb-4">
-      <div><h3 class="font-bold text-lg">Tracking Adjudikasi</h3><p class="text-xs text-slate-500">${item.nama_anak} - ${item.registrasi?.nomor||''}</p></div>
+      <div><h3 class="font-bold text-lg">Tracking</h3><p class="text-xs text-slate-500">${item.nama_anak} - ${item.registrasi?.nomor||''}</p></div>
       <button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     ${a.jalur && isAdmin() ? `<p class="text-xs mb-3"><button class="btn btn-ghost btn-sm" onclick="if(confirm('Ganti jalur adjudikasi? Data tahapan sebelumnya akan direset.')) resetJalur('${id}')"><i data-lucide='refresh-ccw' class='w-3 h-3'></i> Ganti Jalur</button></p>`:''}
@@ -1947,7 +2095,7 @@ function openPascaManualModal(){
         <button class="btn btn-primary" onclick="openPascaModal(document.getElementById('ps-pilih-anak').value)">Lanjutkan</button>
       </div>
       ` : `
-      <p class="text-sm text-slate-500 mb-3">Belum ada anak dengan status adjudikasi <b>Selesai</b> yang siap dimasukkan ke bimbingan. Selesaikan proses adjudikasi di menu Tracking Adjudikasi, atau gunakan tab <b>Tambah Langsung (Pindahan)</b> untuk klien dari Bapas lain.</p>
+      <p class="text-sm text-slate-500 mb-3">Belum ada anak dengan status adjudikasi <b>Selesai</b> yang siap dimasukkan ke bimbingan. Selesaikan proses adjudikasi di menu Tracking, atau gunakan tab <b>Tambah Langsung (Pindahan)</b> untuk klien dari Bapas lain.</p>
       <div class="flex justify-end"><button class="btn btn-ghost" onclick="closeModal()">Tutup</button></div>
       `}
     </div>
@@ -3407,9 +3555,114 @@ async function uploadFileToDrive(file, folderId){
   });
 }
 
+function normalizeAdjudikasi(raw, item){
+  // Parse jika string JSON dari Sheet
+  let a = raw;
+  if (typeof a === 'string') {
+    try { a = JSON.parse(a); } catch (e) { a = null; }
+  }
+  if (!a || typeof a !== 'object') {
+    a = {};
+  }
+
+  // Default struktur UI
+  const base = {
+    jalur: null,
+    status: 'Berjalan',
+    diversi: { kepolisian: {}, kejaksaan: {}, pengadilan: {} },
+    persidangan: { sidang: [], putusan: {} }
+  };
+
+  // Normalisasi jalur dari format backend lama / Sheet
+  let jalur = a.jalur || null;
+  if (jalur) {
+    const j = String(jalur).toLowerCase();
+    if (j.includes('diversi')) jalur = 'Diversi';
+    else if (j.includes('sidang') || j.includes('peradilan') || j.includes('persidangan')) jalur = 'Persidangan';
+  }
+
+  // Merge diversi
+  const diversiIn = a.diversi && typeof a.diversi === 'object' ? a.diversi : {};
+  const diversi = {
+    kepolisian: { ...(diversiIn.kepolisian || {}) },
+    kejaksaan: { ...(diversiIn.kejaksaan || {}) },
+    pengadilan: { ...(diversiIn.pengadilan || {}) }
+  };
+
+  // Jika backend lama simpan tahap/instansi/hasil di root, petakan ke diversi
+  if (!a.diversi && (a.tahap || a.instansi || a.hasil_adjudikasi || a.nomor_penetapan)) {
+    const tahap = String(a.tahap || '').toLowerCase();
+    const slot = tahap.includes('jaksa') ? 'kejaksaan'
+      : (tahap.includes('pengadilan') || tahap.includes('sidang') ? 'pengadilan' : 'kepolisian');
+    diversi[slot] = {
+      hasil: a.hasil_adjudikasi || diversi[slot].hasil || '',
+      nomor: a.nomor_penetapan || diversi[slot].nomor || '',
+      tanggal: a.tanggal_penetapan || diversi[slot].tanggal || '',
+      instansi: a.instansi || diversi[slot].instansi || (item && item.kepolisian) || '',
+      catatan: a.detail_putusan || diversi[slot].catatan || ''
+    };
+  }
+
+  // Merge persidangan
+  const persIn = a.persidangan && typeof a.persidangan === 'object' ? a.persidangan : {};
+  const persidangan = {
+    sidang: Array.isArray(persIn.sidang) ? persIn.sidang : [],
+    putusan: (persIn.putusan && typeof persIn.putusan === 'object') ? { ...persIn.putusan } : {}
+  };
+  // Backend lama: detail_putusan / hasil di root → putusan
+  if (!a.persidangan && jalur === 'Persidangan') {
+    if (a.hasil_adjudikasi || a.detail_putusan || a.nomor_penetapan) {
+      const hasil = String(a.hasil_adjudikasi || '').toLowerCase();
+      if (hasil && hasil !== 'dalam proses' && hasil !== '-') {
+        persidangan.putusan = {
+          nomor: a.nomor_penetapan || '',
+          tanggal: a.tanggal_penetapan || '',
+          isi: a.detail_putusan || a.hasil_adjudikasi || ''
+        };
+      }
+    }
+  }
+
+  // Status
+  let status = a.status || 'Berjalan';
+  const hasilRoot = String(a.hasil_adjudikasi || '').toLowerCase();
+  if (hasilRoot && hasilRoot !== 'dalam proses' && hasilRoot !== '-' && (hasilRoot.includes('selesai') || hasilRoot.includes('berhasil') || hasilRoot.includes('gagal') || hasilRoot.includes('putusan'))) {
+    status = 'Selesai';
+  }
+  if (persidangan.putusan && (persidangan.putusan.tanggal || persidangan.putusan.nomor)) {
+    status = 'Selesai';
+  }
+
+  return {
+    ...base,
+    ...a,
+    jalur,
+    status,
+    diversi,
+    persidangan,
+    // pertahankan field backend lama agar tidak hilang saat save ulang
+    tahap: a.tahap || '',
+    instansi: a.instansi || '',
+    nomor_penetapan: a.nomor_penetapan || '',
+    tanggal_penetapan: a.tanggal_penetapan || '',
+    hasil_adjudikasi: a.hasil_adjudikasi || '',
+    detail_putusan: a.detail_putusan || '',
+    link_drive_berkas: a.link_drive_berkas || a.link_drive || ''
+  };
+}
+
+function normalizePasca(raw){
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw); } catch (e) { return null; }
+  }
+  if (typeof raw !== 'object') return null;
+  return raw;
+}
+
 function mapLitmasRows(data){
   return (data||[]).map(d=>{
-    // Ambil nomor registrasi dari berbagai kemungkinan nama kolom / bentuk data
+    // --- Registrasi ---
     const rawNomor = d.nomor_registrasi ?? d.no_registrasi ?? d.no_reg ??
       d['no._registrasi'] ?? d.registrasi_nomor ??
       (d.registrasi && typeof d.registrasi === 'object' ? d.registrasi.nomor : null) ??
@@ -3420,7 +3673,6 @@ function mapLitmasRows(data){
     const rawTgl = d.tanggal_registrasi ?? d.tgl_registrasi ??
       (d.registrasi && typeof d.registrasi === 'object' ? d.registrasi.tanggal : null) ?? '';
     let tanggal = rawTgl ? String(rawTgl).trim() : '';
-    // Apps Script kadang kirim Date serial / ISO
     if (tanggal && /^\d{4}-\d{2}-\d{2}/.test(tanggal)) {
       tanggal = tanggal.slice(0, 10);
     }
@@ -3433,23 +3685,22 @@ function mapLitmasRows(data){
       const m = nomor.match(/\/(\d{4})/);
       if (m) tahun = parseInt(m[1], 10);
     }
+
+    // --- Adjudikasi & Pasca ---
+    const adjudikasi = normalizeAdjudikasi(d.adjudikasi, d);
+    const pasca = normalizePasca(d.pasca_adjudikasi);
+
     return {
       ...d,
       nomor_registrasi: nomor || (d.nomor_registrasi || ''),
       tanggal_registrasi: tanggal || (d.tanggal_registrasi || ''),
-      registrasi: nomor
-        ? { nomor, tanggal: tanggal || null, tahun }
-        : null,
-      adjudikasi: d.adjudikasi || {
-        jalur: null,
-        status: 'Berjalan',
-        diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
-        persidangan: { sidang:[], putusan:{} }
-      },
-      pasca_adjudikasi: d.pasca_adjudikasi || null
+      registrasi: nomor ? { nomor, tanggal: tanggal || null, tahun } : null,
+      adjudikasi,
+      pasca_adjudikasi: pasca
     };
   });
 }
+
 
 /** Terapkan payload master dari sheet; unggah seed jika sheet kosong (hanya saat manual). */
 async function applyMasterFromRemote(pkRemote, wilRemote, polRemote, manual){
@@ -3723,16 +3974,21 @@ if ('serviceWorker' in navigator) {
 }
 
 window.onload = function(){
-  // Perbaiki data lokal: nomor_registrasi (sheet) → objek registrasi (UI)
+  // Perbaiki data lokal: registrasi + adjudikasi dari bentuk Sheet → bentuk UI
   try {
     if (typeof mapLitmasRows === 'function' && Array.isArray(allData) && allData.length) {
-      const needsMap = allData.some(d => d && !d.registrasi && d.nomor_registrasi);
-      if (needsMap) {
-        allData = mapLitmasRows(allData);
-        saveAll();
-      }
+      const needsMap = allData.some(d => d && (
+        (!d.registrasi && d.nomor_registrasi) ||
+        (d.adjudikasi && typeof d.adjudikasi === 'string') ||
+        (d.adjudikasi && d.adjudikasi.jalur && !d.adjudikasi.diversi) ||
+        (d.adjudikasi && typeof d.adjudikasi.jalur === 'string' && /sidang peradilan/i.test(d.adjudikasi.jalur))
+      ));
+      // Selalu normalisasi ringan agar struktur adjudikasi lengkap
+      allData = mapLitmasRows(allData);
+      if (needsMap) saveAll();
+      else saveAll(); // simpan struktur yang sudah dinormalisasi
     }
-  } catch (e) { console.warn('normalize local registrasi', e); }
+  } catch (e) { console.warn('normalize local data', e); }
 
   renderAllViews();
   lucide.createIcons();
