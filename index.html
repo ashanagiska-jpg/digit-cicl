@@ -95,7 +95,7 @@
       <span class="flex items-center gap-1.5"><i data-lucide="user-circle" class="w-3.5 h-3.5 text-amber-400"></i><span id="logged-user-label">-</span></span>
       <button onclick="logoutUser()" class="text-red-400/90 hover:text-red-300 flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Keluar</button>
     </div>
-    <button onclick="syncDataFromSheets(true)" class="w-full bg-gradient-to-r from-amber-600/20 to-amber-500/10 hover:from-amber-600/30 hover:to-amber-500/20 text-xs text-amber-300 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 border border-amber-500/20 font-semibold transition">
+    <button onclick="(window.CICLApi ? CICLApi.syncDataFromSheetsOptimized(true) : syncDataFromSheets(true))" class="w-full bg-gradient-to-r from-amber-600/20 to-amber-500/10 hover:from-amber-600/30 hover:to-amber-500/20 text-xs text-amber-300 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 border border-amber-500/20 font-semibold transition">
       <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Sinkron Google Sheet</span>
     </button>
     <div class="bg-white/5 rounded-xl p-2.5 flex items-center gap-2.5 text-xs text-slate-400 border border-white/5">
@@ -938,7 +938,7 @@
   </div>
 </div>
 
-
+<script src="js/api-layer.js"></script
 <script src="js/app.js"></script>
 </body>
 </html>
