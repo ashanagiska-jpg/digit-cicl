@@ -4357,7 +4357,56 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
+/** Ubah nilai input teks menjadi huruf kapital (kecuali tipe khusus). */
+function shouldUppercaseField(el){
+  if (!el || el.disabled || el.readOnly) return false;
+  if (el.classList && el.classList.contains('no-uppercase')) return false;
+  const tag = (el.tagName || '').toUpperCase();
+  if (tag === 'TEXTAREA') return true;
+  if (tag === 'SELECT') return false; // opsi sudah dari master; tampilan CSS cukup
+  if (tag !== 'INPUT') return false;
+  const t = (el.type || 'text').toLowerCase();
+  if (['password','email','url','number','date','time','datetime-local','file','checkbox','radio','hidden','color','range','month','week'].includes(t)) return false;
+  return true;
+}
+
+function forceInputUppercase(el){
+  if (!shouldUppercaseField(el)) return;
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  const up = String(el.value || '').toUpperCase();
+  if (el.value !== up) {
+    el.value = up;
+    try {
+      if (typeof start === 'number' && el.setSelectionRange) {
+        el.setSelectionRange(start, end);
+      }
+    } catch (_) {}
+  }
+}
+
+function initUppercaseInputs(){
+  if (window.__ciclUppercaseInit) return;
+  window.__ciclUppercaseInit = true;
+  document.addEventListener('input', function(e){
+    const el = e.target;
+    if (shouldUppercaseField(el)) forceInputUppercase(el);
+  }, true);
+  document.addEventListener('blur', function(e){
+    const el = e.target;
+    if (shouldUppercaseField(el)) forceInputUppercase(el);
+  }, true);
+  // Form submit: pastikan semua field ter-uppercase
+  document.addEventListener('submit', function(e){
+    const form = e.target;
+    if (!form || !form.querySelectorAll) return;
+    form.querySelectorAll('input, textarea').forEach(forceInputUppercase);
+  }, true);
+}
+
 window.onload = function(){
+  initUppercaseInputs();
   // Perbaiki data lokal: registrasi + adjudikasi dari bentuk Sheet → bentuk UI
   try {
     if (typeof mapLitmasRows === 'function' && Array.isArray(allData) && allData.length) {
