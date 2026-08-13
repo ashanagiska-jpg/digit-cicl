@@ -598,7 +598,7 @@
         <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="pushAllPkToSheet()" title="Unggah seluruh daftar PK ke Google Sheet">
           <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> Unggah ke Sheet
         </button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="syncDataFromSheets(true)">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="(window.CICLApi?CICLApi.syncDataFromSheetsOptimized(true):syncDataFromSheets(true))">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tarik dari Sheet
         </button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="exportPkCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
@@ -678,7 +678,7 @@
       </div>
       <div class="flex flex-wrap gap-2">
         <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="pushAllWilayahToSheet()"><i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> Unggah ke Sheet</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="syncDataFromSheets(true)"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tarik dari Sheet</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="(window.CICLApi?CICLApi.syncDataFromSheetsOptimized(true):syncDataFromSheets(true))"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tarik dari Sheet</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="exportWilayahCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
         <button type="button" class="btn btn-primary btn-sm admin-only" onclick="openWilayahModal()"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah Wilayah</button>
       </div>
@@ -751,7 +751,7 @@
       </div>
       <div class="flex flex-wrap gap-2">
         <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="pushAllKepolisianToSheet()"><i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> Unggah ke Sheet</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="syncDataFromSheets(true)"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tarik dari Sheet</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="(window.CICLApi?CICLApi.syncDataFromSheetsOptimized(true):syncDataFromSheets(true))"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tarik dari Sheet</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="exportKepolisianCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
         <button type="button" class="btn btn-primary btn-sm admin-only" onclick="openKepolisianModal()"><i data-lucide="plus-circle" class="w-4 h-4"></i>Tambah Kepolisian</button>
       </div>
@@ -938,7 +938,7 @@
   </div>
 </div>
 
-<script src="js/api-layer.js"></script
+<script src="js/api-layer.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

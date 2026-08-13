@@ -292,8 +292,10 @@ function completeLogin(role, label){
   document.getElementById('login-overlay').style.display = 'none';
   applyRoleUI();
   if (window.CICLApi) {
-  CICLApi.bootOptimized();
-}
+    CICLApi.bootOptimized();
+  } else if (typeof syncDataFromSheets === 'function' && gsheetUrl) {
+    syncDataFromSheets(false);
+  }
   showToast(role === 'admin' ? `Selamat datang, ${label}` : 'Masuk sebagai Tamu (view only)', 'success');
 }
 function logoutUser(){
@@ -3451,6 +3453,7 @@ async function applyMasterFromRemote(pkRemote, wilRemote, polRemote, manual){
 }
 
 async function syncDataFromSheets(manual){
+
   const dot = document.getElementById('sheet-status-dot');
   const textEl = document.getElementById('sheet-status-text');
   const url = normalizeGasUrl(gsheetUrl);
@@ -3697,7 +3700,14 @@ if ('serviceWorker' in navigator) {
 
 window.onload = function(){
   renderAllViews();
-  if(gsheetUrl) syncDataFromSheets(false);
   lucide.createIcons();
   initAuth();
+  // Boot optimasi: UI lokal dulu, stats+master cepat, full sync di background
+  if (window.CICLApi) {
+    if (currentRole === 'admin' || currentRole === 'guest') {
+      CICLApi.bootOptimized();
+    }
+  } else if (gsheetUrl) {
+    syncDataFromSheets(false);
+  }
 };

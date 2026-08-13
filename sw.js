@@ -1,9 +1,10 @@
 /* DIGIT-CICL Service Worker — offline-first shell + runtime cache */
-const CACHE_NAME = 'digit-cicl-v4';
+const CACHE_NAME = 'digit-cicl-v5-opt';
 const SHELL = [
   './',
   './index.html',
   './css/styles.css',
+  './js/api-layer.js',
   './js/app.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
