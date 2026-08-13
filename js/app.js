@@ -291,6 +291,9 @@ function completeLogin(role, label){
   localStorage.setItem('CICL_USER_LABEL', label);
   document.getElementById('login-overlay').style.display = 'none';
   applyRoleUI();
+  if (window.CICLApi) {
+  CICLApi.bootOptimized();
+}
   showToast(role === 'admin' ? `Selamat datang, ${label}` : 'Masuk sebagai Tamu (view only)', 'success');
 }
 function logoutUser(){
