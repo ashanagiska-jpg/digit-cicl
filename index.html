@@ -79,6 +79,8 @@
     <div class="sidebar-link" data-page="registrasi" onclick="navigateTo('registrasi')"><i data-lucide="hash" class="w-4 h-4"></i><span>Registrasi Anak</span></div>
     <div class="sidebar-link" data-page="adjudikasi" onclick="navigateTo('adjudikasi')"><i data-lucide="scale" class="w-4 h-4"></i><span>Tracking</span></div>
     <div class="sidebar-link" data-page="pasca" onclick="navigateTo('pasca')"><i data-lucide="heart-handshake" class="w-4 h-4"></i><span>Pasca Adjudikasi</span></div>
+    <div class="sidebar-link" data-page="integrasi" onclick="navigateTo('integrasi')"><i data-lucide="file-check-2" class="w-4 h-4"></i><span>Litmas Integrasi</span></div>
+    <div class="sidebar-link" data-page="arsip" onclick="navigateTo('arsip')"><i data-lucide="archive" class="w-4 h-4"></i><span>Arsip LPKA</span></div>
     <div class="nav-section-label">Master Data</div>
     <div class="sidebar-link" data-page="pk" onclick="navigateTo('pk')"><i data-lucide="users" class="w-4 h-4"></i><span>Data PK</span></div>
     <div class="sidebar-link" data-page="wilayah" onclick="navigateTo('wilayah')"><i data-lucide="map-pin" class="w-4 h-4"></i><span>Wilayah</span></div>
@@ -607,7 +609,79 @@
   </section>
 
   <!-- ================= 5. DATA PK ================= -->
-  <section class="page" id="page-pk">
+  
+  <!-- ================= LITMAS INTEGRASI ================= -->
+  <section class="page" id="page-integrasi">
+    <div class="mb-5">
+      <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Operasional</p>
+      <h3 class="text-lg font-extrabold tracking-tight">Litmas Integrasi</h3>
+      <p class="text-xs text-slate-500 mt-1">Anak dengan Litmas Integrasi (proses sidang sudah selesai). Dapat dilanjutkan ke bimbingan tanpa lewat menu Tracking.</p>
+    </div>
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, no surat, PK…" id="q-integrasi" oninput="renderIntegrasiTable()">
+        </div>
+        <span class="text-xs text-slate-400" id="integrasi-count">—</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" data-table="integrasi" data-key="nama_anak">Nama Anak<span class="sort-arrow"></span></th>
+              <th>No. Registrasi</th>
+              <th>No. Surat</th>
+              <th>Perkara</th>
+              <th>Wilayah</th>
+              <th>PK</th>
+              <th>Status</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tb-integrasi"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pg-integrasi"></div>
+    </div>
+  </section>
+
+  <!-- ================= ARSIP LPKA / LUAR WILAYAH ================= -->
+  <section class="page" id="page-arsip">
+    <div class="mb-5">
+      <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Arsip</p>
+      <h3 class="text-lg font-extrabold tracking-tight">Arsip LPKA / Luar Wilayah</h3>
+      <p class="text-xs text-slate-500 mt-1">Data anak dengan putusan pidana penjara di LPKA. Dipindah dari data aktif (bukan dihapus) — masih bisa di-restore jika ada kesalahan.</p>
+    </div>
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[200px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama arsip…" id="q-arsip" oninput="renderArsipTable()">
+        </div>
+        <span class="text-xs text-slate-400" id="arsip-count">—</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Anak</th>
+              <th>No. Registrasi</th>
+              <th>Perkara</th>
+              <th>Wilayah</th>
+              <th>Tgl Arsip</th>
+              <th>Alasan</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tb-arsip"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pg-arsip"></div>
+    </div>
+  </section>
+
+<section class="page" id="page-pk">
     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
         <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Master Data</p>
