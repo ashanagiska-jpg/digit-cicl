@@ -306,8 +306,11 @@
 
       if (payload && Array.isArray(payload.litmas)) {
         if (typeof allData !== 'undefined') {
+          // WAJIB: map nomor_registrasi (sheet) → objek registrasi (UI)
           // eslint-disable-next-line no-undef
-          allData = payload.litmas;
+          allData = (typeof mapLitmasRows === 'function')
+            ? mapLitmasRows(payload.litmas)
+            : payload.litmas;
           if (typeof saveAll === 'function') saveAll();
         }
       }

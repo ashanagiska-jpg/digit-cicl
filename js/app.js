@@ -3408,23 +3408,47 @@ async function uploadFileToDrive(file, folderId){
 }
 
 function mapLitmasRows(data){
-  return (data||[]).map(d=>({
-    ...d,
-    registrasi: d.nomor_registrasi
-      ? {
-          nomor: d.nomor_registrasi,
-          tanggal: d.tanggal_registrasi,
-          tahun: d.tanggal_registrasi ? new Date(d.tanggal_registrasi).getFullYear() : null
-        }
-      : null,
-    adjudikasi: d.adjudikasi || {
-      jalur: null,
-      status: 'Berjalan',
-      diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
-      persidangan: { sidang:[], putusan:{} }
-    },
-    pasca_adjudikasi: d.pasca_adjudikasi || null
-  }));
+  return (data||[]).map(d=>{
+    // Ambil nomor registrasi dari berbagai kemungkinan nama kolom / bentuk data
+    const rawNomor = d.nomor_registrasi ?? d.no_registrasi ?? d.no_reg ??
+      d['no._registrasi'] ?? d.registrasi_nomor ??
+      (d.registrasi && typeof d.registrasi === 'object' ? d.registrasi.nomor : null) ??
+      (typeof d.registrasi === 'string' || typeof d.registrasi === 'number' ? d.registrasi : null);
+    const nomor = (rawNomor !== undefined && rawNomor !== null && String(rawNomor).trim() !== '')
+      ? String(rawNomor).trim()
+      : '';
+    const rawTgl = d.tanggal_registrasi ?? d.tgl_registrasi ??
+      (d.registrasi && typeof d.registrasi === 'object' ? d.registrasi.tanggal : null) ?? '';
+    let tanggal = rawTgl ? String(rawTgl).trim() : '';
+    // Apps Script kadang kirim Date serial / ISO
+    if (tanggal && /^\d{4}-\d{2}-\d{2}/.test(tanggal)) {
+      tanggal = tanggal.slice(0, 10);
+    }
+    let tahun = null;
+    if (tanggal) {
+      const y = new Date(tanggal).getFullYear();
+      if (!isNaN(y)) tahun = y;
+    }
+    if (!tahun && nomor) {
+      const m = nomor.match(/\/(\d{4})/);
+      if (m) tahun = parseInt(m[1], 10);
+    }
+    return {
+      ...d,
+      nomor_registrasi: nomor || (d.nomor_registrasi || ''),
+      tanggal_registrasi: tanggal || (d.tanggal_registrasi || ''),
+      registrasi: nomor
+        ? { nomor, tanggal: tanggal || null, tahun }
+        : null,
+      adjudikasi: d.adjudikasi || {
+        jalur: null,
+        status: 'Berjalan',
+        diversi: { kepolisian:{}, kejaksaan:{}, pengadilan:{} },
+        persidangan: { sidang:[], putusan:{} }
+      },
+      pasca_adjudikasi: d.pasca_adjudikasi || null
+    };
+  });
 }
 
 /** Terapkan payload master dari sheet; unggah seed jika sheet kosong (hanya saat manual). */
@@ -3699,6 +3723,17 @@ if ('serviceWorker' in navigator) {
 }
 
 window.onload = function(){
+  // Perbaiki data lokal: nomor_registrasi (sheet) → objek registrasi (UI)
+  try {
+    if (typeof mapLitmasRows === 'function' && Array.isArray(allData) && allData.length) {
+      const needsMap = allData.some(d => d && !d.registrasi && d.nomor_registrasi);
+      if (needsMap) {
+        allData = mapLitmasRows(allData);
+        saveAll();
+      }
+    }
+  } catch (e) { console.warn('normalize local registrasi', e); }
+
   renderAllViews();
   lucide.createIcons();
   initAuth();
