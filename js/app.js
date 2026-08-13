@@ -2154,6 +2154,7 @@ async function archiveToLuarWilayah(item, alasan){
   if (!item || !item.id) return;
   try {
     if (typeof postToSheetJSON === 'function' && gsheetUrl) {
+      try { await postToSheetJSON('ensure_arsip_sheet', {}); } catch (_) {}
       await postToSheetJSON('archive_luar_wilayah', {
         id: item.id,
         alasan: alasan || 'Pidana Penjara LPKA — luar wilayah Bapas Lahat'
@@ -2161,7 +2162,7 @@ async function archiveToLuarWilayah(item, alasan){
     }
   } catch (e) {
     console.error('archiveToLuarWilayah', e);
-    showToast('Gagal pindah ke arsip Sheet: ' + (e.message || e) + ' — data tetap di lokal sebagai arsip', 'error');
+    showToast('Sheet belum siap (deploy Code.gs). Data tetap diarsipkan di lokal.', 'info');
   }
   // Lokal: pindah dari allData → arsipData
   const mapped = (typeof mapLitmasRows === 'function') ? mapLitmasRows([item])[0] : item;
@@ -2181,28 +2182,76 @@ async function archiveToLuarWilayah(item, alasan){
 async function restoreFromArsip(id){
   if (guardWrite()) return;
   if (!confirm('Kembalikan data ini ke daftar aktif (DataLitmas)?')) return;
+  const item = (arsipData || []).find(d => String(d.id) === String(id));
+  if (!item) {
+    showToast('Data arsip tidak ditemukan di lokal', 'error');
+    return;
+  }
+
+  let sheetOk = false;
   try {
     if (typeof postToSheetJSON === 'function' && gsheetUrl) {
       await postToSheetJSON('restore_arsip', { id });
+      sheetOk = true;
     }
   } catch (e) {
-    showToast('Gagal restore di Sheet: ' + (e.message || e), 'error');
+    const msg = String(e.message || e);
+    // Backend lama belum deploy: tetap restore lokal + tulis ulang ke DataLitmas via add
+    console.warn('restore_arsip sheet gagal, fallback lokal:', msg);
+    try {
+      if (typeof postToSheetJSON === 'function' && gsheetUrl) {
+        // Pastikan sheet arsip ada + coba create, lalu add ke DataLitmas
+        try { await postToSheetJSON('ensure_arsip_sheet', {}); } catch (_) {}
+        const payload = { ...item, action: undefined };
+        delete payload.tanggal_arsip;
+        delete payload.alasan_arsip;
+        delete payload.status_klien;
+        delete payload.bukan_klien_bapas;
+        await postToSheetJSON('add', payload);
+        sheetOk = true;
+      }
+    } catch (e2) {
+      showToast('Restore lokal OK. Sheet gagal: ' + (e2.message || e2) + ' — deploy Code.gs terbaru', 'error');
+    }
+  }
+
+  delete item.status_klien;
+  delete item.bukan_klien_bapas;
+  delete item.tanggal_arsip;
+  delete item.alasan_arsip;
+  // Hindari duplikat di allData
+  allData = allData.filter(d => String(d.id) !== String(id));
+  allData.unshift(item);
+  arsipData = arsipData.filter(d => String(d.id) !== String(id));
+  saveAll();
+  saveArsip();
+  renderAllViews();
+  showToast(sheetOk
+    ? 'Data dikembalikan ke daftar aktif (+ Sheet)'
+    : 'Data dikembalikan ke daftar aktif (lokal). Deploy Code.gs agar Sheet ikut tersinkron.',
+    sheetOk ? 'success' : 'info');
+}
+
+/** Kirim arsip lokal ke Sheet ArsipLuarWilayah (buat sheet jika belum ada). */
+async function pushArsipToSheet(){
+  if (!gsheetUrl) {
+    showToast('Isi URL Apps Script di Pengaturan', 'error');
     return;
   }
-  const item = (arsipData || []).find(d => String(d.id) === String(id));
-  if (item) {
-    delete item.status_klien;
-    delete item.bukan_klien_bapas;
-    delete item.tanggal_arsip;
-    delete item.alasan_arsip;
-    allData.unshift(item);
-    arsipData = arsipData.filter(d => String(d.id) !== String(id));
-    saveAll();
-    saveArsip();
-    renderAllViews();
-    showToast('Data dikembalikan ke daftar aktif', 'success');
+  if (!(arsipData || []).length) {
+    showToast('Tidak ada data arsip lokal untuk dikirim', 'info');
+    return;
+  }
+  try {
+    showToast('Membuat/mengisi sheet ArsipLuarWilayah…', 'info');
+    await postToSheetJSON('ensure_arsip_sheet', {});
+    await postToSheetJSON('replace_arsip_list', { list: arsipData });
+    showToast('Sheet ArsipLuarWilayah siap (' + arsipData.length + ' baris)', 'success');
+  } catch (e) {
+    showToast('Gagal: ' + (e.message || e) + ' — pastikan Code.gs terbaru sudah di-deploy', 'error');
   }
 }
+
 
 function renderIntegrasiTable(){
   const tbody = document.getElementById('tb-integrasi');
