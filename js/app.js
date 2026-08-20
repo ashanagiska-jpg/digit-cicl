@@ -473,8 +473,8 @@ document.addEventListener('click', function(e){
 });
 
 // ==================== AUTENTIKASI (ADMIN / TAMU) ====================
-const ADMIN_USERNAME = 'Naer';
-const ADMIN_PASSWORD = 'adp1212';
+const ADMIN_USERNAME = 'NAER';
+const ADMIN_PASSWORD = 'ADP1212';
 let currentRole = localStorage.getItem('CICL_ROLE') || null; // 'admin' | 'guest' | null
 let currentUserLabel = localStorage.getItem('CICL_USER_LABEL') || '';
 
