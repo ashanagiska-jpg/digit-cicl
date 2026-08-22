@@ -701,8 +701,30 @@ function navigateTo(pageId){
 function openSidebar(){ document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('sidebar-overlay').classList.remove('hidden'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); }
 function toggleSidebar(){ document.getElementById('sidebar').classList.contains('-translate-x-full') ? openSidebar() : closeSidebar(); }
+function toggleSidebarCollapse(){
+  const sb = document.getElementById('sidebar');
+  const collapsed = sb.classList.toggle('collapsed');
+  document.body.classList.toggle('sidebar-collapsed', collapsed);
+  try { localStorage.setItem('cicl_sidebar_collapsed', collapsed ? '1' : '0'); } catch(e){}
+  const icon = sb.querySelector('.sidebar-toggle-btn i');
+  if (icon) {
+    icon.setAttribute('data-lucide', collapsed ? 'panel-left-open' : 'panel-left-close');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+(function restoreSidebarState(){
+  try {
+    if (localStorage.getItem('cicl_sidebar_collapsed') === '1') {
+      const sb = document.getElementById('sidebar');
+      if (sb) {
+        sb.classList.add('collapsed');
+        document.body.classList.add('sidebar-collapsed');
+      }
+    }
+  } catch(e){}
+})();
 
-function openModal(html){ document.getElementById('modal-box').innerHTML = html; document.getElementById('modal-overlay').style.display='flex'; lucide.createIcons(); }
+function openModal(html){ document.getElementById('modal-box').innerHTML = html; document.getElementById('modal-overlay').style.display='flex'; lucide.createIcons(); initDatePickers(document.getElementById('modal-box')); }
 function closeModal(){ document.getElementById('modal-overlay').style.display='none'; }
 
 function initDropdowns(){
@@ -719,13 +741,13 @@ function openSettingsModal(){
     <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Pengaturan</h3><button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <div class="space-y-4">
       <div><label class="fl">Gemini API Key (untuk AI Scan)</label>
-        <input class="form-input" id="set-gemini" value="${geminiKey}" placeholder="AIza...">
+        <input class="form-input no-uppercase" id="set-gemini" value="${geminiKey}" placeholder="AIza..." autocomplete="off" spellcheck="false">
         <p class="text-[11px] text-slate-500 mt-1">Kunci disimpan hanya di browser Anda (localStorage), tidak dikirim ke server manapun selain Google Gemini.</p>
         <button type="button" class="btn btn-ghost btn-sm mt-2" onclick="testGeminiKey()"><i data-lucide="plug-zap" class="w-3.5 h-3.5"></i>Tes Koneksi & Kuota</button>
         <p id="gemini-test-result" class="text-xs mt-1"></p>
       </div>
       <div><label class="fl">URL Web App Google Apps Script (opsional, untuk sinkron Google Sheet)</label>
-        <input class="form-input" id="set-gas" value="${gsheetUrl}" placeholder="https://script.google.com/macros/s/.../exec">
+        <input class="form-input no-uppercase" type="url" id="set-gas" value="${gsheetUrl}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
@@ -1227,6 +1249,98 @@ function getFilteredPermintaan(){
   });
 }
 
+
+/* ========== Shared page view (table | card) ========== */
+const pageViews = {
+  reg: localStorage.getItem('CICL_VIEW_reg') || 'table',
+  adj: localStorage.getItem('CICL_VIEW_adj') || 'table',
+  pasca: localStorage.getItem('CICL_VIEW_pasca') || 'table',
+  integrasi: localStorage.getItem('CICL_VIEW_integrasi') || 'table',
+  arsip: localStorage.getItem('CICL_VIEW_arsip') || 'table'
+};
+
+function setPageView(page, mode){
+  pageViews[page] = mode;
+  try { localStorage.setItem('CICL_VIEW_'+page, mode); } catch(e){}
+  document.getElementById(page+'-view-table')?.classList.toggle('active', mode==='table');
+  document.getElementById(page+'-view-card')?.classList.toggle('active', mode==='card');
+
+  if(page==='reg'){
+    ['reg-belum','reg-sudah'].forEach(k=>{
+      document.getElementById(k+'-table-wrap')?.classList.toggle('hidden', mode!=='table');
+      document.getElementById(k+'-card-wrap')?.classList.toggle('hidden', mode!=='card');
+    });
+    renderRegistrasiTables();
+  } else if(page==='adj'){
+    document.getElementById('adj-table-wrap')?.classList.toggle('hidden', mode!=='table');
+    document.getElementById('adj-card-wrap')?.classList.toggle('hidden', mode!=='card');
+    renderAdjudikasiTable();
+  } else if(page==='pasca'){
+    document.getElementById('pasca-table-wrap')?.classList.toggle('hidden', mode!=='table');
+    document.getElementById('pasca-card-wrap')?.classList.toggle('hidden', mode!=='card');
+    renderPascaTable();
+  } else if(page==='integrasi'){
+    document.getElementById('integrasi-table-wrap')?.classList.toggle('hidden', mode!=='table');
+    document.getElementById('integrasi-card-wrap')?.classList.toggle('hidden', mode!=='card');
+    renderIntegrasiTable();
+  } else if(page==='arsip'){
+    document.getElementById('arsip-table-wrap')?.classList.toggle('hidden', mode!=='table');
+    document.getElementById('arsip-card-wrap')?.classList.toggle('hidden', mode!=='card');
+    renderArsipTable();
+  }
+}
+
+function applyPageViewUI(page){
+  const mode = pageViews[page] || 'table';
+  document.getElementById(page+'-view-table')?.classList.toggle('active', mode==='table');
+  document.getElementById(page+'-view-card')?.classList.toggle('active', mode==='card');
+  if(page==='reg'){
+    ['reg-belum','reg-sudah'].forEach(k=>{
+      document.getElementById(k+'-table-wrap')?.classList.toggle('hidden', mode!=='table');
+      document.getElementById(k+'-card-wrap')?.classList.toggle('hidden', mode!=='card');
+    });
+  } else {
+    document.getElementById(page+'-table-wrap')?.classList.toggle('hidden', mode!=='table');
+    document.getElementById(page+'-card-wrap')?.classList.toggle('hidden', mode!=='card');
+  }
+}
+
+function getPkFoto(name){
+  if(!name) return '';
+  const p = (typeof PK_MASTER!=='undefined' ? PK_MASTER : []).find(x=>x.name===name);
+  return (p && p.foto) ? p.foto : '';
+}
+
+function dataCardHtml(d, extraRows, actionsHtml){
+  const luar = (typeof isKlienLuarWilayah==='function' && isKlienLuarWilayah(d)) || d._from_arsip;
+  const name = d.nama_anak || '-';
+  const rows = (extraRows||[]).map(r=>`<p class="line-clamp-2"><span class="font-semibold text-slate-400">${r.l}</span> · ${r.v||'-'}</p>`).join('');
+  const pkName = d.nama_pk || d.pasca_adjudikasi?.pk_pembimbing || '';
+  const pkFoto = getPkFoto(pkName);
+  const pkDecor = pkName ? (
+    pkFoto
+      ? `<div class="card-pk-photo" title="PK: ${pkName.replace(/"/g,'&quot;')}" style="background-image:url('${pkFoto}')"></div>`
+      : `<div class="card-pk-photo card-pk-photo--fallback" title="PK: ${pkName.replace(/"/g,'&quot;')}" style="--pk-color:${pkAvatarColor(pkName)}">
+           <span>${pkInitials(pkName)}</span>
+         </div>`
+  ) : '';
+  return `<div class="card-panel data-card p-4 flex flex-col gap-3 anim-fade-up relative overflow-hidden">
+    ${pkDecor}
+    <div class="relative z-[1] flex items-start gap-3">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#2457FF] to-[#1a3fd4] text-[#B6FF2E] flex items-center justify-center text-sm font-extrabold shrink-0">${initials(name)}</div>
+      <div class="min-w-0 flex-1">
+        <p class="font-bold text-sm leading-snug truncate">${luar?`<span class="line-through text-slate-400">${name}</span>`:name}</p>
+        <p class="text-[11px] text-slate-400 truncate">${d.jenis_litmas||d.jenis_perkara||''}</p>
+      </div>
+    </div>
+    <div class="relative z-[1] space-y-1 text-[12px] text-slate-600 dark:text-slate-300">${rows}</div>
+    <div class="relative z-[1] flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60 dark:border-white/5 flex-wrap">
+      ${actionsHtml||''}
+    </div>
+  </div>`;
+}
+
+
 let permintaanView = localStorage.getItem('CICL_PVIEW') || 'table';
 
 function setPermintaanView(mode){
@@ -1652,6 +1766,33 @@ function renderRegistrasiTables(){
       </td></tr>`;
   }
 
+  // Card views
+  applyPageViewUI('reg');
+  const cardsBelum = document.getElementById('reg-belum-cards');
+  if(cardsBelum){
+    cardsBelum.innerHTML = pgB.slice.length ? pgB.slice.map(d=>{
+      return dataCardHtml(d, [
+        {l:'Surat', v:d.nomor_surat||'-'},
+        {l:'Diterima', v:fmtDate(d.tanggal_diterima)},
+        {l:'Perkara', v:d.jenis_perkara},
+        {l:'Wilayah', v:d.wilayah_asal},
+        {l:'PK', v:d.nama_pk}
+      ], isAdmin()?`<button class="btn btn-primary btn-sm" onclick="registrasiAnak('${d.id}')"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i> Registrasi</button>`:'');
+    }).join('') : `<div class="col-span-full text-center py-10 text-slate-400"><p class="font-semibold">Tidak ada data menunggu</p></div>`;
+  }
+  const cardsSudah = document.getElementById('reg-sudah-cards');
+  if(cardsSudah){
+    cardsSudah.innerHTML = pgS.slice.length ? pgS.slice.map(d=>{
+      return dataCardHtml(d, [
+        {l:'No. Reg', v:d.registrasi?.nomor||'-'},
+        {l:'Tgl Reg', v:fmtDate(d.registrasi?.tanggal)},
+        {l:'Perkara', v:d.jenis_perkara},
+        {l:'Wilayah', v:d.wilayah_asal},
+        {l:'PK', v:d.nama_pk}
+      ], `<span class="badge badge-indigo">${d.registrasi?.nomor||'-'}</span>`);
+    }).join('') : `<div class="col-span-full text-center py-10 text-slate-400"><p class="font-semibold">Tidak ada data teregistrasi</p></div>`;
+  }
+
   renderPagination('pg-reg-belum', 'reg-belum', pgB.total, pgB.pages, pgB.page);
   renderPagination('pg-reg-sudah', 'reg-sudah', pgS.total, pgS.pages, pgS.page);
   lucide.createIcons();
@@ -1904,6 +2045,24 @@ function renderAdjudikasiTable(){
       <p class="text-xs">Pastikan anak sudah teregistrasi, atau longgarkan filter</p>
     </div>
   </td></tr>`;
+
+  applyPageViewUI('adj');
+  const adjCards = document.getElementById('adj-cards');
+  if(adjCards){
+    adjCards.innerHTML = pg.slice.length ? pg.slice.map(d=>{
+      const st = getAdjStatus(d);
+      const jalur = d.adjudikasi?.jalur || 'Belum ditentukan';
+      const stBadge = st==='Selesai'?'badge-green':(st==='Berjalan'?'badge-amber':'badge-slate');
+      return dataCardHtml(d, [
+        {l:'No. Reg', v:d.registrasi?.nomor||'-'},
+        {l:'Jalur', v:jalur},
+        {l:'Status', v:st},
+        {l:'Wilayah', v:d.wilayah_asal},
+        {l:'PK', v:d.nama_pk}
+      ], `<span class="badge ${stBadge}">${st}</span>
+        <button class="btn btn-primary btn-sm" onclick="openAdjudikasiModal('${d.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Detail</button>`);
+    }).join('') : `<div class="col-span-full text-center py-10 text-slate-400"><p class="font-semibold">Tidak ada data adjudikasi</p></div>`;
+  }
 
   renderPagination('pg-adjudikasi', 'adjudikasi', pg.total, pg.pages, pg.page);
   lucide.createIcons();
@@ -2329,6 +2488,22 @@ function renderIntegrasiTable(){
       </td>
     </tr>
   `).join('') : `<tr><td colspan="8" class="text-center py-10 text-slate-400">Belum ada data Litmas Integrasi.</td></tr>`;
+  applyPageViewUI('integrasi');
+  const intCards = document.getElementById('integrasi-cards');
+  if(intCards){
+    intCards.innerHTML = pg.slice.length ? pg.slice.map(d=>{
+      return dataCardHtml(d, [
+        {l:'No. Reg', v:d.registrasi?.nomor||'-'},
+        {l:'No. Surat', v:d.nomor_surat},
+        {l:'Perkara', v:d.jenis_perkara},
+        {l:'Wilayah', v:d.wilayah_asal},
+        {l:'PK', v:d.nama_pk},
+        {l:'Status', v:d.status_jenis}
+      ], `<span class="badge ${d.status_jenis==='Selesai'?'badge-green':'badge-blue'}">${d.status_jenis||'-'}</span>
+        ${isAdmin()?`<button class="btn btn-ghost btn-sm" onclick="openAddPascaFromIntegrasi('${d.id}')"><i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i> Pasca</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>`);
+    }).join('') : `<div class="col-span-full text-center py-10 text-slate-400"><p class="font-semibold">Belum ada data Litmas Integrasi</p></div>`;
+  }
   renderPagination('pg-integrasi', 'integrasi', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
@@ -2385,6 +2560,20 @@ function renderArsipTable(){
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="7" class="text-center py-10 text-slate-400">Belum ada data arsip LPKA / luar wilayah.</td></tr>`;
+  applyPageViewUI('arsip');
+  const arsipCards = document.getElementById('arsip-cards');
+  if(arsipCards){
+    arsipCards.innerHTML = pg.slice.length ? pg.slice.map(d=>{
+      const a = d.arsip || d;
+      return dataCardHtml(d, [
+        {l:'No. Reg', v:d.registrasi?.nomor||'-'},
+        {l:'Perkara', v:d.jenis_perkara},
+        {l:'Wilayah', v:d.wilayah_asal},
+        {l:'Tgl Arsip', v:fmtDate(d.arsip_tanggal||d.tanggal_arsip||a.tanggal)},
+        {l:'Alasan', v:d.arsip_alasan||d.alasan_arsip||a.alasan}
+      ], isAdmin()?`<button class="btn btn-primary btn-sm" onclick="restoreFromArsip('${d.id}')"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i> Restore</button>`:'');
+    }).join('') : `<div class="col-span-full text-center py-10 text-slate-400"><p class="font-semibold">Belum ada data arsip</p></div>`;
+  }
   renderPagination('pg-arsip', 'arsip', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
@@ -2592,6 +2781,23 @@ function renderPascaTable(){
     <td><span class="badge ${p.status==='Selesai'?'badge-green':p.status==='Dicabut'?'badge-amber':'badge-blue'}">${p.status}</span></td>
     <td class="text-center">${isAdmin() ? `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>` : `<button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')" title="Lihat"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>`}</td></tr>
   `;}).join('') : `<tr><td colspan="8" class="text-center py-8 text-slate-400">Belum ada klien bimbingan pasca adjudikasi.</td></tr>`;
+  applyPageViewUI('pasca');
+  const pascaCards = document.getElementById('pasca-cards');
+  if(pascaCards){
+    pascaCards.innerHTML = pg.slice.length ? pg.slice.map(d=>{
+      const p = d.pasca_adjudikasi || {};
+      const st = p.status || '-';
+      const stBadge = st==='Selesai'?'badge-green':(st==='Dalam Bimbingan'?'badge-blue':'badge-slate');
+      return dataCardHtml(d, [
+        {l:'Jenis', v:p.jenis},
+        {l:'PK Pembimbing', v:p.pk_pembimbing},
+        {l:'Mulai', v:fmtDate(p.tanggal_mulai)},
+        {l:'Selesai', v:fmtDate(p.tanggal_selesai)},
+        {l:'Asal LPKA', v:p.asal_lpka}
+      ], `<span class="badge ${stBadge}">${st}</span>
+        <button class="btn btn-ghost btn-sm" onclick="openPascaModal('${d.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Detail</button>`);
+    }).join('') : `<div class="col-span-full text-center py-10 text-slate-400"><p class="font-semibold">Belum ada klien bimbingan</p></div>`;
+  }
   renderPagination('pg-pasca', 'pasca', pg.total, pg.pages, pg.page);
   lucide.createIcons();
 }
@@ -2624,6 +2830,50 @@ function getPkRows(){
     return { ...p, int: st.int, pnd: st.pnd, total: st.total };
   });
 }
+
+function previewPkFoto(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('File harus gambar','error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(){
+    const img = new Image();
+    img.onload = function(){
+      const max = 320;
+      let w = img.width, h = img.height;
+      if(w > h && w > max){ h = Math.round(h*max/w); w = max; }
+      else if(h > max){ w = Math.round(w*max/h); h = max; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      const hid = document.getElementById('pk-foto');
+      if(hid) hid.value = dataUrl;
+      const prev = document.getElementById('pk-foto-preview');
+      if(prev){
+        prev.style.background = `url('${dataUrl}') center/cover`;
+        prev.textContent = '';
+      }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearPkFoto(){
+  const hid = document.getElementById('pk-foto');
+  if(hid) hid.value = '';
+  const file = document.getElementById('pk-foto-file');
+  if(file) file.value = '';
+  const prev = document.getElementById('pk-foto-preview');
+  if(prev){
+    const name = document.getElementById('pk-name')?.value || '';
+    prev.style.background = name ? pkAvatarColor(name) : '#2457FF';
+    prev.style.color = '#B6FF2E';
+    prev.textContent = name ? pkInitials(name) : '?';
+  }
+}
+
 function openPkModal(oldName){
   if(guardWrite())return;
   const item = oldName ? PK_MASTER.find(p=>p.name===oldName) : null;
@@ -2658,6 +2908,20 @@ function openPkModal(oldName){
         <input class="form-input" id="pk-email" type="email" value="${item?(item.email||'').replace(/"/g,'&quot;'):''}"></div>
       <div><label class="fl">Tanggal Masuk</label>
         <input class="form-input" id="pk-tanggal" type="date" value="${item?item.tanggal_masuk||'':''}"></div>
+      <div class="sm:col-span-2"><label class="fl">Foto PK (tampil di kartu)</label>
+        <div class="flex items-center gap-3">
+          <div id="pk-foto-preview" class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center text-white font-bold text-lg"
+            style="background:${item&&item.foto?`url('${item.foto}') center/cover`:(item?pkAvatarColor(item.name):'#2457FF')}; ${item&&item.foto?'':'color:#B6FF2E'}">
+            ${item&&item.foto?'':(item?pkInitials(item.name):'?')}
+          </div>
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <input type="file" id="pk-foto-file" accept="image/*" class="form-input text-xs" onchange="previewPkFoto(this)">
+            <input type="hidden" id="pk-foto" value="${item&&item.foto?item.foto.replace(/"/g,'&quot;'):''}">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="clearPkFoto()"><i data-lucide="trash-2" class="w-3 h-3"></i> Hapus foto</button>
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">Disarankan foto portrait. Otomatis diperkecil agar ringan.</p>
+      </div>
       <div class="sm:col-span-2"><label class="fl">Catatan</label>
         <textarea class="form-input" id="pk-catatan" rows="2">${item?item.catatan||'':''}</textarea></div>
     </div>
@@ -2671,6 +2935,7 @@ async function savePk(oldName){
   if(guardWrite())return;
   const name = (document.getElementById('pk-name')?.value||'').trim();
   if(!name){ showToast('Nama PK wajib diisi','error'); return; }
+  const prev = oldName ? PK_MASTER.find(p=>p.name===oldName) : null;
   const payload = {
     name,
     nip: (document.getElementById('pk-nip')?.value||'').trim(),
@@ -2680,7 +2945,8 @@ async function savePk(oldName){
     telepon: (document.getElementById('pk-telepon')?.value||'').trim(),
     email: (document.getElementById('pk-email')?.value||'').trim(),
     tanggal_masuk: document.getElementById('pk-tanggal')?.value || '',
-    catatan: (document.getElementById('pk-catatan')?.value||'').trim()
+    catatan: (document.getElementById('pk-catatan')?.value||'').trim(),
+    foto: (document.getElementById('pk-foto')?.value||'').trim() || (prev && prev.foto) || ''
   };
   if(oldName){
     const i = PK_MASTER.findIndex(p=>p.name===oldName);
@@ -3306,23 +3572,170 @@ function renderKepolisianTable(){
 
 // ==================== 8. REKAP PK ====================
 function renderRekapTable(){
-  const head = document.getElementById('rekap-head'); const tbody = document.getElementById('tb-rekap');
+  const head = document.getElementById('rekap-head');
+  const tbody = document.getElementById('tb-rekap');
   if(!head||!tbody) return;
-  head.innerHTML = '<th class="sortable" data-table="rekap" data-key="pk">PK<span class="sort-arrow"></span></th>'
-    + WILAYAH.map(w=>`<th>${w}</th>`).join('')
-    + '<th class="sortable font-extrabold" data-table="rekap" data-key="total">TOTAL<span class="sort-arrow"></span></th>';
+
   let rows = PK_LIST.map(pk=>{
-    let total=0;
-    const perWilayah = WILAYAH.map(w=>{ const c = allData.filter(d=>d.nama_pk===pk && d.wilayah_asal===w).length; total+=c; return c; });
+    let total = 0;
+    const perWilayah = WILAYAH.map(w=>{
+      const c = allData.filter(d=>d.nama_pk===pk && d.wilayah_asal===w).length;
+      total += c;
+      return c;
+    });
     return { pk, perWilayah, total };
   });
-  rows = sortByTable(rows, 'rekap', (r,key)=>key==='pk'?r.pk:r.total);
+  rows = sortByTable(rows, 'rekap', (r,key)=> key==='pk' ? r.pk : r.total);
+
+  const grandTotal = rows.reduce((s,r)=>s+r.total, 0);
+  const maxTotal = Math.max(1, ...rows.map(r=>r.total));
+  const maxCell = Math.max(1, ...rows.flatMap(r=>r.perWilayah));
+  const sortedByLoad = rows.slice().sort((a,b)=>b.total-a.total);
+  const top = sortedByLoad[0];
+
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+  set('rk-pk', PK_LIST.length);
+  set('rk-total', grandTotal);
+  set('rk-top', top && top.total ? top.pk : '—');
+  set('rk-avg', PK_LIST.length ? (grandTotal/PK_LIST.length).toFixed(1) : '0');
+
+  const rankEl = document.getElementById('rekap-rank-cards');
+  const noteEl = document.getElementById('rekap-rank-note');
+  if(noteEl) noteEl.textContent = grandTotal ? `${grandTotal} litmas · ${PK_LIST.length} PK` : '';
+  if(rankEl){
+    const topN = sortedByLoad.slice(0, 6);
+    rankEl.innerHTML = topN.length ? topN.map((r,i)=>{
+      const pct = Math.round((r.total / maxTotal) * 100);
+      const rankClass = i===0 ? 'rank-1' : (i===1 ? 'rank-2' : (i===2 ? 'rank-3' : ''));
+      return `<div class="rekap-rank-card ${rankClass}" style="animation-delay:${i*0.06}s">
+        <div class="rekap-rank-top">
+          <div class="rekap-rank-badge">${i+1}</div>
+          <div class="min-w-0">
+            <p class="rekap-rank-name truncate">${r.pk}</p>
+            <p class="rekap-rank-meta">${r.perWilayah.filter(c=>c>0).length} wilayah aktif</p>
+          </div>
+        </div>
+        <div class="rekap-bar-track"><div class="rekap-bar-fill" style="width:${pct}%"></div></div>
+        <div class="rekap-rank-stats">
+          <span><strong>${r.total}</strong> litmas</span>
+          <span class="text-slate-400">${pct}% dari puncak</span>
+        </div>
+      </div>`;
+    }).join('') : `<div class="col-span-full text-center py-8 text-slate-400 text-sm">Belum ada data litmas</div>`;
+  }
+
+  const heatClass = (c)=>{
+    if(c<=0) return 'cell-0';
+    const ratio = c / maxCell;
+    if(ratio >= 0.75) return 'cell-peak';
+    if(ratio >= 0.45) return 'cell-high';
+    if(ratio >= 0.2) return 'cell-mid';
+    return 'cell-low';
+  };
+
+  // Nama wilayah lengkap (mapping singkatan umum → nama formal)
+  const wilayahLabel = (w)=>{
+    const s = String(w||'').trim();
+    const map = {
+      'kabupaten lahat': 'Lahat',
+      'lahat': 'Lahat',
+      'kabupaten muara enim': 'Muara Enim',
+      'muara enim': 'Muara Enim',
+      'kabupaten empat lawang': 'Empat Lawang',
+      'empat lawang': 'Empat Lawang',
+      'kabupaten pali': 'PALI',
+      'pali': 'PALI',
+      'penukal abab lematang ilir': 'PALI',
+      'kota pagar alam': 'Pagar Alam',
+      'pagar alam': 'Pagar Alam'
+    };
+    const key = s.toLowerCase().replace(/^kab\.?\s*/i,'').replace(/^kota\s+/i,'');
+    // coba exact / partial
+    if(map[s.toLowerCase()]) return map[s.toLowerCase()];
+    if(map[key]) return map[key];
+    for(const [k,v] of Object.entries(map)){
+      if(s.toLowerCase().includes(k) || k.includes(key)) return v;
+    }
+    // fallback: bersihkan prefix Kabupaten/Kota
+    return s.replace(/^Kabupaten\s+/i,'').replace(/^Kota\s+/i,'').trim() || s;
+  };
+
+  head.innerHTML = '<th class="sortable" data-table="rekap" data-key="pk">PK<span class="sort-arrow"></span></th>'
+    + WILAYAH.map(w=>`<th class="rekap-wil-th" title="${w}">${wilayahLabel(w)}</th>`).join('')
+    + '<th class="sortable font-extrabold" data-table="rekap" data-key="total">TOTAL<span class="sort-arrow"></span></th>';
+
   tbody.innerHTML = rows.map(r=>{
-    const cells = r.perWilayah.map(c=>`<td>${c}</td>`).join('');
-    return `<tr><td class="font-semibold">${r.pk}</td>${cells}<td class="font-extrabold text-brand-navy dark:text-amber-400">${r.total}</td></tr>`;
-  }).join('');
+    const cells = r.perWilayah.map((c, wi)=>{
+      const w = WILAYAH[wi];
+      const label = wilayahLabel(w);
+      if(c <= 0){
+        return `<td><span class="cell-heat cell-0">·</span></td>`;
+      }
+      return `<td>
+        <button type="button" class="cell-heat ${heatClass(c)} cell-clickable"
+          title="Lihat detail: ${r.pk} · ${label}"
+          onclick="showRekapCellDetail(${JSON.stringify(r.pk)}, ${JSON.stringify(w)})">${c}</button>
+      </td>`;
+    }).join('');
+    const totalBtn = r.total > 0
+      ? `<button type="button" class="cell-heat ${heatClass(Math.max(...r.perWilayah, r.total))} cell-clickable"
+          title="Semua litmas ${r.pk}"
+          onclick="showRekapCellDetail(${JSON.stringify(r.pk)}, null)">${r.total}</button>`
+      : `<span class="cell-heat cell-0">0</span>`;
+    return `<tr>
+      <td>
+        <button type="button" class="rekap-pk-link" onclick="showRekapCellDetail(${JSON.stringify(r.pk)}, null)" title="Detail semua wilayah">${r.pk}</button>
+      </td>
+      ${cells}
+      <td class="total-col">${totalBtn}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="${WILAYAH.length+2}" class="text-center py-10 text-slate-400">Belum ada data</td></tr>`;
+
   updateSortIndicators();
+  if(window.lucide) lucide.createIcons();
 }
+
+/** Detail litmas untuk kombinasi PK + wilayah (atau semua wilayah jika wilayah=null). */
+function showRekapCellDetail(pk, wilayah){
+  const list = allData.filter(d=>{
+    if(d.nama_pk !== pk) return false;
+    if(wilayah != null && d.wilayah_asal !== wilayah) return false;
+    return true;
+  });
+  const wilLabel = wilayah
+    ? String(wilayah).replace(/^Kabupaten\s+/i,'').replace(/^Kota\s+/i,'').trim()
+    : 'Semua wilayah';
+  const rows = list.length ? list.map(d=>{
+    const st = d.status_jenis || '-';
+    const stBadge = st==='Selesai'?'badge-green':(st==='Pending'?'badge-amber':'badge-blue');
+    const reg = d.registrasi?.nomor ? `<span class="badge badge-indigo">${d.registrasi.nomor}</span>` : `<span class="badge badge-slate">Belum reg.</span>`;
+    return `<li class="py-3 px-3 rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/5 flex flex-wrap items-start justify-between gap-2">
+      <div class="min-w-0 flex-1">
+        <p class="font-bold text-sm">${d.nama_anak||'-'}</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">${d.jenis_litmas||'-'} · ${d.jenis_perkara||'-'}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">${d.wilayah_asal||'-'}${d.kepolisian?' · '+d.kepolisian:''}</p>
+      </div>
+      <div class="flex flex-col items-end gap-1 shrink-0">
+        <span class="badge ${stBadge}">${st}</span>
+        ${reg}
+      </div>
+    </li>`;
+  }).join('') : `<li class="py-10 text-center text-slate-400 text-sm">Tidak ada data untuk filter ini.</li>`;
+
+  openModal(`
+    <div class="flex justify-between items-start gap-3 mb-4">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Detail Rekapitulasi</p>
+        <h3 class="font-extrabold text-lg leading-tight">${pk}</h3>
+        <p class="text-xs text-slate-500 mt-1">${wilLabel} · <strong>${list.length}</strong> litmas</p>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <ul class="divide-y divide-slate-100 dark:divide-white/5 max-h-[60vh] overflow-y-auto space-y-0.5">${rows}</ul>
+  `);
+}
+
+
 function exportCSV(){
   let csv = "No Registrasi,Nomor Surat,Nama Anak,JK,Jenis Litmas,Wilayah,PK,Status Litmas,Jalur Adjudikasi,Tahap Adjudikasi\n";
   allData.forEach(d=>{
@@ -4358,16 +4771,65 @@ if ('serviceWorker' in navigator) {
 }
 
 
+
+/* ========== Modern date picker (Flatpickr) ========== */
+function initDatePickers(root){
+  if(typeof flatpickr === 'undefined') return;
+  const scope = root || document;
+  const opts = {
+    locale: (flatpickr.l10ns && flatpickr.l10ns.id) ? flatpickr.l10ns.id : 'default',
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'd/m/Y',
+    allowInput: true,
+    disableMobile: true,
+    animate: true,
+    monthSelectorType: 'static'
+  };
+  scope.querySelectorAll('input[type="date"]').forEach(el=>{
+    if(el._flatpickr) return;
+    if(el.disabled) return;
+    const onChangeAttr = el.getAttribute('onchange');
+    const classes = el.className || 'form-input';
+    flatpickr(el, {
+      ...opts,
+      defaultDate: el.value || null,
+      onReady: function(selectedDates, dateStr, instance){
+        if(instance.altInput){
+          instance.altInput.className = classes + ' flatpickr-alt';
+          instance.altInput.setAttribute('placeholder', el.getAttribute('placeholder') || 'dd/mm/yyyy');
+          if(el.required) instance.altInput.required = true;
+        }
+      },
+      onChange: function(selectedDates, dateStr, instance){
+        el.value = dateStr;
+        if(onChangeAttr){
+          try { new Function(onChangeAttr).call(el); } catch(e){}
+        }
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+    });
+  });
+}
+
 /** Ubah nilai input teks menjadi huruf kapital (kecuali tipe khusus). */
 function shouldUppercaseField(el){
   if (!el || el.disabled || el.readOnly) return false;
   if (el.classList && el.classList.contains('no-uppercase')) return false;
+  // Jangan ubah case untuk key/URL/kredensial
+  const id = (el.id || '').toLowerCase();
+  const name = (el.name || '').toLowerCase();
+  if (/gemini|api.?key|gas|gsheet|script\.google|password|token|secret|url/.test(id + ' ' + name)) return false;
   const tag = (el.tagName || '').toUpperCase();
   if (tag === 'TEXTAREA') return true;
-  if (tag === 'SELECT') return false; // opsi sudah dari master; tampilan CSS cukup
+  if (tag === 'SELECT') return false;
   if (tag !== 'INPUT') return false;
   const t = (el.type || 'text').toLowerCase();
   if (['password','email','url','number','date','time','datetime-local','file','checkbox','radio','hidden','color','range','month','week'].includes(t)) return false;
+  // Jika value terlihat seperti URL atau API key, biarkan case-nya
+  const v = String(el.value || '');
+  if (/^https?:\/\//i.test(v) || /^AIza/i.test(v) || /script\.google\.com/i.test(v)) return false;
   return true;
 }
 
@@ -4407,6 +4869,7 @@ function initUppercaseInputs(){
 
 window.onload = function(){
   initUppercaseInputs();
+  initDatePickers();
   // Perbaiki data lokal: registrasi + adjudikasi dari bentuk Sheet → bentuk UI
   try {
     if (typeof mapLitmasRows === 'function' && Array.isArray(allData) && allData.length) {

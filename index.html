@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b1c33">
+<meta name="theme-color" content="#2457FF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIGIT-CICL">
@@ -17,9 +17,12 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <script>
   tailwind.config = { darkMode: 'class', theme: { extend: {
-    colors: { brand: { navy:'#1e3a5f', navyDark:'#0a1628', gold:'#d4a843', goldHover:'#b88e32', cardDark:'#132338' } },
+    colors: { brand: { graphite:'#2457FF', graphiteDark:'#1a3fd4', lime:'#B6FF2E', limeDim:'#9ae01f', cardDark:'#1a2233' } },
     fontFamily: { sans: ['"Plus Jakarta Sans"','sans-serif'] },
     boxShadow: { glass: '0 8px 32px rgba(0,0,0,.12)', 'glass-lg': '0 12px 48px rgba(0,0,0,.18)' }
   } } }
@@ -31,14 +34,14 @@
 <!-- ==================== LOGIN OVERLAY ==================== -->
 <div id="login-overlay">
   <div class="login-card" id="login-card">
-    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#e8c547] to-[#b8922e] flex items-center justify-center text-[#0b1c33] font-extrabold text-3xl shadow-xl shadow-amber-900/20 mb-4">C</div>
+    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#2457FF] to-[#1a3fd4] flex items-center justify-center text-[#B6FF2E] font-extrabold text-3xl shadow-xl mb-4" style="box-shadow:8px 8px 16px rgba(163,177,198,.4),-8px -8px 16px rgba(255,255,255,.9)">C</div>
     <h1 class="text-xl font-extrabold tracking-tight mb-1">DIGIT-CICL</h1>
-    <p class="text-[11px] font-semibold tracking-widest uppercase text-amber-600/80 mb-1">Bapas Kelas II Lahat</p>
+    <p class="text-[11px] font-semibold tracking-widest uppercase text-[#2457FF] mb-1">Bapas Kelas II Lahat</p>
     <p class="text-xs text-slate-500 mb-7">Sistem Litmas &amp; Tracking Anak</p>
 
     <div id="login-step-role" class="space-y-3">
       <button type="button" class="role-btn" onclick="showAdminLoginForm()">
-        <span class="role-icon bg-gradient-to-br from-[#0f2744] to-[#1a3d66] text-amber-300"><i data-lucide="shield-check" class="w-5 h-5"></i></span>
+        <span class="role-icon bg-gradient-to-br from-[#2457FF] to-[#1a3fd4] text-[#B6FF2E]"><i data-lucide="shield-check" class="w-5 h-5"></i></span>
         <span><span class="block font-bold text-sm">Admin</span><span class="block text-[11px] text-slate-500">Akses penuh — kelola &amp; edit data</span></span>
       </button>
       <button type="button" class="role-btn" onclick="loginAsGuest()">
@@ -61,15 +64,18 @@
 <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeSidebar()"></div>
 
 <aside class="sidebar fixed left-0 top-0 bottom-0 flex flex-col z-50 transition-transform duration-300 -translate-x-full md:translate-x-0" id="sidebar" style="width:var(--sidebar-w)">
-  <div class="p-5 border-b border-white/5 flex items-center justify-between relative z-10">
-    <div class="flex items-center gap-3">
-      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#e8c547] to-[#b8922e] flex items-center justify-center text-[#0b1c33] font-extrabold text-xl shadow-lg shadow-amber-900/30">C</div>
-      <div>
-        <h1 class="text-base font-extrabold text-white tracking-tight">DIGIT-CICL</h1>
-        <p class="text-[10px] text-amber-400/90 font-semibold tracking-wider uppercase">Bapas II Lahat</p>
+  <div class="sidebar-header relative z-10">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo" title="DIGIT-CICL">C</div>
+      <div class="sidebar-brand-text">
+        <h1>DIGIT-CICL</h1>
+        <p>Bapas II Lahat</p>
       </div>
     </div>
-    <button onclick="closeSidebar()" class="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <button type="button" onclick="toggleSidebarCollapse()" class="sidebar-toggle-btn hidden md:flex" title="Minimize / Expand sidebar" id="sidebar-collapse-btn">
+      <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+    </button>
+    <button onclick="closeSidebar()" class="md:hidden sidebar-toggle-btn sidebar-close-mobile" title="Tutup"><i data-lucide="x" class="w-4 h-4"></i></button>
   </div>
   <nav class="flex-1 p-3 overflow-y-auto relative z-10" id="sidebar-nav">
     <div class="nav-section-label">Utama</div>
@@ -92,17 +98,17 @@
       <div class="sidebar-link" onclick="openSettingsModal()"><i data-lucide="settings" class="w-4 h-4"></i><span>Pengaturan</span></div>
     </div>
   </nav>
-  <div class="p-3 border-t border-white/5 space-y-2 relative z-10">
-    <div id="logged-badge" class="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2.5 text-slate-300 border border-white/5">
-      <span class="flex items-center gap-1.5"><i data-lucide="user-circle" class="w-3.5 h-3.5 text-amber-400"></i><span id="logged-user-label">-</span></span>
-      <button onclick="logoutUser()" class="text-red-400/90 hover:text-red-300 flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Keluar</button>
+  <div class="p-3 space-y-2 relative z-10">
+    <div id="logged-badge" class="flex items-center justify-between rounded-xl px-3 py-2.5 neu-pressed">
+      <span class="flex items-center gap-1.5 logged-text"><i data-lucide="user-circle" class="w-3.5 h-3.5" style="color:var(--graphite)"></i><span id="logged-user-label">-</span></span>
+      <button onclick="logoutUser()" class="text-red-500 hover:text-red-400 flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="log-out" class="w-3.5 h-3.5"></i><span class="logged-text">Keluar</span></button>
     </div>
-    <button onclick="(window.CICLApi ? CICLApi.syncDataFromSheetsOptimized(true) : syncDataFromSheets(true))" class="w-full bg-gradient-to-r from-amber-600/20 to-amber-500/10 hover:from-amber-600/30 hover:to-amber-500/20 text-xs text-amber-300 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 border border-amber-500/20 font-semibold transition">
-      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Sinkron Google Sheet</span>
+    <button onclick="(window.CICLApi ? CICLApi.syncDataFromSheetsOptimized(true) : syncDataFromSheets(true))" class="sidebar-footer-btn w-full btn btn-primary btn-sm justify-center gap-2">
+      <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span class="sync-label">Sinkron Google Sheet</span>
     </button>
-    <div class="bg-white/5 rounded-xl p-2.5 flex items-center gap-2.5 text-xs text-slate-400 border border-white/5">
-      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" id="sheet-status-dot"></span>
-      <span class="truncate font-medium text-[11px]" id="sheet-status-text">Mode Lokal (Belum Sinkron)</span>
+    <div class="rounded-xl p-2.5 flex items-center gap-2.5 text-xs neu-flat">
+      <span class="w-2 h-2 rounded-full bg-[#B6FF2E] animate-pulse shrink-0" id="sheet-status-dot"></span>
+      <span class="truncate font-medium text-[11px] status-label" id="sheet-status-text">Mode Lokal (Belum Sinkron)</span>
     </div>
   </div>
 </aside>
@@ -168,27 +174,27 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-      <div class="stat-card text-white" style="background:linear-gradient(145deg,#0f2744,#1a3d66)">
+      <div class="stat-card accent-graphite text-white">
         <div class="stat-icon"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
         <p class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Total Permintaan</p>
         <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-total">0</p>
       </div>
-      <div class="stat-card text-white" style="background:linear-gradient(145deg,#5c4a1a,#8a6f28)">
+      <div class="stat-card accent-lime">
         <div class="stat-icon"><i data-lucide="clock" class="w-5 h-5"></i></div>
-        <p class="text-[11px] font-semibold text-amber-100/80 uppercase tracking-wider">Belum Registrasi</p>
+        <p class="text-[11px] font-semibold text-white/80 uppercase tracking-wider">Belum Registrasi</p>
         <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-belumreg">0</p>
       </div>
-      <div class="stat-card text-white" style="background:linear-gradient(145deg,#1e3a5f,#2d5a8a)">
+      <div class="stat-card accent-graphite text-white">
         <div class="stat-icon"><i data-lucide="badge-check" class="w-5 h-5"></i></div>
         <p class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Sudah Registrasi</p>
         <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-reg">0</p>
       </div>
-      <div class="stat-card text-white" style="background:linear-gradient(145deg,#5a3a18,#8a5a28)">
+      <div class="stat-card accent-lime">
         <div class="stat-icon"><i data-lucide="scale" class="w-5 h-5"></i></div>
-        <p class="text-[11px] font-semibold text-amber-100/80 uppercase tracking-wider">Dalam Adjudikasi</p>
+        <p class="text-[11px] font-semibold text-white/80 uppercase tracking-wider">Dalam Adjudikasi</p>
         <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-adj">0</p>
       </div>
-      <div class="stat-card text-white" style="background:linear-gradient(145deg,#1a4a32,#2d6b4a)">
+      <div class="stat-card accent-graphite text-white">
         <div class="stat-icon"><i data-lucide="heart-handshake" class="w-5 h-5"></i></div>
         <p class="text-[11px] font-semibold text-emerald-100/80 uppercase tracking-wider">Bimbingan Pasca</p>
         <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-pasca">0</p>
@@ -256,7 +262,7 @@
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" id="permintaan-kpi">
       <div class="card-panel p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-slate-800/90 text-amber-300 flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF] text-[#B6FF2E] flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</p><p class="text-xl font-extrabold leading-tight" id="pkpi-total">0</p></div>
       </div>
       <div class="card-panel p-4 flex items-center gap-3">
@@ -268,7 +274,7 @@
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Selesai</p><p class="text-xl font-extrabold leading-tight" id="pkpi-selesai">0</p></div>
       </div>
       <div class="card-panel p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Belum Reg.</p><p class="text-xl font-extrabold leading-tight" id="pkpi-belumreg">0</p></div>
       </div>
     </div>
@@ -355,21 +361,21 @@
       <div>
         <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Operasional</p>
         <h3 class="text-lg font-extrabold tracking-tight">Registrasi Anak</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Nomor resmi format <span class="font-semibold text-amber-600">0001/AN/Bulan-Romawi/Tahun</span></p>
+        <p class="text-xs text-slate-500 mt-0.5">Nomor resmi format <span class="font-semibold text-[#2457FF]">0001/AN/Bulan-Romawi/Tahun</span></p>
       </div>
       <div class="card-panel px-4 py-2.5 flex items-center gap-3" id="reg-next-preview">
         <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor berikutnya</div>
-        <div class="font-extrabold text-amber-600 text-sm" id="reg-next-nomor">—</div>
+        <div class="font-extrabold text-[#2457FF] text-sm" id="reg-next-nomor">—</div>
       </div>
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" id="reg-kpi">
       <div class="card-panel p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-slate-800/90 text-amber-300 flex items-center justify-center shrink-0"><i data-lucide="users" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF] text-[#B6FF2E] flex items-center justify-center shrink-0"><i data-lucide="users" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Anak</p><p class="text-xl font-extrabold leading-tight" id="rkpi-total">0</p></div>
       </div>
       <div class="card-panel p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Menunggu</p><p class="text-xl font-extrabold leading-tight" id="rkpi-belum">0</p></div>
       </div>
       <div class="card-panel p-4 flex items-center gap-3">
@@ -387,6 +393,10 @@
         <div class="relative flex-1 min-w-[200px]">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
           <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, no surat, no registrasi, PK…" id="q-registrasi" oninput="onRegFilterChange()">
+        </div>
+        <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1 shrink-0">
+          <button type="button" class="df-preset active" id="reg-view-table" onclick="setPageView('reg','table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
+          <button type="button" class="df-preset" id="reg-view-card" onclick="setPageView('reg','card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
         </div>
         <button type="button" class="btn btn-ghost btn-sm" onclick="exportRegistrasiCSV()" title="Export"><i data-lucide="download" class="w-3.5 h-3.5"></i> CSV</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="resetRegFilters()" title="Reset"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
@@ -421,10 +431,10 @@
       <!-- BELUM -->
       <div id="reg-panel-belum">
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-sm font-bold text-amber-600 flex items-center gap-1.5"><i data-lucide="hourglass" class="w-4 h-4"></i> Menunggu Registrasi</h4>
+          <h4 class="text-sm font-bold text-[#2457FF] flex items-center gap-1.5"><i data-lucide="hourglass" class="w-4 h-4"></i> Menunggu Registrasi</h4>
           <span class="text-[11px] text-slate-400" id="reg-belum-count"></span>
         </div>
-        <div class="table-wrap rounded-xl">
+        <div id="reg-belum-table-wrap" class="table-wrap rounded-xl">
           <table>
             <thead>
               <tr>
@@ -439,6 +449,7 @@
             <tbody id="tb-reg-belum"></tbody>
           </table>
         </div>
+        <div id="reg-belum-card-wrap" class="hidden"><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="reg-belum-cards"></div></div>
         <div class="pagination" id="pg-reg-belum"></div>
       </div>
 
@@ -448,7 +459,7 @@
           <h4 class="text-sm font-bold text-emerald-600 flex items-center gap-1.5"><i data-lucide="badge-check" class="w-4 h-4"></i> Sudah Teregistrasi</h4>
           <span class="text-[11px] text-slate-400" id="reg-sudah-count"></span>
         </div>
-        <div class="table-wrap rounded-xl">
+        <div id="reg-sudah-table-wrap" class="table-wrap rounded-xl">
           <table>
             <thead>
               <tr>
@@ -463,6 +474,9 @@
             </thead>
             <tbody id="tb-reg-sudah"></tbody>
           </table>
+        </div>
+        <div id="reg-sudah-card-wrap" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="reg-sudah-cards"></div>
         </div>
         <div class="pagination" id="pg-reg-sudah"></div>
       </div>
@@ -481,11 +495,11 @@
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5" id="adj-kpi">
       <div class="card-panel p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-slate-800/90 text-amber-300 flex items-center justify-center shrink-0"><i data-lucide="scale" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF] text-[#B6FF2E] flex items-center justify-center shrink-0"><i data-lucide="scale" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Teregistrasi</p><p class="text-xl font-extrabold leading-tight" id="akpi-total">0</p></div>
       </div>
       <div class="card-panel p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="loader" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="loader" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Berjalan</p><p class="text-xl font-extrabold leading-tight" id="akpi-berjalan">0</p></div>
       </div>
       <div class="card-panel p-4 flex items-center gap-3">
@@ -557,9 +571,13 @@
 
       <div class="flex items-center justify-between">
         <span class="text-[11px] text-slate-400" id="adj-count"></span>
+        <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1 shrink-0">
+          <button type="button" class="df-preset active" id="adj-view-table" onclick="setPageView('adj','table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
+          <button type="button" class="df-preset" id="adj-view-card" onclick="setPageView('adj','card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
+        </div>
       </div>
 
-      <div class="table-wrap rounded-xl">
+      <div id="adj-table-wrap" class="table-wrap rounded-xl">
         <table>
           <thead>
             <tr>
@@ -574,6 +592,9 @@
           </thead>
           <tbody id="tb-adjudikasi"></tbody>
         </table>
+      </div>
+      <div id="adj-card-wrap" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="adj-cards"></div>
       </div>
       <div class="pagination" id="pg-adjudikasi"></div>
     </div>
@@ -592,7 +613,11 @@
         <select class="form-input" id="f-pasca-jenis" onchange="renderPascaTable()"><option value="">Semua Jenis</option><option value="Pembebasan Bersyarat (PB)">PB</option><option value="Cuti Bersyarat (CB)">CB</option></select>
         <select class="form-input" id="f-pasca-status" onchange="renderPascaTable()"><option value="">Semua Status</option><option>Dalam Bimbingan</option><option>Selesai</option><option>Dicabut</option></select>
       </div>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
+              <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1 shrink-0">
+          <button type="button" class="df-preset active" id="pasca-view-table" onclick="setPageView('pasca','table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
+          <button type="button" class="df-preset" id="pasca-view-card" onclick="setPageView('pasca','card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
+        </div>
+      <div id="pasca-table-wrap" class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
         <table><thead class="bg-slate-50 dark:bg-slate-800/60"><tr>
           <th class="sortable" data-table="pasca" data-key="nama_anak">Nama Anak<span class="sort-arrow"></span></th>
           <th class="sortable" data-table="pasca" data-key="jenis">Jenis<span class="sort-arrow"></span></th>
@@ -603,6 +628,9 @@
           <th class="sortable" data-table="pasca" data-key="status">Status<span class="sort-arrow"></span></th>
           <th class="text-center">Aksi</th></tr></thead>
         <tbody id="tb-pasca"></tbody></table>
+      </div>
+      <div id="pasca-card-wrap" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="pasca-cards"></div>
       </div>
       <div class="pagination" id="pg-pasca"></div>
     </div>
@@ -624,8 +652,12 @@
           <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama, no surat, PK…" id="q-integrasi" oninput="renderIntegrasiTable()">
         </div>
         <span class="text-xs text-slate-400" id="integrasi-count">—</span>
+        <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1 shrink-0">
+          <button type="button" class="df-preset active" id="integrasi-view-table" onclick="setPageView('integrasi','table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
+          <button type="button" class="df-preset" id="integrasi-view-card" onclick="setPageView('integrasi','card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
+        </div>
       </div>
-      <div class="table-wrap">
+      <div id="integrasi-table-wrap" class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -641,6 +673,9 @@
           </thead>
           <tbody id="tb-integrasi"></tbody>
         </table>
+      </div>
+      <div id="integrasi-card-wrap" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="integrasi-cards"></div>
       </div>
       <div class="pagination" id="pg-integrasi"></div>
     </div>
@@ -660,9 +695,13 @@
           <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama arsip…" id="q-arsip" oninput="renderArsipTable()">
         </div>
         <span class="text-xs text-slate-400" id="arsip-count">—</span>
+        <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1 shrink-0">
+          <button type="button" class="df-preset active" id="arsip-view-table" onclick="setPageView('arsip','table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
+          <button type="button" class="df-preset" id="arsip-view-card" onclick="setPageView('arsip','card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
+        </div>
         <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="pushArsipToSheet()"><i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> Kirim ke Sheet</button>
       </div>
-      <div class="table-wrap">
+      <div id="arsip-table-wrap" class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -677,6 +716,9 @@
           </thead>
           <tbody id="tb-arsip"></tbody>
         </table>
+      </div>
+      <div id="arsip-card-wrap" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="arsip-cards"></div>
       </div>
       <div class="pagination" id="pg-arsip"></div>
     </div>
@@ -715,7 +757,7 @@
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nonaktif</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-nonaktif">0</p></div>
       </div>
       <div class="card-panel p-3.5 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0"><i data-lucide="briefcase" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="briefcase" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Kasus</p><p class="text-xl font-extrabold leading-tight" id="pkkpi-kasus">0</p></div>
       </div>
       <div class="card-panel p-3.5 flex items-center gap-3">
@@ -789,7 +831,7 @@
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Aktif</p><p class="text-xl font-extrabold leading-tight" id="wilkpi-aktif">0</p></div>
       </div>
       <div class="card-panel p-3.5 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Kasus</p><p class="text-xl font-extrabold leading-tight" id="wilkpi-kasus">0</p></div>
       </div>
       <div class="card-panel p-3.5 flex items-center gap-3">
@@ -866,7 +908,7 @@
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Polsek</p><p class="text-xl font-extrabold leading-tight" id="polkpi-polsek">0</p></div>
       </div>
       <div class="card-panel p-3.5 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
         <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Masuk</p><p class="text-xl font-extrabold leading-tight" id="polkpi-kasus">0</p></div>
       </div>
     </div>
@@ -922,12 +964,59 @@
 
   <!-- ================= 8. REKAP PK ================= -->
   <section class="page" id="page-rekap">
-    <div class="card-panel p-5 overflow-x-auto">
-      <h3 class="font-bold text-base mb-4">Rekapitulasi Litmas per PK</h3>
-      <div class="table-wrap rounded-xl border border-slate-200/70 dark:border-slate-800">
-        <table id="tbl-rekap"><thead class="bg-slate-50 dark:bg-slate-800/60"><tr id="rekap-head"></tr></thead><tbody id="tb-rekap"></tbody></table>
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Laporan</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Rekapitulasi PK</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Beban kerja litmas per Pembimbing Kemasyarakatan &amp; wilayah</p>
       </div>
-      <div class="mt-4"><button class="btn btn-gold" onclick="exportCSV()"><i data-lucide="download" class="w-4 h-4"></i>Export CSV</button></div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="renderRekapTable()"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh</button>
+        <button type="button" class="btn btn-lime btn-sm" onclick="exportCSV()"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
+      </div>
+    </div>
+
+    <!-- KPI ringkas -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" id="rekap-kpi">
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF] text-[#B6FF2E] flex items-center justify-center shrink-0"><i data-lucide="users" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">PK Aktif</p><p class="text-xl font-extrabold leading-tight" id="rk-pk">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Litmas</p><p class="text-xl font-extrabold leading-tight" id="rk-total">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0"><i data-lucide="trophy" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">PK Terbanyak</p><p class="text-sm font-extrabold leading-tight truncate max-w-[120px]" id="rk-top">—</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="gauge" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rata-rata / PK</p><p class="text-xl font-extrabold leading-tight" id="rk-avg">0</p></div>
+      </div>
+    </div>
+
+    <!-- Ranking cards -->
+    <div class="mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-bold flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4" style="color:var(--graphite)"></i> Peringkat Beban Kerja</h4>
+        <span class="text-[11px] text-slate-400" id="rekap-rank-note"></span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" id="rekap-rank-cards"></div>
+    </div>
+
+    <!-- Matrix table -->
+    <div class="card-panel p-4 sm:p-5 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h4 class="text-sm font-bold flex items-center gap-2"><i data-lucide="table" class="w-4 h-4" style="color:var(--graphite)"></i> Matriks PK × Wilayah</h4>
+        <p class="text-[11px] text-slate-400">Warna sel menunjukkan intensitas beban</p>
+      </div>
+      <div class="table-wrap rounded-xl rekap-matrix-wrap">
+        <table id="tbl-rekap" class="rekap-matrix">
+          <thead><tr id="rekap-head"></tr></thead>
+          <tbody id="tb-rekap"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -1023,7 +1112,12 @@
 
 <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="if(event.target===this) closeModal()"><div class="modal-box" id="modal-box"></div></div>
 
-<div class="app-watermark" id="app-watermark">Built with AI Innovation by NAER</div>
+<div class="app-watermark" id="app-watermark" aria-hidden="true">
+  <span class="wm-dot"></span>
+  <span class="wm-text">AI Innovation</span>
+  <span class="wm-sep">·</span>
+  <span class="wm-brand">NAER</span>
+</div>
 
 <div id="pwa-install-bar">
   <span class="flex items-center gap-2"><i data-lucide="download-cloud" class="w-4 h-4"></i> Install DIGIT-CICL di perangkat Anda</span>
