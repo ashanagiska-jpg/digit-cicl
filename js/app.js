@@ -3762,6 +3762,22 @@ function toYMD(d){
 }
 function parseDay(s){
   if(!s) return null;
+  s = String(s).trim();
+
+  // Sudah ISO YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){
+    const d = new Date(s);
+    if(!isNaN(d)){ d.setHours(0,0,0,0); return d; }
+  }
+
+  // DD/MM/YYYY atau DD-MM-YYYY
+  const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m1){
+    const d = new Date(+m1[3], +m1[2]-1, +m1[1]);
+    if(!isNaN(d)){ d.setHours(0,0,0,0); return d; }
+  }
+
+  // Fallback native
   const d = new Date(s);
   if(isNaN(d)) return null;
   d.setHours(0,0,0,0);
