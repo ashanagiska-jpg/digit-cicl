@@ -554,6 +554,40 @@ function initAuth(){
 
 function saveAll(){ localStorage.setItem('CICL_DATA', JSON.stringify(allData)); }
 function saveArsip(){ localStorage.setItem('CICL_ARSIP', JSON.stringify(arsipData)); }
+
+/** Migrasi sekali: kembalikan arsip lokal ke allData agar tidak terpisah (tanpa menu Arsip). */
+function migrateArsipBackToActive(){
+  if (!Array.isArray(arsipData) || !arsipData.length) return 0;
+  const ids = new Set((allData || []).map(d => String(d.id)));
+  let n = 0;
+  arsipData.forEach(d => {
+    if (!d || !d.id) return;
+    const marked = {
+      ...d,
+      status_klien: d.status_klien || 'luar_wilayah',
+      bukan_klien_bapas: true
+    };
+    if (ids.has(String(d.id))) {
+      // sudah ada di aktif — pastikan flag luar wilayah
+      const i = allData.findIndex(x => String(x.id) === String(d.id));
+      if (i >= 0) {
+        allData[i].status_klien = allData[i].status_klien || 'luar_wilayah';
+        allData[i].bukan_klien_bapas = true;
+      }
+    } else {
+      allData.unshift(marked);
+      ids.add(String(d.id));
+      n++;
+    }
+  });
+  if (n || arsipData.length) {
+    arsipData = [];
+    saveAll();
+    saveArsip();
+  }
+  return n;
+}
+
 function saveMaster(){
   localStorage.setItem('CICL_WILAYAH', JSON.stringify(WILAYAH_MASTER));
   localStorage.setItem('CICL_POLISI', JSON.stringify(KEPOLISIAN_MASTER));
@@ -687,7 +721,7 @@ function navigateTo(pageId){
     t.classList.add('active');
   }
   document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-page')===pageId));
-  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', pasca:'Pasca Adjudikasi (Bimbingan)', integrasi:'Litmas Integrasi', arsip:'Arsip LPKA / Luar Wilayah', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
+  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', pasca:'Pasca Adjudikasi (Bimbingan)', integrasi:'Litmas Integrasi', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
   const titleEl = document.getElementById('nav-title');
   if(titleEl){
     titleEl.style.animation = 'none';
@@ -2137,7 +2171,13 @@ function resetJalur(id){
   showSuccessPopup('Jalur adjudikasi direset');
 }
 function persistAdj(item){
-  sendToSheet('update_adjudikasi', {id:item.id, adjudikasi:item.adjudikasi});
+  // Kirim adjudikasi + flag luar wilayah (jika ada) agar tetap di sheet utama, tidak dipindah
+  const payload = { id: item.id, adjudikasi: item.adjudikasi };
+  if (item.status_klien) payload.status_klien = item.status_klien;
+  if (item.bukan_klien_bapas != null) payload.bukan_klien_bapas = item.bukan_klien_bapas;
+  if (item.alasan_arsip) payload.alasan_arsip = item.alasan_arsip;
+  if (item.tanggal_arsip) payload.tanggal_arsip = item.tanggal_arsip;
+  sendToSheet('update_adjudikasi', payload);
   saveAll(); renderAllViews();
 }
 
@@ -2318,12 +2358,12 @@ function saveEditPutusan(id){
     jenis_putusan: document.getElementById('ept-jenis')?.value || ''
   };
   markLuarWilayahIfNeeded(item);
-  if (isKlienLuarWilayah(item)) {
-    // Pindahkan ke sheet ArsipLuarWilayah (bukan hapus; tetap bisa diedit di menu Arsip)
-    archiveToLuarWilayah(item, 'Pidana Penjara LPKA — luar wilayah Bapas Lahat');
-  }
+  // Data tetap di allData + Google Sheet. Hanya dicoret di tampilan jika LPKA / luar wilayah.
   editPutusanState = null;
-  persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim diperbarui','success');
+  persistAdj(item); openAdjudikasiModal(id);
+  showToast(isKlienLuarWilayah(item)
+    ? 'Putusan disimpan — data dicoret (LPKA/luar wilayah), tetap di database'
+    : 'Putusan hakim diperbarui', 'success');
 }
 function addSidang(id){
   if(guardWrite())return;
@@ -2346,43 +2386,26 @@ function savePutusan(id){
     jenis_putusan: document.getElementById('pt-jenis')?.value || ''
   };
   markLuarWilayahIfNeeded(item);
-  if (isKlienLuarWilayah(item)) {
-    // Pindahkan ke sheet ArsipLuarWilayah (bukan hapus; tetap bisa diedit di menu Arsip)
-    archiveToLuarWilayah(item, 'Pidana Penjara LPKA — luar wilayah Bapas Lahat');
-  }
-  persistAdj(item); openAdjudikasiModal(id); showToast('Putusan hakim disimpan, adjudikasi selesai','success');
+  // Data tetap di allData + Google Sheet. Hanya dicoret di tampilan jika LPKA / luar wilayah.
+  persistAdj(item); openAdjudikasiModal(id);
+  showToast(isKlienLuarWilayah(item)
+    ? 'Putusan disimpan, adjudikasi selesai — data dicoret (LPKA), tetap di database'
+    : 'Putusan hakim disimpan, adjudikasi selesai', 'success');
 }
 
 // ==================== 4. PASCA ADJUDIKASI ====================
 
 async function archiveToLuarWilayah(item, alasan){
-  if (!item || !item.id) return;
-  try {
-    if (typeof postToSheetJSON === 'function' && gsheetUrl) {
-      try { await postToSheetJSON('ensure_arsip_sheet', {}); } catch (_) {}
-      await postToSheetJSON('archive_luar_wilayah', {
-        id: item.id,
-        alasan: alasan || 'Pidana Penjara LPKA — luar wilayah Bapas Lahat'
-      });
-    }
-  } catch (e) {
-    console.error('archiveToLuarWilayah', e);
-    showToast('Sheet belum siap (deploy Code.gs). Data tetap diarsipkan di lokal.', 'info');
-  }
-  // Lokal: pindah dari allData → arsipData
-  const mapped = (typeof mapLitmasRows === 'function') ? mapLitmasRows([item])[0] : item;
-  mapped.status_klien = 'luar_wilayah';
-  mapped.tanggal_arsip = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  mapped.alasan_arsip = alasan || '';
-  arsipData = (arsipData || []).filter(d => String(d.id) !== String(item.id));
-  arsipData.unshift(mapped);
-  allData = allData.filter(d => String(d.id) !== String(item.id));
+  // DEPRECATED: tidak lagi memindah data. Cukup tandai status_klien.
+  // Data tetap di allData dan Google Sheet (DataLitmas).
+  if (!item) return;
+  markLuarWilayahIfNeeded(item);
+  item.alasan_arsip = alasan || 'Pidana Penjara LPKA — luar wilayah Bapas Lahat';
+  item.tanggal_arsip = item.tanggal_arsip || new Date().toISOString().slice(0, 19).replace('T', ' ');
   saveAll();
-  saveArsip();
-  if (typeof closeModal === 'function') closeModal();
   if (typeof renderAllViews === 'function') renderAllViews();
-  showToast('Data dipindah ke Arsip LPKA / Luar Wilayah (tetap bisa diedit di menu Arsip)', 'success');
 }
+
 
 async function restoreFromArsip(id){
   if (guardWrite()) return;
@@ -4817,7 +4840,7 @@ function renderAllViews(){
   renderAdjudikasiTable();
   renderPascaTable();
   try { renderIntegrasiTable(); } catch(e) {}
-  try { renderArsipTable(); } catch(e) {}
+  /* menu Arsip LPKA dihapus — data dicoret di daftar aktif */
   renderPkTable();
   renderWilayahTable();
   renderKepolisianTable();
