@@ -84,6 +84,7 @@
     <div class="sidebar-link" data-page="permintaan" onclick="navigateTo('permintaan')"><i data-lucide="file-input" class="w-4 h-4"></i><span>Permintaan Litmas</span></div>
     <div class="sidebar-link" data-page="registrasi" onclick="navigateTo('registrasi')"><i data-lucide="hash" class="w-4 h-4"></i><span>Registrasi Anak</span></div>
     <div class="sidebar-link" data-page="adjudikasi" onclick="navigateTo('adjudikasi')"><i data-lucide="scale" class="w-4 h-4"></i><span>Tracking</span></div>
+    <div class="sidebar-link" data-page="monitoring" onclick="navigateTo('monitoring')"><i data-lucide="radar" class="w-4 h-4"></i><span>Monitoring Perkara</span></div>
     <div class="sidebar-link" data-page="pasca" onclick="navigateTo('pasca')"><i data-lucide="heart-handshake" class="w-4 h-4"></i><span>Pasca Adjudikasi</span></div>
     <div class="sidebar-link" data-page="integrasi" onclick="navigateTo('integrasi')"><i data-lucide="file-check-2" class="w-4 h-4"></i><span>Litmas Integrasi</span></div>
     <div class="nav-section-label">Master Data</div>
@@ -596,6 +597,77 @@
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="adj-cards"></div>
       </div>
       <div class="pagination" id="pg-adjudikasi"></div>
+    </div>
+  </section>
+
+
+  <!-- ================= MONITORING NOMOR PERKARA ================= -->
+  <section class="page" id="page-monitoring">
+    <div class="mb-5">
+      <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Pemantauan</p>
+      <h3 class="text-lg font-extrabold tracking-tight">Monitoring berdasarkan Nomor Perkara</h3>
+      <p class="text-xs text-slate-500 mt-1">Pantau progres sidang per nomor perkara (PN/Pengadilan). Cari, filter, dan buka detail tracking anak.</p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#2457FF]/10 text-[#2457FF] flex items-center justify-center shrink-0"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nomor Perkara</p><p class="text-xl font-extrabold leading-tight" id="mon-kpi-total">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="calendar-clock" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sidang Berjalan</p><p class="text-xl font-extrabold leading-tight" id="mon-kpi-berjalan">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0"><i data-lucide="gavel" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sudah Putusan</p><p class="text-xl font-extrabold leading-tight" id="mon-kpi-putusan">0</p></div>
+      </div>
+      <div class="card-panel p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-500/10 text-slate-500 flex items-center justify-center shrink-0"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
+        <div><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tanpa No. Perkara</p><p class="text-xl font-extrabold leading-tight" id="mon-kpi-tanpa">0</p></div>
+      </div>
+    </div>
+
+    <div class="card-panel p-4 sm:p-5 space-y-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[220px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nomor perkara, nama anak, PN…" id="q-monitoring" oninput="onMonitoringFilterChange()">
+        </div>
+        <select class="form-input w-auto min-w-[140px]" id="f-mon-status" onchange="onMonitoringFilterChange()">
+          <option value="">Semua Status</option>
+          <option value="berjalan">Sidang Berjalan</option>
+          <option value="putusan">Sudah Putusan</option>
+          <option value="tanpa">Tanpa Nomor Perkara</option>
+        </select>
+        <select class="form-input w-auto min-w-[140px]" id="f-mon-wilayah" onchange="onMonitoringFilterChange()">
+          <option value="">Semua Wilayah</option>
+        </select>
+        <select class="form-input w-auto min-w-[140px]" id="f-mon-pk" onchange="onMonitoringFilterChange()">
+          <option value="">Semua PK</option>
+        </select>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetMonitoringFilters()" title="Reset filter"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        <span class="text-xs text-slate-400 ml-auto" id="mon-count">—</span>
+      </div>
+
+      <div class="table-wrap rounded-xl">
+        <table>
+          <thead>
+            <tr>
+              <th>Nomor Perkara</th>
+              <th>Anak / Registrasi</th>
+              <th>Sidang</th>
+              <th>Sidang Terakhir</th>
+              <th>Agenda / Catatan</th>
+              <th>Putusan</th>
+              <th>PK / Wilayah</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tb-monitoring"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pg-monitoring"></div>
     </div>
   </section>
 
