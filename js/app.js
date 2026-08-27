@@ -1533,7 +1533,8 @@ function exportPermintaanCSV(){
 
 // ==================== 2. REGISTRASI ====================
 function toRomanMonth(dateStr){
-  const m = new Date(dateStr).getMonth();
+  const d = parseDay(dateStr);
+  const m = d ? d.getMonth() : 0;
   return ROMAN[m>=0&&m<12?m:0];
 }
 function registrasiAnak(id){
@@ -1697,7 +1698,11 @@ function renderRegistrasiTables(){
   let belum = sortByTable(belumAll, 'reg-belum', regGetter);
   let sudah = tableSort['reg-sudah']
     ? sortByTable(sudahAll, 'reg-sudah', regGetter)
-    : sudahAll.slice().sort((a,b)=> new Date(b.registrasi.tanggal) - new Date(a.registrasi.tanggal));
+    : sudahAll.slice().sort((a,b)=> {
+        const da = parseDay(b.registrasi?.tanggal) || new Date(0);
+        const db = parseDay(a.registrasi?.tanggal) || new Date(0);
+        return da - db;
+      });
 
   const pgB = paginate(belum, 'reg-belum');
   const pgS = paginate(sudah, 'reg-sudah');
@@ -3760,31 +3765,73 @@ function toYMD(d){
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
+/**
+ * Parse tanggal dari berbagai format umum (ISO, DD/MM/YYYY, DD-MM-YYYY, Excel serial, dll.)
+ * Agar statistik & filter tidak salah karena format di Google Sheet.
+ */
 function parseDay(s){
-  if(!s) return null;
-  s = String(s).trim();
+  if(s === null || s === undefined || s === '') return null;
+  // Sudah objek Date
+  if(s instanceof Date){
+    if(isNaN(s)) return null;
+    const d = new Date(s.getTime());
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  // Excel / Sheets serial number (hari sejak 1899-12-30)
+  if(typeof s === 'number' && isFinite(s) && s > 20000 && s < 80000){
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.round(s) * 86400000);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  let str = String(s).trim();
+  if(!str) return null;
 
-  // Sudah ISO YYYY-MM-DD
-  if(/^\d{4}-\d{2}-\d{2}/.test(s)){
-    const d = new Date(s);
+  // ISO / YYYY-MM-DD (dengan atau tanpa waktu)
+  if(/^\d{4}-\d{2}-\d{2}/.test(str)){
+    const d = new Date(str.slice(0,10) + 'T00:00:00');
     if(!isNaN(d)){ d.setHours(0,0,0,0); return d; }
   }
 
-  // DD/MM/YYYY atau DD-MM-YYYY
-  const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if(m1){
-    const d = new Date(+m1[3], +m1[2]-1, +m1[1]);
+  // DD/MM/YYYY atau DD-MM-YYYY (format Indonesia)
+  let m = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  if(m){
+    const day = parseInt(m[1],10), mon = parseInt(m[2],10)-1, year = parseInt(m[3],10);
+    const d = new Date(year, mon, day);
+    if(!isNaN(d) && d.getFullYear()===year && d.getMonth()===mon && d.getDate()===day){
+      d.setHours(0,0,0,0);
+      return d;
+    }
+  }
+
+  // MM/DD/YYYY (US) — hanya jika hari > 12 agar tidak ambigu dengan DD/MM
+  m = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  if(m){
+    const mon = parseInt(m[1],10)-1, day = parseInt(m[2],10), year = parseInt(m[3],10);
+    if(day > 12){
+      const d = new Date(year, mon, day);
+      if(!isNaN(d) && d.getFullYear()===year && d.getMonth()===mon && d.getDate()===day){
+        d.setHours(0,0,0,0);
+        return d;
+      }
+    }
+  }
+
+  // DD MMM YYYY / DD Month YYYY (id-ID atau en)
+  m = str.match(/^(\d{1,2})\s+([A-Za-zÀ-ÿ]+)\s+(\d{4})/);
+  if(m){
+    const d = new Date(m[1] + ' ' + m[2] + ' ' + m[3]);
     if(!isNaN(d)){ d.setHours(0,0,0,0); return d; }
   }
 
   // Fallback native
-  const d = new Date(s);
+  const d = new Date(str);
   if(isNaN(d)) return null;
   d.setHours(0,0,0,0);
   return d;
 }
 function itemDate(d){
-  return parseDay(d.tanggal_diterima) || parseDay(d.tanggal_surat) || parseDay(d.tanggal_registrasi);
+  return parseDay(d.tanggal_diterima) || parseDay(d.tanggal_surat) || parseDay(d.registrasi?.tanggal) || parseDay(d.tanggal_registrasi);
 }
 /** Data aktif untuk KPI + grafik (menghormati filter tanggal global). */
 function getScopedData(){
@@ -3965,9 +4012,12 @@ function renderAllCharts(){
   const statusData = statusLabels.map(s => data.filter(d => d.status_jenis === s).length);
   const trendByJenis = { 'Litmas Integrasi': new Array(12).fill(0), 'Litmas Pendampingan ABH': new Array(12).fill(0) };
   data.forEach(d => {
-    if (d.tanggal_diterima && trendByJenis[d.jenis_litmas]) {
-      const m = new Date(d.tanggal_diterima).getMonth();
-      if (m >= 0 && m < 12) trendByJenis[d.jenis_litmas][m]++;
+    if (trendByJenis[d.jenis_litmas]) {
+      const dt = parseDay(d.tanggal_diterima) || parseDay(d.tanggal_surat);
+      if (dt) {
+        const m = dt.getMonth();
+        if (m >= 0 && m < 12) trendByJenis[d.jenis_litmas][m]++;
+      }
     }
   });
   const trendTotal = months.map((_, i) =>
@@ -4055,7 +4105,10 @@ function renderAllCharts(){
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       const m = el.index;
-      showStatDetail('Permintaan — ' + months[m], data.filter(d => d.tanggal_diterima && new Date(d.tanggal_diterima).getMonth() === m));
+      showStatDetail('Permintaan — ' + months[m], data.filter(d => {
+        const dt = parseDay(d.tanggal_diterima) || parseDay(d.tanggal_surat);
+        return dt && dt.getMonth() === m;
+      }));
     }
   });
 
@@ -4134,7 +4187,11 @@ function renderAllCharts(){
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       const monthIdx = el.index; const jenis = JENIS_LITMAS_LIST[el.datasetIndex];
-      showStatDetail(jenis + ' — ' + months[monthIdx], data.filter(d => d.jenis_litmas === jenis && d.tanggal_diterima && new Date(d.tanggal_diterima).getMonth() === monthIdx));
+      showStatDetail(jenis + ' — ' + months[monthIdx], data.filter(d => {
+        if (d.jenis_litmas !== jenis) return false;
+        const dt = parseDay(d.tanggal_diterima) || parseDay(d.tanggal_surat);
+        return dt && dt.getMonth() === monthIdx;
+      }));
     }
   });
 
@@ -4187,7 +4244,9 @@ function renderAllCharts(){
   data.forEach(d => {
     (d.adjudikasi?.persidangan?.sidang || []).forEach(s => {
       if (!s.tanggal) return;
-      const m = new Date(s.tanggal).getMonth();
+      const dt = parseDay(s.tanggal);
+      if (!dt) return;
+      const m = dt.getMonth();
       if (m >= 0 && m < 12) sidangByMonth[m].push(d);
     });
   });
@@ -4207,7 +4266,9 @@ function renderAllCharts(){
   data.forEach(d => {
     const tgl = d.adjudikasi?.persidangan?.putusan?.tanggal;
     if (!tgl) return;
-    const m = new Date(tgl).getMonth();
+    const dt = parseDay(tgl);
+    if (!dt) return;
+    const m = dt.getMonth();
     if (m >= 0 && m < 12) putusanByMonth[m].push(d);
   });
   mk('st-putusan', 'bar', {
@@ -4227,7 +4288,9 @@ function renderAllCharts(){
     ['kepolisian', 'kejaksaan', 'pengadilan'].forEach(tier => {
       const t = dv[tier];
       if (t && t.hasil === 'Berhasil' && t.tanggal) {
-        const m = new Date(t.tanggal).getMonth();
+        const dt = parseDay(t.tanggal);
+        if (!dt) return;
+        const m = dt.getMonth();
         if (m >= 0 && m < 12) diversiOkByMonth[m].push(d);
       }
     });
@@ -4280,7 +4343,12 @@ function renderAllCharts(){
   });
 }
 
-function fmtDate(s){ if(!s) return '-'; const d = new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDate(s){
+  if(!s) return '-';
+  const d = parseDay(s);
+  if(!d) return String(s);
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+}
 
 // ==================== GOOGLE SHEET SYNC ====================
 // Penting: Apps Script Web App TIDAK mendukung preflight CORS.
@@ -4474,8 +4542,8 @@ function mapLitmasRows(data){
     }
     let tahun = null;
     if (tanggal) {
-      const y = new Date(tanggal).getFullYear();
-      if (!isNaN(y)) tahun = y;
+      const pd = parseDay(tanggal);
+      if (pd) tahun = pd.getFullYear();
     }
     if (!tahun && nomor) {
       const m = nomor.match(/\/(\d{4})/);
