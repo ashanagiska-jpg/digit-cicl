@@ -86,7 +86,6 @@
     <div class="sidebar-link" data-page="adjudikasi" onclick="navigateTo('adjudikasi')"><i data-lucide="scale" class="w-4 h-4"></i><span>Tracking</span></div>
     <div class="sidebar-link" data-page="pasca" onclick="navigateTo('pasca')"><i data-lucide="heart-handshake" class="w-4 h-4"></i><span>Pasca Adjudikasi</span></div>
     <div class="sidebar-link" data-page="integrasi" onclick="navigateTo('integrasi')"><i data-lucide="file-check-2" class="w-4 h-4"></i><span>Litmas Integrasi</span></div>
-    <div class="sidebar-link" data-page="arsip" onclick="navigateTo('arsip')"><i data-lucide="archive" class="w-4 h-4"></i><span>Arsip LPKA</span></div>
     <div class="nav-section-label">Master Data</div>
     <div class="sidebar-link" data-page="pk" onclick="navigateTo('pk')"><i data-lucide="users" class="w-4 h-4"></i><span>Data PK</span></div>
     <div class="sidebar-link" data-page="wilayah" onclick="navigateTo('wilayah')"><i data-lucide="map-pin" class="w-4 h-4"></i><span>Wilayah</span></div>
@@ -678,49 +677,6 @@
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="integrasi-cards"></div>
       </div>
       <div class="pagination" id="pg-integrasi"></div>
-    </div>
-  </section>
-
-  <!-- ================= ARSIP LPKA / LUAR WILAYAH ================= -->
-  <section class="page" id="page-arsip">
-    <div class="mb-5">
-      <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Arsip</p>
-      <h3 class="text-lg font-extrabold tracking-tight">Arsip LPKA / Luar Wilayah</h3>
-      <p class="text-xs text-slate-500 mt-1">Data anak dengan putusan pidana penjara di LPKA. Dipindah dari data aktif (bukan dihapus) — masih bisa di-restore jika ada kesalahan.</p>
-    </div>
-    <div class="card-panel p-4 sm:p-5 space-y-4">
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="relative flex-1 min-w-[200px]">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-          <input class="form-input" style="padding-left:2.5rem" placeholder="Cari nama arsip…" id="q-arsip" oninput="renderArsipTable()">
-        </div>
-        <span class="text-xs text-slate-400" id="arsip-count">—</span>
-        <div class="flex gap-1 bg-slate-100/80 dark:bg-white/5 rounded-xl p-1 shrink-0">
-          <button type="button" class="df-preset active" id="arsip-view-table" onclick="setPageView('arsip','table')"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Tabel</button>
-          <button type="button" class="df-preset" id="arsip-view-card" onclick="setPageView('arsip','card')"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Kartu</button>
-        </div>
-        <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="pushArsipToSheet()"><i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> Kirim ke Sheet</button>
-      </div>
-      <div id="arsip-table-wrap" class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Nama Anak</th>
-              <th>No. Registrasi</th>
-              <th>Perkara</th>
-              <th>Wilayah</th>
-              <th>Tgl Arsip</th>
-              <th>Alasan</th>
-              <th class="text-center">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="tb-arsip"></tbody>
-        </table>
-      </div>
-      <div id="arsip-card-wrap" class="hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" id="arsip-cards"></div>
-      </div>
-      <div class="pagination" id="pg-arsip"></div>
     </div>
   </section>
 
