@@ -732,6 +732,9 @@ function navigateTo(pageId){
   }
   closeSidebar();
   renderAllViews();
+  if (pageId === 'statistik' || pageId === 'dashboard') {
+    setTimeout(() => { try { renderAllCharts(); } catch (e) {} }, 100);
+  }
 }
 function openSidebar(){ document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('sidebar-overlay').classList.remove('hidden'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); }
@@ -3978,6 +3981,27 @@ function clickedEl(evt, chart){
   return pts.length ? pts[0] : null;
 }
 
+
+/** Ambil Date dari berbagai bentuk field tanggal (sidang/putusan/diversi). */
+function extractEventDate(obj){
+  if (!obj) return null;
+  if (obj instanceof Date) return parseDay(obj);
+  if (typeof obj === 'string' || typeof obj === 'number') return parseDay(obj);
+  const candidates = [
+    obj.tanggal, obj.tgl, obj.tanggal_sidang, obj.tanggal_putusan,
+    obj.tanggal_penetapan, obj.date, obj.tanggal_hasil
+  ];
+  for (const c of candidates) {
+    const d = parseDay(c);
+    if (d) return d;
+  }
+  return null;
+}
+function isHasilBerhasil(h){
+  const s = String(h || '').trim().toLowerCase();
+  return s === 'berhasil' || s.includes('berhasil') || s === 'success' || s === 'ok';
+}
+
 function renderAllCharts(){
   const data = getScopedData();
   const isDark = document.documentElement.classList.contains('dark');
@@ -4266,21 +4290,44 @@ function renderAllCharts(){
     }
   });
 
+  // --- Grafik berbasis kejadian adjudikasi (pakai allData + filter tanggal KEJADIAN, bukan hanya tanggal litmas)
+  const eventData = Array.isArray(allData) ? allData : data;
+  const eventInRange = (dt) => {
+    if (!dt) return false;
+    if (dateFilter.from && dt < dateFilter.from) return false;
+    if (dateFilter.to) {
+      const end = new Date(dateFilter.to);
+      end.setHours(23, 59, 59, 999);
+      if (dt > end) return false;
+    }
+    return true;
+  };
+
   const sidangByMonth = new Array(12).fill(0).map(() => []);
-  data.forEach(d => {
-    (d.adjudikasi?.persidangan?.sidang || []).forEach(s => {
-      if (!s.tanggal) return;
-      const dt = parseDay(s.tanggal);
-      if (!dt) return;
+  eventData.forEach(d => {
+    const list = d.adjudikasi?.persidangan?.sidang || [];
+    list.forEach(s => {
+      const dt = extractEventDate(s);
+      if (!dt || !eventInRange(dt)) return;
       const m = dt.getMonth();
       if (m >= 0 && m < 12) sidangByMonth[m].push(d);
     });
   });
+  const sidangCounts = sidangByMonth.map(l => l.length);
+  const sidangMax = Math.max(1, ...sidangCounts);
   mk('st-sidang', 'bar', {
     labels: months,
-    datasets: [{ label: 'Sidang', data: sidangByMonth.map(l => l.length), backgroundColor: '#3b82f6', borderRadius: 8, borderSkipped: false }]
+    datasets: [{ label: 'Sidang', data: sidangCounts, backgroundColor: '#3b82f6', borderRadius: 8, borderSkipped: false }]
   }, {
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      title: sidangCounts.every(n => n === 0) ? {
+        display: true, text: 'Belum ada tanggal sidang terisi di Tracking',
+        color: tc, font: { size: 11, weight: '500' }
+      } : { display: false }
+    },
+    scales: { y: { beginAtZero: true, suggestedMax: sidangMax, ticks: { stepSize: 1, precision: 0, color: tc }, grid: { color: gridC } },
+              x: { ticks: { color: tc }, grid: { color: gridC } } },
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       const uniq = Array.from(new Map(sidangByMonth[el.index].map(d => [d.id, d])).values());
@@ -4289,19 +4336,28 @@ function renderAllCharts(){
   });
 
   const putusanByMonth = new Array(12).fill(0).map(() => []);
-  data.forEach(d => {
-    const tgl = d.adjudikasi?.persidangan?.putusan?.tanggal;
-    if (!tgl) return;
-    const dt = parseDay(tgl);
-    if (!dt) return;
+  eventData.forEach(d => {
+    const put = d.adjudikasi?.persidangan?.putusan;
+    const dt = extractEventDate(put);
+    if (!dt || !eventInRange(dt)) return;
     const m = dt.getMonth();
     if (m >= 0 && m < 12) putusanByMonth[m].push(d);
   });
+  const putusanCounts = putusanByMonth.map(l => l.length);
+  const putusanMax = Math.max(1, ...putusanCounts);
   mk('st-putusan', 'bar', {
     labels: months,
-    datasets: [{ label: 'Putusan', data: putusanByMonth.map(l => l.length), backgroundColor: '#ec4899', borderRadius: 8, borderSkipped: false }]
+    datasets: [{ label: 'Putusan', data: putusanCounts, backgroundColor: '#ec4899', borderRadius: 8, borderSkipped: false }]
   }, {
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      title: putusanCounts.every(n => n === 0) ? {
+        display: true, text: 'Belum ada tanggal putusan terisi di Tracking',
+        color: tc, font: { size: 11, weight: '500' }
+      } : { display: false }
+    },
+    scales: { y: { beginAtZero: true, suggestedMax: putusanMax, ticks: { stepSize: 1, precision: 0, color: tc }, grid: { color: gridC } },
+              x: { ticks: { color: tc }, grid: { color: gridC } } },
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       showStatDetail('Putusan — ' + months[el.index], putusanByMonth[el.index]);
@@ -4309,23 +4365,32 @@ function renderAllCharts(){
   });
 
   const diversiOkByMonth = new Array(12).fill(0).map(() => []);
-  data.forEach(d => {
+  eventData.forEach(d => {
     const dv = d.adjudikasi?.diversi; if (!dv) return;
     ['kepolisian', 'kejaksaan', 'pengadilan'].forEach(tier => {
       const t = dv[tier];
-      if (t && t.hasil === 'Berhasil' && t.tanggal) {
-        const dt = parseDay(t.tanggal);
-        if (!dt) return;
-        const m = dt.getMonth();
-        if (m >= 0 && m < 12) diversiOkByMonth[m].push(d);
-      }
+      if (!t || !isHasilBerhasil(t.hasil)) return;
+      const dt = extractEventDate(t);
+      if (!dt || !eventInRange(dt)) return;
+      const m = dt.getMonth();
+      if (m >= 0 && m < 12) diversiOkByMonth[m].push(d);
     });
   });
+  const diversiCounts = diversiOkByMonth.map(l => l.length);
+  const diversiMax = Math.max(1, ...diversiCounts);
   mk('st-diversi-berhasil', 'bar', {
     labels: months,
-    datasets: [{ label: 'Diversi OK', data: diversiOkByMonth.map(l => l.length), backgroundColor: '#10b981', borderRadius: 8, borderSkipped: false }]
+    datasets: [{ label: 'Diversi OK', data: diversiCounts, backgroundColor: '#10b981', borderRadius: 8, borderSkipped: false }]
   }, {
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      title: diversiCounts.every(n => n === 0) ? {
+        display: true, text: 'Belum ada diversi berhasil + tanggal di Tracking',
+        color: tc, font: { size: 11, weight: '500' }
+      } : { display: false }
+    },
+    scales: { y: { beginAtZero: true, suggestedMax: diversiMax, ticks: { stepSize: 1, precision: 0, color: tc }, grid: { color: gridC } },
+              x: { ticks: { color: tc }, grid: { color: gridC } } },
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       const uniq = Array.from(new Map(diversiOkByMonth[el.index].map(d => [d.id, d])).values());
@@ -4446,10 +4511,13 @@ async function uploadFileToDrive(file, folderId){
 }
 
 function normalizeAdjudikasi(raw, item){
-  // Parse jika string JSON dari Sheet
+  // Parse jika string JSON dari Sheet (bisa double-encoded)
   let a = raw;
   if (typeof a === 'string') {
-    try { a = JSON.parse(a); } catch (e) { a = null; }
+    try {
+      a = JSON.parse(a);
+      if (typeof a === 'string') { try { a = JSON.parse(a); } catch (_) {} }
+    } catch (e) { a = null; }
   }
   if (!a || typeof a !== 'object') {
     a = {};
@@ -4494,10 +4562,32 @@ function normalizeAdjudikasi(raw, item){
   }
 
   // Merge persidangan
-  const persIn = a.persidangan && typeof a.persidangan === 'object' ? a.persidangan : {};
+  let persIn = a.persidangan;
+  if (typeof persIn === 'string') {
+    try { persIn = JSON.parse(persIn); } catch (_) { persIn = {}; }
+  }
+  if (!persIn || typeof persIn !== 'object') persIn = {};
+  let sidangRaw = persIn.sidang;
+  if (typeof sidangRaw === 'string') {
+    try { sidangRaw = JSON.parse(sidangRaw); } catch (_) { sidangRaw = []; }
+  }
+  const sidangList = (Array.isArray(sidangRaw) ? sidangRaw : []).map(s => {
+    if (!s || typeof s !== 'object') return s;
+    // alias tanggal dari berbagai format backend
+    const tgl = s.tanggal || s.tgl || s.tanggal_sidang || s.date || '';
+    return { ...s, tanggal: tgl };
+  });
+  let putusanObj = persIn.putusan;
+  if (typeof putusanObj === 'string') {
+    try { putusanObj = JSON.parse(putusanObj); } catch (_) { putusanObj = {}; }
+  }
+  if (!putusanObj || typeof putusanObj !== 'object') putusanObj = {};
+  if (!putusanObj.tanggal) {
+    putusanObj.tanggal = putusanObj.tanggal || putusanObj.tgl || putusanObj.tanggal_putusan || '';
+  }
   const persidangan = {
-    sidang: Array.isArray(persIn.sidang) ? persIn.sidang : [],
-    putusan: (persIn.putusan && typeof persIn.putusan === 'object') ? { ...persIn.putusan } : {}
+    sidang: sidangList,
+    putusan: { ...putusanObj }
   };
   // Backend lama: detail_putusan / hasil di root → putusan
   if (!a.persidangan && jalur === 'Persidangan') {
