@@ -3951,25 +3951,152 @@ const JENIS_COLORS = {'Litmas Integrasi':'#1e3a5f','Litmas Pendampingan ABH':'#8
 
 // Popup detail data saat item statistik diklik
 function showStatDetail(title, list){
-  const rows = list.length ? list.map(d=>`
-    <tr>
-      <td class="font-semibold">${d.nomor_surat||'-'}</td>
-      <td>${d.nama_anak||'-'}</td>
-      <td>${d.jenis_kelamin||'-'}</td>
-      <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${d.jenis_litmas||'-'}</span></td>
-      <td>${d.wilayah_asal||'-'}</td>
-      <td>${d.nama_pk||'-'}</td>
-      <td><span class="badge ${d.status_jenis==='Selesai'?'badge-green':d.status_jenis==='Pending'?'badge-amber':'badge-blue'}">${d.status_jenis||'-'}</span></td>
-      <td>${d.registrasi?`<span class="badge badge-slate">${d.registrasi.nomor}</span>`:'-'}</td>
-    </tr>`).join('') : `<tr><td colspan="8" class="text-center py-8 text-slate-400">Tidak ada data untuk kategori ini.</td></tr>`;
+  const titleStr = String(title || '');
+  const isSidang = /^Sidang/i.test(titleStr);
+  const isPutusan = /^Putusan/i.test(titleStr);
+  const isDiversi = /Diversi/i.test(titleStr) && !/Litmas/i.test(titleStr);
+  const isAdj = /^Adjudikasi|^Jalur/i.test(titleStr);
+
+  // Normalisasi: item bisa berupa objek anak (d) atau { item, sidang, putusan, diversiTier, ... }
+  const normalize = (x) => {
+    if (!x) return null;
+    if (x.item && (x.sidang || x.putusan || x.diversiTier)) return x;
+    return { item: x };
+  };
+  const entries = (list || []).map(normalize).filter(Boolean);
+
+  let head = '';
+  let rows = '';
+
+  if (isSidang) {
+    head = `<th>Nama Anak</th><th>No. Registrasi</th><th>Nomor Perkara</th><th>Tgl Sidang</th><th>Ke-</th><th>Agenda</th><th>PK</th><th>Wilayah</th><th class="text-center">Aksi</th>`;
+    // Expand: setiap anak → baris per sidang di bulan terkait (atau semua sidang)
+    const expanded = [];
+    entries.forEach(e => {
+      const d = e.item;
+      const monthHint = titleStr.match(/—\s*(\w+)/); // e.g. Agu
+      const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const mIdx = monthHint ? monthNames.findIndex(m => m.toLowerCase() === monthHint[1].toLowerCase()) : -1;
+      let sidangList = e.sidang ? [e.sidang] : (d.adjudikasi?.persidangan?.sidang || []);
+      if (mIdx >= 0) {
+        sidangList = sidangList.filter(s => {
+          const dt = extractEventDate(s);
+          return dt && dt.getMonth() === mIdx;
+        });
+      }
+      if (!sidangList.length && e.sidang) sidangList = [e.sidang];
+      if (!sidangList.length) {
+        expanded.push({ d, s: null });
+      } else {
+        sidangList.forEach(s => expanded.push({ d, s }));
+      }
+    });
+    rows = expanded.length ? expanded.map(({ d, s }) => {
+      const reg = d.registrasi?.nomor || d.nomor_registrasi || '—';
+      const np = s?.nomor_perkara || '—';
+      const tgl = s?.tanggal ? fmtDate(s.tanggal) : '—';
+      const ke = s?.ke != null ? s.ke : '—';
+      const agenda = s?.agenda || s?.catatan || '—';
+      return `<tr class="align-top">
+        <td class="font-semibold">${d.nama_anak || '-'}</td>
+        <td class="text-xs font-mono">${reg}</td>
+        <td class="text-xs font-mono font-bold text-[#2457FF]">${np}</td>
+        <td class="text-sm whitespace-nowrap">${tgl}</td>
+        <td class="text-center">${ke}</td>
+        <td class="text-xs max-w-[160px]">${shortText(agenda, 48)}</td>
+        <td class="text-xs">${shortText(d.nama_pk, 20)}</td>
+        <td class="text-xs">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '), 18)}</td>
+        <td class="text-center"><button type="button" class="btn btn-primary btn-sm" onclick="closeModal(); openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i></button></td>
+      </tr>`;
+    }).join('') : '';
+  } else if (isPutusan) {
+    head = `<th>Nama Anak</th><th>No. Registrasi</th><th>Tgl Putusan</th><th>No. Putusan</th><th>Jenis Putusan</th><th>Isi Singkat</th><th>PK</th><th>Wilayah</th><th class="text-center">Aksi</th>`;
+    rows = entries.map(e => {
+      const d = e.item;
+      const put = e.putusan || d.adjudikasi?.persidangan?.putusan || {};
+      return `<tr class="align-top">
+        <td class="font-semibold">${d.nama_anak || '-'}</td>
+        <td class="text-xs font-mono">${d.registrasi?.nomor || '—'}</td>
+        <td class="whitespace-nowrap">${put.tanggal ? fmtDate(put.tanggal) : '—'}</td>
+        <td class="text-xs font-mono">${put.nomor || '—'}</td>
+        <td class="text-xs">${put.jenis_putusan || '—'}</td>
+        <td class="text-xs max-w-[180px]">${shortText(put.isi || '', 56)}</td>
+        <td class="text-xs">${shortText(d.nama_pk, 20)}</td>
+        <td class="text-xs">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '), 18)}</td>
+        <td class="text-center"><button type="button" class="btn btn-primary btn-sm" onclick="closeModal(); openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i></button></td>
+      </tr>`;
+    }).join('');
+  } else if (isDiversi) {
+    head = `<th>Nama Anak</th><th>No. Registrasi</th><th>Tingkat</th><th>Hasil</th><th>Tanggal</th><th>Nomor</th><th>Instansi</th><th>PK</th><th class="text-center">Aksi</th>`;
+    const expanded = [];
+    entries.forEach(e => {
+      const d = e.item;
+      const dv = d.adjudikasi?.diversi || {};
+      const tiers = e.diversiTier
+        ? [e.diversiTier]
+        : ['kepolisian', 'kejaksaan', 'pengadilan'].filter(t => isHasilBerhasil(dv[t]?.hasil));
+      if (!tiers.length) expanded.push({ d, tier: '—', t: {} });
+      else tiers.forEach(tier => expanded.push({ d, tier, t: dv[tier] || {} }));
+    });
+    const tierLabel = { kepolisian: 'Kepolisian', kejaksaan: 'Kejaksaan', pengadilan: 'Pengadilan' };
+    rows = expanded.map(({ d, tier, t }) => `<tr class="align-top">
+      <td class="font-semibold">${d.nama_anak || '-'}</td>
+      <td class="text-xs font-mono">${d.registrasi?.nomor || '—'}</td>
+      <td><span class="badge badge-slate">${tierLabel[tier] || tier}</span></td>
+      <td><span class="badge badge-green">${t.hasil || '—'}</span></td>
+      <td class="whitespace-nowrap">${t.tanggal ? fmtDate(t.tanggal) : '—'}</td>
+      <td class="text-xs font-mono">${t.nomor || '—'}</td>
+      <td class="text-xs">${shortText(t.instansi || '', 24)}</td>
+      <td class="text-xs">${shortText(d.nama_pk, 20)}</td>
+      <td class="text-center"><button type="button" class="btn btn-primary btn-sm" onclick="closeModal(); openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i></button></td>
+    </tr>`).join('');
+  } else if (isAdj) {
+    head = `<th>Nama Anak</th><th>No. Registrasi</th><th>Jalur</th><th>Tahap</th><th>Status</th><th>PK</th><th>Wilayah</th><th class="text-center">Aksi</th>`;
+    rows = entries.map(e => {
+      const d = e.item;
+      const jalur = d.adjudikasi?.jalur || 'Belum';
+      return `<tr class="align-top">
+        <td class="font-semibold">${d.nama_anak || '-'}</td>
+        <td class="text-xs font-mono">${d.registrasi?.nomor || '—'}</td>
+        <td><span class="badge ${jalur==='Diversi'?'badge-green':jalur==='Persidangan'?'badge-blue':'badge-slate'}">${jalur}</span></td>
+        <td class="text-xs">${typeof getAdjTahapLabel==='function' ? getAdjTahapLabel(d) : '—'}</td>
+        <td class="text-xs">${typeof getAdjStatus==='function' ? getAdjStatus(d) : '—'}</td>
+        <td class="text-xs">${shortText(d.nama_pk, 20)}</td>
+        <td class="text-xs">${shortText((d.wilayah_asal||'').replace('Kabupaten ','Kab. '), 18)}</td>
+        <td class="text-center"><button type="button" class="btn btn-primary btn-sm" onclick="closeModal(); openAdjudikasiModal('${d.id}')"><i data-lucide="scale" class="w-3.5 h-3.5"></i></button></td>
+      </tr>`;
+    }).join('');
+  } else {
+    // Default: litmas generik
+    head = `<th>No Surat</th><th>Nama Anak</th><th>JK</th><th>Jenis Litmas</th><th>Wilayah</th><th>PK</th><th>Status</th><th>Reg.</th>`;
+    rows = entries.map(e => {
+      const d = e.item;
+      return `<tr>
+        <td class="font-semibold">${d.nomor_surat||'-'}</td>
+        <td>${d.nama_anak||'-'}</td>
+        <td>${d.jenis_kelamin||'-'}</td>
+        <td><span class="badge ${d.jenis_litmas==='Litmas Integrasi'?'badge-blue':'badge-indigo'}">${d.jenis_litmas||'-'}</span></td>
+        <td>${d.wilayah_asal||'-'}</td>
+        <td>${d.nama_pk||'-'}</td>
+        <td><span class="badge ${d.status_jenis==='Selesai'?'badge-green':d.status_jenis==='Pending'?'badge-amber':'badge-blue'}">${d.status_jenis||'-'}</span></td>
+        <td>${d.registrasi?`<span class="badge badge-slate">${d.registrasi.nomor}</span>`:'-'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  if (!rows) {
+    const cols = (head.match(/<th/g) || []).length || 8;
+    rows = `<tr><td colspan="${cols}" class="text-center py-8 text-slate-400">Tidak ada data untuk kategori ini.</td></tr>`;
+  }
+
   openModal(`
     <div class="flex justify-between items-center mb-4">
-      <div><h3 class="font-bold text-lg">${title}</h3><p class="text-xs text-slate-500">${list.length} data ditemukan</p></div>
+      <div><h3 class="font-bold text-lg">${titleStr}</h3><p class="text-xs text-slate-500">${entries.length} data ditemukan</p></div>
       <button onclick="closeModal()"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     <div class="table-wrap rounded-xl border border-slate-200 dark:border-slate-700" style="max-height:60vh;overflow-y:auto">
       <table><thead class="bg-slate-50 dark:bg-slate-800/60" style="position:sticky;top:0"><tr>
-        <th>No Surat</th><th>Nama Anak</th><th>JK</th><th>Jenis Litmas</th><th>Wilayah</th><th>PK</th><th>Status</th><th>Reg.</th>
+        ${head}
       </tr></thead><tbody>${rows}</tbody></table>
     </div>
     <div class="flex justify-end pt-3"><button class="btn btn-ghost" onclick="closeModal()">Tutup</button></div>
