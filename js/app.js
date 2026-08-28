@@ -387,6 +387,7 @@ let pageState = {
   pasca: 1,
   integrasi: 1,
   arsip: 1,
+  monitoring: 1,
   pk: 1,
   wilayah: 1,
   kepolisian: 1
@@ -721,7 +722,7 @@ function navigateTo(pageId){
     t.classList.add('active');
   }
   document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-page')===pageId));
-  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', pasca:'Pasca Adjudikasi (Bimbingan)', integrasi:'Litmas Integrasi', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
+  const titles = {dashboard:'Dashboard Monitoring', permintaan:'Permintaan Litmas ABH', registrasi:'Registrasi Anak', adjudikasi:'Tracking', monitoring:'Monitoring Nomor Perkara', pasca:'Pasca Adjudikasi (Bimbingan)', integrasi:'Litmas Integrasi', pk:'Data PK', wilayah:'Wilayah Kerja', kepolisian:'Data Kepolisian', rekap:'Rekapitulasi PK', statistik:'Statistik & Visualisasi'};
   const titleEl = document.getElementById('nav-title');
   if(titleEl){
     titleEl.style.animation = 'none';
@@ -731,6 +732,9 @@ function navigateTo(pageId){
   }
   closeSidebar();
   renderAllViews();
+  if (pageId === 'statistik' || pageId === 'dashboard') {
+    setTimeout(() => { try { renderAllCharts(); } catch (e) {} }, 100);
+  }
 }
 function openSidebar(){ document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('sidebar-overlay').classList.remove('hidden'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); }
@@ -1950,7 +1954,9 @@ function getFilteredAdjudikasi(){
       if (k !== kat) return false;
     }
     if(q){
-      const hay = [d.nama_anak, d.registrasi?.nomor, d.nama_pk, d.wilayah_asal, d.kepolisian, d.jenis_perkara]
+      const nomorPerkaras = ((d.adjudikasi?.persidangan?.sidang)||[]).map(s=>s.nomor_perkara||'').join(' ');
+      const putNomor = d.adjudikasi?.persidangan?.putusan?.nomor || '';
+      const hay = [d.nama_anak, d.registrasi?.nomor, d.nama_pk, d.wilayah_asal, d.kepolisian, d.jenis_perkara, nomorPerkaras, putNomor]
         .map(x=>(x||'').toLowerCase()).join(' ');
       if(!hay.includes(q)) return false;
     }
@@ -3975,6 +3981,27 @@ function clickedEl(evt, chart){
   return pts.length ? pts[0] : null;
 }
 
+
+/** Ambil Date dari berbagai bentuk field tanggal (sidang/putusan/diversi). */
+function extractEventDate(obj){
+  if (!obj) return null;
+  if (obj instanceof Date) return parseDay(obj);
+  if (typeof obj === 'string' || typeof obj === 'number') return parseDay(obj);
+  const candidates = [
+    obj.tanggal, obj.tgl, obj.tanggal_sidang, obj.tanggal_putusan,
+    obj.tanggal_penetapan, obj.date, obj.tanggal_hasil
+  ];
+  for (const c of candidates) {
+    const d = parseDay(c);
+    if (d) return d;
+  }
+  return null;
+}
+function isHasilBerhasil(h){
+  const s = String(h || '').trim().toLowerCase();
+  return s === 'berhasil' || s.includes('berhasil') || s === 'success' || s === 'ok';
+}
+
 function renderAllCharts(){
   const data = getScopedData();
   const isDark = document.documentElement.classList.contains('dark');
@@ -4263,21 +4290,44 @@ function renderAllCharts(){
     }
   });
 
+  // --- Grafik berbasis kejadian adjudikasi (pakai allData + filter tanggal KEJADIAN, bukan hanya tanggal litmas)
+  const eventData = Array.isArray(allData) ? allData : data;
+  const eventInRange = (dt) => {
+    if (!dt) return false;
+    if (dateFilter.from && dt < dateFilter.from) return false;
+    if (dateFilter.to) {
+      const end = new Date(dateFilter.to);
+      end.setHours(23, 59, 59, 999);
+      if (dt > end) return false;
+    }
+    return true;
+  };
+
   const sidangByMonth = new Array(12).fill(0).map(() => []);
-  data.forEach(d => {
-    (d.adjudikasi?.persidangan?.sidang || []).forEach(s => {
-      if (!s.tanggal) return;
-      const dt = parseDay(s.tanggal);
-      if (!dt) return;
+  eventData.forEach(d => {
+    const list = d.adjudikasi?.persidangan?.sidang || [];
+    list.forEach(s => {
+      const dt = extractEventDate(s);
+      if (!dt || !eventInRange(dt)) return;
       const m = dt.getMonth();
       if (m >= 0 && m < 12) sidangByMonth[m].push(d);
     });
   });
+  const sidangCounts = sidangByMonth.map(l => l.length);
+  const sidangMax = Math.max(1, ...sidangCounts);
   mk('st-sidang', 'bar', {
     labels: months,
-    datasets: [{ label: 'Sidang', data: sidangByMonth.map(l => l.length), backgroundColor: '#3b82f6', borderRadius: 8, borderSkipped: false }]
+    datasets: [{ label: 'Sidang', data: sidangCounts, backgroundColor: '#3b82f6', borderRadius: 8, borderSkipped: false }]
   }, {
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      title: sidangCounts.every(n => n === 0) ? {
+        display: true, text: 'Belum ada tanggal sidang terisi di Tracking',
+        color: tc, font: { size: 11, weight: '500' }
+      } : { display: false }
+    },
+    scales: { y: { beginAtZero: true, suggestedMax: sidangMax, ticks: { stepSize: 1, precision: 0, color: tc }, grid: { color: gridC } },
+              x: { ticks: { color: tc }, grid: { color: gridC } } },
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       const uniq = Array.from(new Map(sidangByMonth[el.index].map(d => [d.id, d])).values());
@@ -4286,19 +4336,28 @@ function renderAllCharts(){
   });
 
   const putusanByMonth = new Array(12).fill(0).map(() => []);
-  data.forEach(d => {
-    const tgl = d.adjudikasi?.persidangan?.putusan?.tanggal;
-    if (!tgl) return;
-    const dt = parseDay(tgl);
-    if (!dt) return;
+  eventData.forEach(d => {
+    const put = d.adjudikasi?.persidangan?.putusan;
+    const dt = extractEventDate(put);
+    if (!dt || !eventInRange(dt)) return;
     const m = dt.getMonth();
     if (m >= 0 && m < 12) putusanByMonth[m].push(d);
   });
+  const putusanCounts = putusanByMonth.map(l => l.length);
+  const putusanMax = Math.max(1, ...putusanCounts);
   mk('st-putusan', 'bar', {
     labels: months,
-    datasets: [{ label: 'Putusan', data: putusanByMonth.map(l => l.length), backgroundColor: '#ec4899', borderRadius: 8, borderSkipped: false }]
+    datasets: [{ label: 'Putusan', data: putusanCounts, backgroundColor: '#ec4899', borderRadius: 8, borderSkipped: false }]
   }, {
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      title: putusanCounts.every(n => n === 0) ? {
+        display: true, text: 'Belum ada tanggal putusan terisi di Tracking',
+        color: tc, font: { size: 11, weight: '500' }
+      } : { display: false }
+    },
+    scales: { y: { beginAtZero: true, suggestedMax: putusanMax, ticks: { stepSize: 1, precision: 0, color: tc }, grid: { color: gridC } },
+              x: { ticks: { color: tc }, grid: { color: gridC } } },
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       showStatDetail('Putusan — ' + months[el.index], putusanByMonth[el.index]);
@@ -4306,23 +4365,32 @@ function renderAllCharts(){
   });
 
   const diversiOkByMonth = new Array(12).fill(0).map(() => []);
-  data.forEach(d => {
+  eventData.forEach(d => {
     const dv = d.adjudikasi?.diversi; if (!dv) return;
     ['kepolisian', 'kejaksaan', 'pengadilan'].forEach(tier => {
       const t = dv[tier];
-      if (t && t.hasil === 'Berhasil' && t.tanggal) {
-        const dt = parseDay(t.tanggal);
-        if (!dt) return;
-        const m = dt.getMonth();
-        if (m >= 0 && m < 12) diversiOkByMonth[m].push(d);
-      }
+      if (!t || !isHasilBerhasil(t.hasil)) return;
+      const dt = extractEventDate(t);
+      if (!dt || !eventInRange(dt)) return;
+      const m = dt.getMonth();
+      if (m >= 0 && m < 12) diversiOkByMonth[m].push(d);
     });
   });
+  const diversiCounts = diversiOkByMonth.map(l => l.length);
+  const diversiMax = Math.max(1, ...diversiCounts);
   mk('st-diversi-berhasil', 'bar', {
     labels: months,
-    datasets: [{ label: 'Diversi OK', data: diversiOkByMonth.map(l => l.length), backgroundColor: '#10b981', borderRadius: 8, borderSkipped: false }]
+    datasets: [{ label: 'Diversi OK', data: diversiCounts, backgroundColor: '#10b981', borderRadius: 8, borderSkipped: false }]
   }, {
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      title: diversiCounts.every(n => n === 0) ? {
+        display: true, text: 'Belum ada diversi berhasil + tanggal di Tracking',
+        color: tc, font: { size: 11, weight: '500' }
+      } : { display: false }
+    },
+    scales: { y: { beginAtZero: true, suggestedMax: diversiMax, ticks: { stepSize: 1, precision: 0, color: tc }, grid: { color: gridC } },
+              x: { ticks: { color: tc }, grid: { color: gridC } } },
     onClick: (evt, els, chart) => {
       const el = els[0] || clickedEl(evt, chart); if (!el) return;
       const uniq = Array.from(new Map(diversiOkByMonth[el.index].map(d => [d.id, d])).values());
@@ -4443,10 +4511,13 @@ async function uploadFileToDrive(file, folderId){
 }
 
 function normalizeAdjudikasi(raw, item){
-  // Parse jika string JSON dari Sheet
+  // Parse jika string JSON dari Sheet (bisa double-encoded)
   let a = raw;
   if (typeof a === 'string') {
-    try { a = JSON.parse(a); } catch (e) { a = null; }
+    try {
+      a = JSON.parse(a);
+      if (typeof a === 'string') { try { a = JSON.parse(a); } catch (_) {} }
+    } catch (e) { a = null; }
   }
   if (!a || typeof a !== 'object') {
     a = {};
@@ -4491,10 +4562,32 @@ function normalizeAdjudikasi(raw, item){
   }
 
   // Merge persidangan
-  const persIn = a.persidangan && typeof a.persidangan === 'object' ? a.persidangan : {};
+  let persIn = a.persidangan;
+  if (typeof persIn === 'string') {
+    try { persIn = JSON.parse(persIn); } catch (_) { persIn = {}; }
+  }
+  if (!persIn || typeof persIn !== 'object') persIn = {};
+  let sidangRaw = persIn.sidang;
+  if (typeof sidangRaw === 'string') {
+    try { sidangRaw = JSON.parse(sidangRaw); } catch (_) { sidangRaw = []; }
+  }
+  const sidangList = (Array.isArray(sidangRaw) ? sidangRaw : []).map(s => {
+    if (!s || typeof s !== 'object') return s;
+    // alias tanggal dari berbagai format backend
+    const tgl = s.tanggal || s.tgl || s.tanggal_sidang || s.date || '';
+    return { ...s, tanggal: tgl };
+  });
+  let putusanObj = persIn.putusan;
+  if (typeof putusanObj === 'string') {
+    try { putusanObj = JSON.parse(putusanObj); } catch (_) { putusanObj = {}; }
+  }
+  if (!putusanObj || typeof putusanObj !== 'object') putusanObj = {};
+  if (!putusanObj.tanggal) {
+    putusanObj.tanggal = putusanObj.tanggal || putusanObj.tgl || putusanObj.tanggal_putusan || '';
+  }
   const persidangan = {
-    sidang: Array.isArray(persIn.sidang) ? persIn.sidang : [],
-    putusan: (persIn.putusan && typeof persIn.putusan === 'object') ? { ...persIn.putusan } : {}
+    sidang: sidangList,
+    putusan: { ...putusanObj }
   };
   // Backend lama: detail_putusan / hasil di root → putusan
   if (!a.persidangan && jalur === 'Persidangan') {
@@ -4831,6 +4924,231 @@ function renderKpi(){
   }
   syncDateInputs();
 }
+
+// ==================== MONITORING NOMOR PERKARA ====================
+/**
+ * Ambil semua nomor perkara dari data (sidang + putusan).
+ * Satu nomor perkara → satu baris monitoring (gabung jika sama di beberapa sidang anak yang sama).
+ */
+function collectPerkaraRows(){
+  const rows = [];
+  const seen = new Map(); // key: nomor_perkara|id_anak
+  const data = typeof getAllIncludingArsip === 'function' ? getAllIncludingArsip() : (allData || []);
+
+  data.forEach(d => {
+    if (!d) return;
+    const sidangList = (d.adjudikasi?.persidangan?.sidang) || [];
+    const putusan = d.adjudikasi?.persidangan?.putusan || {};
+    const jalur = d.adjudikasi?.jalur || '';
+    const statusAdj = typeof getAdjStatus === 'function' ? getAdjStatus(d) : (d.adjudikasi?.status || '');
+    const luar = typeof isKlienLuarWilayah === 'function' && isKlienLuarWilayah(d);
+
+    // Kumpulkan nomor perkara unik per anak
+    const nomorSet = new Set();
+    sidangList.forEach(s => {
+      const np = String(s.nomor_perkara || '').trim();
+      if (np) nomorSet.add(np);
+    });
+    const putNomor = String(putusan.nomor || '').trim();
+    // Jika putusan punya nomor mirip perkara, ikutkan
+    if (putNomor && !nomorSet.size) nomorSet.add(putNomor);
+
+    if (nomorSet.size === 0) {
+      // Persidangan tanpa nomor perkara / belum isi
+      if (jalur === 'Persidangan' || sidangList.length || putusan.tanggal) {
+        const key = '__TANPA__|' + d.id;
+        if (!seen.has(key)) {
+          seen.set(key, true);
+          const lastSidang = sidangList.length ? sidangList[sidangList.length - 1] : null;
+          rows.push({
+            nomor_perkara: '',
+            tanpa_nomor: true,
+            item: d,
+            id: d.id,
+            nama_anak: d.nama_anak,
+            registrasi: d.registrasi?.nomor || '',
+            wilayah: d.wilayah_asal || '',
+            pk: d.nama_pk || '',
+            jenis_perkara: d.jenis_perkara || '',
+            jumlah_sidang: sidangList.length,
+            last_sidang: lastSidang,
+            putusan,
+            status_adj: statusAdj,
+            luar,
+            jalur
+          });
+        }
+      }
+      return;
+    }
+
+    nomorSet.forEach(np => {
+      const key = np.toLowerCase() + '|' + d.id;
+      if (seen.has(key)) return;
+      seen.set(key, true);
+      const related = sidangList.filter(s => String(s.nomor_perkara || '').trim() === np);
+      const lastSidang = related.length ? related[related.length - 1] : (sidangList.length ? sidangList[sidangList.length - 1] : null);
+      rows.push({
+        nomor_perkara: np,
+        tanpa_nomor: false,
+        item: d,
+        id: d.id,
+        nama_anak: d.nama_anak,
+        registrasi: d.registrasi?.nomor || '',
+        wilayah: d.wilayah_asal || '',
+        pk: d.nama_pk || '',
+        jenis_perkara: d.jenis_perkara || '',
+        jumlah_sidang: related.length || sidangList.length,
+        last_sidang: lastSidang,
+        putusan,
+        status_adj: statusAdj,
+        luar,
+        jalur
+      });
+    });
+  });
+
+  // Urut: yang punya nomor dulu, lalu by nomor, lalu nama
+  rows.sort((a, b) => {
+    if (a.tanpa_nomor !== b.tanpa_nomor) return a.tanpa_nomor ? 1 : -1;
+    const c = String(a.nomor_perkara).localeCompare(String(b.nomor_perkara), 'id');
+    if (c) return c;
+    return String(a.nama_anak || '').localeCompare(String(b.nama_anak || ''), 'id');
+  });
+  return rows;
+}
+
+function populateMonitoringFilters(){
+  const wil = document.getElementById('f-mon-wilayah');
+  if (wil) {
+    const cur = wil.value;
+    wil.innerHTML = '<option value="">Semua Wilayah</option>' + (WILAYAH || []).map(w => `<option>${w}</option>`).join('');
+    wil.value = cur;
+  }
+  const pk = document.getElementById('f-mon-pk');
+  if (pk) {
+    const cur = pk.value;
+    pk.innerHTML = '<option value="">Semua PK</option>' + (PK_LIST || []).map(x => `<option>${x}</option>`).join('');
+    pk.value = cur;
+  }
+}
+
+function getFilteredMonitoring(){
+  const q = (document.getElementById('q-monitoring')?.value || '').toLowerCase().trim();
+  const st = document.getElementById('f-mon-status')?.value || '';
+  const wl = document.getElementById('f-mon-wilayah')?.value || '';
+  const pk = document.getElementById('f-mon-pk')?.value || '';
+  let list = collectPerkaraRows();
+  if (q) {
+    list = list.filter(r => {
+      const hay = [r.nomor_perkara, r.nama_anak, r.registrasi, r.wilayah, r.pk, r.jenis_perkara,
+        r.last_sidang?.agenda, r.last_sidang?.catatan, r.putusan?.nomor, r.putusan?.isi]
+        .map(x => String(x || '').toLowerCase()).join(' ');
+      return hay.includes(q);
+    });
+  }
+  if (st === 'berjalan') {
+    list = list.filter(r => !r.putusan?.tanggal && r.status_adj === 'Berjalan');
+  } else if (st === 'putusan') {
+    list = list.filter(r => !!r.putusan?.tanggal);
+  } else if (st === 'tanpa') {
+    list = list.filter(r => r.tanpa_nomor);
+  }
+  if (wl) list = list.filter(r => r.wilayah === wl);
+  if (pk) list = list.filter(r => r.pk === pk);
+  return list;
+}
+
+function onMonitoringFilterChange(){
+  if (typeof pageState !== 'undefined') pageState.monitoring = 1;
+  renderMonitoringTable();
+}
+
+function resetMonitoringFilters(){
+  ['q-monitoring', 'f-mon-status', 'f-mon-wilayah', 'f-mon-pk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  onMonitoringFilterChange();
+}
+
+function renderMonitoringTable(){
+  const tbody = document.getElementById('tb-monitoring');
+  if (!tbody) return;
+  populateMonitoringFilters();
+  const allRows = collectPerkaraRows();
+  const list = getFilteredMonitoring();
+
+  // KPI dari seluruh data (bukan filter)
+  const withNomor = allRows.filter(r => !r.tanpa_nomor);
+  const uniqueNomor = new Set(withNomor.map(r => r.nomor_perkara.toLowerCase()));
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('mon-kpi-total', uniqueNomor.size);
+  set('mon-kpi-berjalan', allRows.filter(r => !r.putusan?.tanggal && r.status_adj === 'Berjalan').length);
+  set('mon-kpi-putusan', allRows.filter(r => !!r.putusan?.tanggal).length);
+  set('mon-kpi-tanpa', allRows.filter(r => r.tanpa_nomor).length);
+
+  const countEl = document.getElementById('mon-count');
+  if (countEl) countEl.textContent = list.length + ' baris';
+
+  const pg = typeof paginate === 'function' ? paginate(list, 'monitoring') : { slice: list, total: list.length };
+
+  tbody.innerHTML = pg.slice.length ? pg.slice.map(r => {
+    const put = r.putusan || {};
+    const hasPut = !!put.tanggal;
+    const last = r.last_sidang || {};
+    const namaClass = r.luar ? 'line-through text-slate-400' : '';
+    const badgeLuar = r.luar ? '<span class="badge badge-pink" style="font-size:9px;padding:1px 6px">LPKA</span>' : '';
+    const statusBadge = hasPut
+      ? `<span class="badge badge-green">Putusan ${fmtDate(put.tanggal)}</span>`
+      : (r.status_adj === 'Berjalan'
+        ? `<span class="badge badge-amber">Berjalan</span>`
+        : `<span class="badge badge-slate">${r.status_adj || '-'}</span>`);
+    const nomorHtml = r.tanpa_nomor
+      ? `<span class="text-amber-600 text-xs font-semibold">Belum diisi</span>`
+      : `<span class="font-mono text-sm font-bold text-[#2457FF]">${r.nomor_perkara}</span>`;
+    return `<tr class="align-top ${r.luar ? 'opacity-70' : ''}">
+      <td class="min-w-[160px]">${nomorHtml}
+        ${r.jenis_perkara ? `<p class="text-[10px] text-slate-400 mt-0.5">${shortText(r.jenis_perkara, 40)}</p>` : ''}
+      </td>
+      <td>
+        <p class="font-bold text-sm ${namaClass}">${r.nama_anak || '-'} ${badgeLuar}</p>
+        <p class="text-[11px] text-slate-400">${r.registrasi || '—'} · ${r.jalur || 'Belum jalur'}</p>
+      </td>
+      <td class="text-center"><span class="font-extrabold">${r.jumlah_sidang}</span><p class="text-[10px] text-slate-400">kali</p></td>
+      <td class="text-sm whitespace-nowrap">${last.tanggal ? fmtDate(last.tanggal) : '—'}
+        ${last.ke ? `<p class="text-[10px] text-slate-400">Ke-${last.ke}</p>` : ''}
+      </td>
+      <td class="text-xs max-w-[180px]">
+        <p class="font-medium">${shortText(last.agenda || '—', 48)}</p>
+        ${last.catatan ? `<p class="text-slate-400 mt-0.5">${shortText(last.catatan, 40)}</p>` : ''}
+      </td>
+      <td>${statusBadge}
+        ${put.jenis_putusan ? `<p class="text-[10px] text-slate-500 mt-0.5">${shortText(put.jenis_putusan, 28)}</p>` : ''}
+        ${put.nomor ? `<p class="text-[10px] font-mono text-slate-400">${shortText(put.nomor, 24)}</p>` : ''}
+      </td>
+      <td class="text-xs">
+        <p class="font-medium">${shortText(r.pk, 22)}</p>
+        <p class="text-slate-400">${shortText((r.wilayah || '').replace('Kabupaten ', 'Kab. '), 22)}</p>
+      </td>
+      <td class="text-center whitespace-nowrap">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openAdjudikasiModal('${r.id}')" title="Buka tracking">
+          <i data-lucide="scale" class="w-3.5 h-3.5"></i> Tracking
+        </button>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="text-center py-12 text-slate-400">
+    <div class="flex flex-col items-center gap-2">
+      <i data-lucide="radar" class="w-8 h-8 opacity-40"></i>
+      <p class="font-semibold">Tidak ada data nomor perkara</p>
+      <p class="text-xs">Isi nomor perkara saat menambah jadwal sidang di menu Tracking</p>
+    </div>
+  </td></tr>`;
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+
 function renderAllViews(){
   initDropdowns();
   renderKpi();
@@ -4840,6 +5158,7 @@ function renderAllViews(){
   renderAdjudikasiTable();
   renderPascaTable();
   try { renderIntegrasiTable(); } catch(e) {}
+  try { renderMonitoringTable(); } catch(e) {}
   /* menu Arsip LPKA dihapus — data dicoret di daftar aktif */
   renderPkTable();
   renderWilayahTable();
