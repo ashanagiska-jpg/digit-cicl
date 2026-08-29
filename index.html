@@ -85,6 +85,7 @@
     <div class="sidebar-link" data-page="registrasi" onclick="navigateTo('registrasi')"><i data-lucide="hash" class="w-4 h-4"></i><span>Registrasi Anak</span></div>
     <div class="sidebar-link" data-page="adjudikasi" onclick="navigateTo('adjudikasi')"><i data-lucide="scale" class="w-4 h-4"></i><span>Tracking</span></div>
     <div class="sidebar-link" data-page="monitoring" onclick="navigateTo('monitoring')"><i data-lucide="radar" class="w-4 h-4"></i><span>Monitoring Perkara</span></div>
+    <div class="sidebar-link" data-page="kalender" onclick="navigateTo('kalender')"><i data-lucide="calendar-days" class="w-4 h-4"></i><span>Kalender Sidang</span></div>
     <div class="sidebar-link" data-page="pasca" onclick="navigateTo('pasca')"><i data-lucide="heart-handshake" class="w-4 h-4"></i><span>Pasca Adjudikasi</span></div>
     <div class="sidebar-link" data-page="integrasi" onclick="navigateTo('integrasi')"><i data-lucide="file-check-2" class="w-4 h-4"></i><span>Litmas Integrasi</span></div>
     <div class="nav-section-label">Master Data</div>
@@ -94,6 +95,8 @@
     <div class="nav-section-label">Laporan</div>
     <div class="sidebar-link" data-page="rekap" onclick="navigateTo('rekap')"><i data-lucide="table" class="w-4 h-4"></i><span>Rekapitulasi PK</span></div>
     <div class="sidebar-link" data-page="statistik" onclick="navigateTo('statistik')"><i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Statistik</span></div>
+    <div class="sidebar-link" data-page="laporan" onclick="navigateTo('laporan')"><i data-lucide="file-bar-chart" class="w-4 h-4"></i><span>Laporan</span></div>
+    <div class="sidebar-link" data-page="audit" onclick="navigateTo('audit')"><i data-lucide="scroll-text" class="w-4 h-4"></i><span>Audit Log</span></div>
     <div class="pt-3 mt-3 border-t border-white/5 admin-only">
       <div class="sidebar-link" onclick="openSettingsModal()"><i data-lucide="settings" class="w-4 h-4"></i><span>Pengaturan</span></div>
     </div>
@@ -123,6 +126,12 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <button type="button" id="btn-cmd-palette" onclick="openCommandPalette()" class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 border border-slate-200/60 dark:border-white/10 text-xs font-medium" title="Cari (Ctrl+K)">
+        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+        <span>Cari…</span>
+        <kbd class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-400">Ctrl+K</kbd>
+      </button>
+      <button type="button" class="sm:hidden p-2.5 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5" onclick="openCommandPalette()" title="Cari"><i data-lucide="search" class="w-4 h-4"></i></button>
       <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 transition border border-transparent hover:border-slate-200/50 dark:hover:border-white/10" title="Mode Gelap/Terang"><i data-lucide="moon" class="w-4 h-4"></i></button>
     </div>
   </header>
@@ -198,6 +207,39 @@
         <div class="stat-icon"><i data-lucide="heart-handshake" class="w-5 h-5"></i></div>
         <p class="text-[11px] font-semibold text-emerald-100/80 uppercase tracking-wider">Bimbingan Pasca</p>
         <p class="text-3xl font-extrabold mt-1 tracking-tight" id="k-pasca">0</p>
+      </div>
+    </div>
+
+    <!-- Reminder sidang -->
+    <div id="sidang-reminder-banner" class="hidden mb-4 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 flex flex-wrap items-center gap-3">
+      <i data-lucide="bell-ring" class="w-5 h-5 text-amber-600 shrink-0"></i>
+      <p class="text-sm flex-1 min-w-[200px]" id="sidang-reminder-text">Pengingat sidang</p>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="navigateTo('kalender')">Buka Kalender</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="dismissSidangReminder()">Tutup</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+      <div class="card-panel p-4 lg:col-span-1">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h4 class="font-bold text-sm flex items-center gap-2"><i data-lucide="list-todo" class="w-4 h-4 text-[#2457FF]"></i> Perlu Ditindak</h4>
+            <p class="text-[11px] text-slate-400" id="action-queue-count">—</p>
+          </div>
+        </div>
+        <div id="action-queue-list" class="max-h-80 overflow-y-auto space-y-1"></div>
+      </div>
+      <div class="card-panel p-4 lg:col-span-1">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-bold text-sm flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-emerald-500"></i> Beban Kerja PK</h4>
+        </div>
+        <div id="workload-list" class="max-h-80 overflow-y-auto space-y-3"></div>
+      </div>
+      <div class="card-panel p-4 lg:col-span-1">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-bold text-sm flex items-center gap-2"><i data-lucide="heart-handshake" class="w-4 h-4 text-pink-500"></i> Masa Bimbingan</h4>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="navigateTo('pasca')">Lihat</button>
+        </div>
+        <div id="bimbingan-alert-list" class="max-h-80 overflow-y-auto"></div>
       </div>
     </div>
 
@@ -1049,6 +1091,100 @@
   </section>
 
   <!-- ================= 9. STATISTIK ================= -->
+
+  <!-- ================= KALENDER SIDANG ================= -->
+  <section class="page" id="page-kalender">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Pemantauan</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Kalender Sidang</h3>
+        <p class="text-xs text-slate-500 mt-1">Jadwal sidang &amp; putusan dari Tracking · pengingat H-3 / H-1</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="enableSidangNotifications()"><i data-lucide="bell" class="w-3.5 h-3.5"></i> Aktifkan Notifikasi</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="calGoToday()">Hari ini</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div class="card-panel p-4 xl:col-span-2">
+        <div class="flex items-center justify-between mb-3">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="calPrevMonth()"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <h4 class="font-bold text-base" id="cal-month-label">—</h4>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="calNextMonth()"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+        <div id="cal-grid" class="cal-grid"></div>
+      </div>
+      <div class="space-y-4">
+        <div class="card-panel p-4">
+          <h4 class="font-bold text-sm mb-1" id="cal-day-head">Pilih tanggal</h4>
+          <div id="cal-day-list" class="max-h-72 overflow-y-auto space-y-2"></div>
+        </div>
+        <div class="card-panel p-4">
+          <h4 class="font-bold text-sm mb-2 flex items-center gap-2"><i data-lucide="calendar-clock" class="w-4 h-4"></i> Sidang Mendatang</h4>
+          <div id="cal-upcoming"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LAPORAN ================= -->
+  <section class="page" id="page-laporan">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Laporan</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Laporan Otomatis</h3>
+        <p class="text-xs text-slate-500 mt-1">Rekap operasional siap unduh PDF / CSV</p>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <select class="form-input w-auto" id="laporan-mode" onchange="onLaporanModeChange()">
+          <option value="bulan">Bulan ini</option>
+          <option value="lalu">Bulan lalu</option>
+          <option value="triwulan">Triwulan ini</option>
+          <option value="tahun">Tahun ini</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="exportLaporan('pdf')"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="exportLaporan('csv')"><i data-lucide="download" class="w-3.5 h-3.5"></i> CSV</button>
+      </div>
+    </div>
+    <p class="text-sm font-semibold text-slate-500 mb-3">Periode: <span id="lap-label" class="text-slate-800 dark:text-slate-100">—</span></p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+      <div class="card-panel p-3 text-center"><p class="text-[10px] uppercase text-slate-400 font-bold">Permintaan</p><p class="text-2xl font-extrabold" id="lap-received">0</p></div>
+      <div class="card-panel p-3 text-center"><p class="text-[10px] uppercase text-slate-400 font-bold">Registrasi</p><p class="text-2xl font-extrabold" id="lap-reg">0</p></div>
+      <div class="card-panel p-3 text-center"><p class="text-[10px] uppercase text-slate-400 font-bold">Sidang</p><p class="text-2xl font-extrabold" id="lap-sidang">0</p></div>
+      <div class="card-panel p-3 text-center"><p class="text-[10px] uppercase text-slate-400 font-bold">Putusan</p><p class="text-2xl font-extrabold" id="lap-putusan">0</p></div>
+      <div class="card-panel p-3 text-center"><p class="text-[10px] uppercase text-slate-400 font-bold">Diversi OK</p><p class="text-2xl font-extrabold" id="lap-diversi">0</p></div>
+      <div class="card-panel p-3 text-center"><p class="text-[10px] uppercase text-slate-400 font-bold">Bimbingan</p><p class="text-2xl font-extrabold" id="lap-bimbingan">0</p></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="card-panel p-4"><h4 class="font-bold text-sm mb-2">Per Wilayah</h4><div id="lap-wilayah"></div></div>
+      <div class="card-panel p-4"><h4 class="font-bold text-sm mb-2">Per PK</h4><div id="lap-pk"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= AUDIT LOG ================= -->
+  <section class="page" id="page-audit">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Akuntabilitas</p>
+        <h3 class="text-lg font-extrabold tracking-tight">Audit Log</h3>
+        <p class="text-xs text-slate-500 mt-1">Riwayat aktivitas lokal di perangkat ini (maks. 400 entri)</p>
+      </div>
+      <div class="flex gap-2">
+        <input class="form-input" id="q-audit" placeholder="Cari log…" oninput="renderAuditTable()">
+        <button type="button" class="btn btn-ghost btn-sm admin-only" onclick="clearAuditLog()">Hapus Log</button>
+      </div>
+    </div>
+    <div class="card-panel p-4">
+      <div class="table-wrap rounded-xl">
+        <table>
+          <thead><tr><th>Waktu</th><th>User</th><th>Aksi</th><th>Detail</th></tr></thead>
+          <tbody id="tb-audit"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
   <section class="page" id="page-statistik">
     <div class="mb-5">
       <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-1">Analitik Lengkap</p>
@@ -1155,7 +1291,62 @@
   </div>
 </div>
 
+
+<!-- Command Palette -->
+<div id="cmd-palette" class="hidden fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" onclick="if(event.target===this)closeCommandPalette()">
+  <div class="cmd-box w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+      <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+      <input id="cmd-input" class="flex-1 bg-transparent outline-none text-sm" placeholder="Cari nama, registrasi, nomor perkara, no surat…" oninput="onCmdInput()" autocomplete="off">
+      <kbd class="text-[10px] text-slate-400">ESC</kbd>
+    </div>
+    <div id="cmd-results" class="max-h-80 overflow-y-auto p-2"></div>
+  </div>
+</div>
+
+<style>
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{min-height:64px;border-radius:12px;border:1px solid rgba(148,163,184,.2);padding:6px;text-align:left;background:transparent;cursor:pointer;transition:.15s}
+.cal-cell:hover{border-color:#2457FF;background:rgba(36,87,255,.04)}
+.cal-empty{border:none;pointer-events:none}
+.cal-today{border-color:#2457FF;box-shadow:inset 0 0 0 1px #2457FF}
+.cal-selected{background:rgba(36,87,255,.1)!important;border-color:#2457FF}
+.cal-has{background:rgba(36,87,255,.03)}
+.cal-day-num{font-size:12px;font-weight:700;display:block}
+.cal-dots{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.cal-dot{width:6px;height:6px;border-radius:50%}
+.cal-dot-sid{background:#3b82f6}
+.cal-dot-put{background:#ec4899}
+.cal-more{font-size:9px;color:#94a3b8}
+.cal-event-card{border-radius:12px;border:1px solid rgba(148,163,184,.25);padding:10px;background:rgba(248,250,252,.8)}
+.dark .cal-event-card{background:rgba(15,23,42,.5)}
+.cal-event-card.is-putusan{border-color:rgba(236,72,153,.35)}
+.action-queue-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:12px;border:1px solid transparent;transition:.15s}
+.action-queue-item:hover{background:rgba(36,87,255,.06);border-color:rgba(36,87,255,.15)}
+.action-queue-item .aq-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(36,87,255,.1);color:#2457FF;flex-shrink:0}
+.action-queue-item.priority-1 .aq-icon{background:rgba(239,68,68,.12);color:#ef4444}
+.action-queue-item.priority-2 .aq-icon{background:rgba(245,158,11,.15);color:#d97706}
+.workload-bar{height:6px;border-radius:99px;background:rgba(148,163,184,.2);overflow:hidden}
+.workload-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#2457FF,#B6FF2E)}
+.workload-row.overload .workload-fill{background:linear-gradient(90deg,#ef4444,#f59e0b)}
+.tl-track{position:relative;padding-left:20px}
+.tl-track::before{content:'';position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:rgba(148,163,184,.35)}
+.tl-item{position:relative;padding:0 0 16px 12px}
+.tl-dot{position:absolute;left:-18px;top:4px;width:10px;height:10px;border-radius:50%;background:#2457FF;border:2px solid #fff;box-shadow:0 0 0 2px #2457FF}
+.tl-item.tl-green .tl-dot{background:#10b981;box-shadow:0 0 0 2px #10b981}
+.tl-item.tl-pink .tl-dot{background:#ec4899;box-shadow:0 0 0 2px #ec4899}
+.tl-item.tl-amber .tl-dot{background:#f59e0b;box-shadow:0 0 0 2px #f59e0b}
+.tl-item.tl-emerald .tl-dot{background:#059669;box-shadow:0 0 0 2px #059669}
+.tl-item.tl-slate .tl-dot{background:#64748b;box-shadow:0 0 0 2px #64748b}
+.cmd-box{animation:fadeUp .2s ease}
+.cmd-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:12px;border:none;background:transparent;cursor:pointer}
+.cmd-item:hover,.cmd-item:focus{background:rgba(36,87,255,.08)}
+.cmd-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;min-width:72px}
+</style>
+
 <script src="js/api-layer.js"></script>
 <script src="js/app.js"></script>
+<script src="js/features-plus.js"></script>
+
 </body>
 </html>
