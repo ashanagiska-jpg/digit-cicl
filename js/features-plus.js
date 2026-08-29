@@ -286,7 +286,7 @@
           </button>
         </div>
       </div>
-    `).join('') : `<p class="text-sm text-slate-400 text-center py-8">Tidak ada sidang/putusan pada tanggal ini.</p>`;
+    `).join('') : `<div class="empty-state py-6"><div class="empty-icon"><i data-lucide="calendar-off" class="w-6 h-6"></i></div><p class="font-semibold">Hari bebas sidang</p><p class="text-xs mt-1">Tidak ada jadwal pada tanggal ini</p></div>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     document.querySelectorAll('.cal-cell[data-day]').forEach(el => {
@@ -318,7 +318,7 @@
         <span class="badge ${urgent ? 'badge-amber' : 'badge-slate'} shrink-0">${badge}</span>
         <button type="button" class="btn btn-ghost btn-sm" onclick="openAdjudikasiModal('${ev.item.id}')"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
       </div>`;
-    }).join('') : `<p class="text-sm text-slate-400 py-4 text-center">Tidak ada sidang mendatang.</p>`;
+    }).join('') : `<div class="empty-state py-4"><div class="empty-icon"><i data-lucide="calendar-check" class="w-6 h-6"></i></div><p class="font-semibold">Belum ada sidang terjadwal</p><p class="text-xs mt-1">Tambah jadwal di menu Tracking</p><button type="button" class="btn btn-primary btn-sm empty-cta" onclick="navigateTo('adjudikasi')">Buka Tracking</button></div>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
@@ -487,9 +487,10 @@
         </span>
         <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 shrink-0"></i>
       </button>
-    `).join('') : `<div class="text-center py-8 text-slate-400">
-      <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto mb-2 text-emerald-500 opacity-70"></i>
-      <p class="font-semibold text-sm">Tidak ada tindakan mendesak</p>
+    `).join('') : `<div class="empty-state py-6">
+      <div class="empty-icon"><i data-lucide="check-circle-2" class="w-6 h-6"></i></div>
+      <p class="font-semibold">Semua clear</p>
+      <p class="text-xs mt-1">Tidak ada tindakan mendesak hari ini</p>
     </div>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
@@ -931,7 +932,7 @@
         </div>
         <span class="badge ${cls}">${badge}</span>
       </div>`;
-    }).join('') : `<p class="text-sm text-slate-400 text-center py-4">Tidak ada klien bimbingan aktif.</p>`;
+    }).join('') : `<div class="empty-state py-4"><div class="empty-icon"><i data-lucide="heart-handshake" class="w-6 h-6"></i></div><p class="font-semibold">Tidak ada bimbingan aktif</p></div>`;
   }
 
   // ==================== HOOK TIMELINE BUTTON ON TRACKING ====================
