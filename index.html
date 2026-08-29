@@ -17,6 +17,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/ui-polish.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
@@ -219,7 +220,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-      <div class="card-panel p-4 lg:col-span-1">
+      <div class="card-panel p-4 lg:col-span-1 panel-priority">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h4 class="font-bold text-sm flex items-center gap-2"><i data-lucide="list-todo" class="w-4 h-4 text-[#2457FF]"></i> Perlu Ditindak</h4>
@@ -1343,6 +1344,45 @@
 .cmd-item:hover,.cmd-item:focus{background:rgba(36,87,255,.08)}
 .cmd-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;min-width:72px}
 </style>
+
+
+<!-- Skeleton sync overlay -->
+<div id="skeleton-overlay" class="skeleton-overlay" aria-hidden="true">
+  <div class="skeleton-card">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl skeleton-line" style="margin:0;height:40px;width:40px;border-radius:12px"></div>
+      <div class="flex-1">
+        <div class="skeleton-line w60"></div>
+        <div class="skeleton-line w40" style="margin-bottom:0"></div>
+      </div>
+    </div>
+    <div class="skeleton-line w80"></div>
+    <div class="skeleton-line"></div>
+    <div class="skeleton-line w60"></div>
+    <p class="text-center text-xs text-slate-400 mt-3 font-medium">Menyinkronkan Google Sheet…</p>
+  </div>
+</div>
+
+<!-- Mobile bottom navigation -->
+<nav class="bottom-nav" id="bottom-nav" aria-label="Navigasi utama">
+  <div class="bottom-nav-inner">
+    <button type="button" class="bnav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <i data-lucide="layout-dashboard"></i><span>Home</span>
+    </button>
+    <button type="button" class="bnav-item" data-page="adjudikasi" onclick="navigateTo('adjudikasi')">
+      <i data-lucide="scale"></i><span>Tracking</span>
+    </button>
+    <button type="button" class="bnav-item" data-page="kalender" onclick="navigateTo('kalender')">
+      <i data-lucide="calendar-days"></i><span>Kalender</span>
+    </button>
+    <button type="button" class="bnav-item" onclick="openCommandPalette()">
+      <i data-lucide="search"></i><span>Cari</span>
+    </button>
+    <button type="button" class="bnav-item" data-page="more" onclick="openMobileMore()">
+      <i data-lucide="menu"></i><span>Lainnya</span>
+    </button>
+  </div>
+</nav>
 
 <script src="js/api-layer.js"></script>
 <script src="js/app.js"></script>
