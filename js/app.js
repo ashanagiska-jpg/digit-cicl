@@ -15,7 +15,7 @@ function dedupeByKey(arr, keyFn){
   });
   return Array.from(map.values());
 }
-function normKey(v){ return String(v==null?'':v).trim().toLowerCase(); }
+function normKey(v){ return String(v==null?'':v).trim().toLowerCase().replace(/\s+/g,' '); }
 
 // ==================== DATA MASTER ====================
 const DEFAULT_WILAYAH_NAMES = ['Kabupaten Lahat','Kabupaten Muara Enim','Kabupaten PALI','Kabupaten Empat Lawang','Kota Pagar Alam'];
@@ -873,7 +873,7 @@ function openLitmasModal(id, useAI){
         <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span id="ai-scan-text">Memproses...</span>
       </div>
     </div>` : ''}
-    <form id="litmas-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3" onsubmit="event.preventDefault(); saveLitmas('${item?item.id:''}')">
+    <form id="litmas-form" data-edit-id="${item?item.id:''}" class="grid grid-cols-1 sm:grid-cols-2 gap-3" onsubmit="event.preventDefault(); saveLitmas('${item?item.id:''}')">
       <div><label class="fl">Nomor Surat</label><input class="form-input" id="fm-nosurat" value="${item?item.nomor_surat||'':''}" required></div>
       <div><label class="fl">Jenis Litmas</label>
         <select class="form-input" id="fm-jenislitmas" required onchange="updateLitmasFormExtras()">
@@ -884,7 +884,9 @@ function openLitmasModal(id, useAI){
       </div>
       <div><label class="fl">Tanggal Surat</label><input type="date" class="form-input" id="fm-tglsurat" value="${item?item.tanggal_surat||'':''}" required></div>
       <div><label class="fl">Tanggal Diterima</label><input type="date" class="form-input" id="fm-tglditerima" value="${item?item.tanggal_diterima||'':''}" required></div>
-      <div><label class="fl">Nama Anak</label><input class="form-input" id="fm-nama" value="${item?item.nama_anak||'':''}" required></div>
+      <div><label class="fl">Nama Anak</label><input class="form-input" id="fm-nama" value="${item?item.nama_anak||'':''}" oninput="checkNamaAnakRiwayat()" required>
+        <div id="fm-nama-riwayat" class="hidden mt-1.5"></div>
+      </div>
       <div><label class="fl">Jenis Kelamin</label><select class="form-input" id="fm-jk"><option ${item&&item.jenis_kelamin==='Laki-laki'?'selected':''}>Laki-laki</option><option ${item&&item.jenis_kelamin==='Perempuan'?'selected':''}>Perempuan</option></select></div>
       <div>
         <label class="fl">Kategori Tindak Pidana</label>
@@ -944,6 +946,7 @@ function openLitmasModal(id, useAI){
   `);
   if(item && item.wilayah_asal){ document.getElementById('fm-wilayah').value = item.wilayah_asal; updatePolisiOptionsIn('fm'); document.getElementById('fm-polisi').value = item.kepolisian||''; }
   updateLitmasFormExtras();
+  checkNamaAnakRiwayat();
 }
 // Menampilkan/menyembunyikan blok unggah berkas litmas & pilihan kategori
 // sesuai Status Litmas dan Jenis Litmas yang dipilih.
@@ -1078,6 +1081,53 @@ function pilihRekomendasiPk(namaPk){
   showToast(`PK Pembimbing diisi: ${namaPk} — masih bisa diubah manual`,'success');
 }
 
+// ==================== RIWAYAT ANAK (cek duplikat/pernah terinput) ====================
+// Saat mengisi Nama Anak di form Permintaan Litmas, cek apakah anak dengan
+// nama yang sama sudah pernah terinput/teregistrasi sebelumnya. Jika ya,
+// langsung tunjukkan riwayatnya beserta PK yang menangani.
+let _riwayatNamaTimer = null;
+function checkNamaAnakRiwayat(){
+  clearTimeout(_riwayatNamaTimer);
+  _riwayatNamaTimer = setTimeout(_checkNamaAnakRiwayatNow, 250);
+}
+function _checkNamaAnakRiwayatNow(){
+  const box = document.getElementById('fm-nama-riwayat');
+  const input = document.getElementById('fm-nama');
+  const form = document.getElementById('litmas-form');
+  if(!box || !input || !form) return;
+  const nama = input.value.trim();
+  const editId = form.dataset.editId || '';
+  if(nama.length < 3){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  const key = normKey(nama);
+  const sumber = [].concat(allData||[], typeof arsipData!=='undefined' ? (arsipData||[]) : []);
+  const riwayat = sumber.filter(d=> d && String(d.id)!==String(editId) && normKey(d.nama_anak)===key);
+  if(!riwayat.length){ box.classList.add('hidden'); box.innerHTML=''; return; }
+
+  // Urutkan dari yang paling baru (berdasarkan tanggal diterima) agar PK
+  // yang ditampilkan sebagai "PK terakhir" relevan.
+  riwayat.sort((a,b)=> String(b.tanggal_diterima||'').localeCompare(String(a.tanggal_diterima||'')));
+  const pkTerakhir = (riwayat.find(d=>d.nama_pk)||{}).nama_pk || '';
+  const daftar = riwayat.slice(0,4).map(d=>`
+    <li>${shortText(d.jenis_litmas,26)||'-'} &middot; ${fmtDate(d.tanggal_diterima)||'-'} &middot; PK: <b>${d.nama_pk||'Belum ditentukan'}</b>
+      ${d.registrasi&&d.registrasi.nomor?` &middot; Reg. ${d.registrasi.nomor}`:''}
+      &middot; <span class="badge ${statusBadge(d.status_jenis)} !text-[9px] !py-0">${d.status_jenis||'-'}</span>
+    </li>`).join('');
+
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-300">
+      <div class="flex items-center gap-1.5 font-semibold"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 shrink-0"></i><span>"${nama}" sudah pernah terinput sebelumnya (${riwayat.length} data)</span></div>
+      <ul class="list-disc pl-4 mt-1 space-y-0.5">${daftar}</ul>
+      ${pkTerakhir ? `<button type="button" onclick="isiPkDariRiwayat('${String(pkTerakhir).replace(/'/g,"\\'")}')" class="mt-1.5 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1"><i data-lucide="user-check" class="w-3 h-3"></i>Isi PK sama seperti sebelumnya (${pkTerakhir})</button>` : ''}
+    </div>`;
+  lucide.createIcons();
+}
+function isiPkDariRiwayat(namaPk){
+  const sel = document.getElementById('fm-pk');
+  if(sel) sel.value = namaPk;
+  showToast(`PK Pembimbing diisi otomatis dari riwayat sebelumnya: ${namaPk} — masih bisa diubah manual`,'success');
+}
+
 // Kompres gambar di browser sebelum dikirim ke Gemini (mempercepat upload & analisis).
 // PDF tidak dikompres (dikirim apa adanya).
 function compressImageFile(file, maxDim=1600, quality=0.8){
@@ -1186,6 +1236,7 @@ async function handleAIFile(file){
       switchLitmasTab(false);
       showToast('Data berhasil diekstrak AI, silakan periksa & simpan','success');
       statusBox.classList.add('hidden');
+      checkNamaAnakRiwayat();
     }catch(err){
       console.error(err);
       showToast('Gagal memindai: '+err.message,'error');
