@@ -1,3 +1,22 @@
+// ==================== DEDUPLIKASI DATA ====================
+/**
+ * Hilangkan entri duplikat berdasarkan key yang dihasilkan keyFn.
+ * Entri belakangan (misal hasil sinkron terbaru) menang, tapi posisi
+ * urutan asli tetap dipertahankan agar tampilan tidak "loncat".
+ */
+function dedupeByKey(arr, keyFn){
+  if(!Array.isArray(arr) || !arr.length) return arr||[];
+  const map = new Map();
+  arr.forEach(item=>{
+    if(item==null) return;
+    const key = keyFn(item);
+    if(key===''||key===null||key===undefined) return;
+    map.set(key, item);
+  });
+  return Array.from(map.values());
+}
+function normKey(v){ return String(v==null?'':v).trim().toLowerCase(); }
+
 // ==================== DATA MASTER ====================
 const DEFAULT_WILAYAH_NAMES = ['Kabupaten Lahat','Kabupaten Muara Enim','Kabupaten PALI','Kabupaten Empat Lawang','Kota Pagar Alam'];
 const DEFAULT_KEPOLISIAN_MAP = {
@@ -13,27 +32,31 @@ function normalizeWilayahMaster(raw){
     return DEFAULT_WILAYAH_NAMES.map(name=>({ name, kode:'', status:'Aktif', catatan:'' }));
   }
   if(typeof raw[0] === 'string'){
-    return raw.map(name=>({ name, kode:'', status:'Aktif', catatan:'' }));
+    return dedupeByKey(raw.map(name=>({ name, kode:'', status:'Aktif', catatan:'' })), w=>normKey(w.name));
   }
-  return raw.map(w=>({
+  const list = raw.map(w=>({
     name: String(w.name || w.nama || '').trim(),
     kode: String(w.kode || '').trim(),
     status: w.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
     catatan: String(w.catatan || '').trim()
   })).filter(w=>w.name);
+  // Cegah wilayah yang sama tampil berkali-kali di menu/dropdown/tabel
+  return dedupeByKey(list, w=>normKey(w.name));
 }
 
 function normalizeKepolisianMaster(raw){
   // Accept: object map {wilayah:[names]} OR array of {wilayah,nama,...}
   if(!raw) return flattenKepolisianMap(DEFAULT_KEPOLISIAN_MAP);
   if(Array.isArray(raw)){
-    return raw.map(p=>({
+    const list = raw.map(p=>({
       wilayah: String(p.wilayah || '').trim(),
       nama: String(p.nama || p.name || '').trim(),
       jenis: String(p.jenis || inferJenisPolisi(p.nama || p.name || '')).trim(),
       status: p.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
       catatan: String(p.catatan || '').trim()
     })).filter(p=>p.wilayah && p.nama);
+    // Cegah unit kepolisian yang sama (wilayah+nama) tampil berkali-kali
+    return dedupeByKey(list, p=>normKey(p.wilayah)+'|'+normKey(p.nama));
   }
   // object map
   return flattenKepolisianMap(raw);
@@ -51,7 +74,7 @@ function flattenKepolisianMap(map){
       list.push({ wilayah: wil, nama, jenis: inferJenisPolisi(nama), status:'Aktif', catatan:'' });
     });
   });
-  return list;
+  return dedupeByKey(list, p=>normKey(p.wilayah)+'|'+normKey(p.nama));
 }
 function kepolisianMapFromMaster(list){
   const map = {};
@@ -115,7 +138,7 @@ function normalizePkMaster(raw){
       return def ? {...def} : { name, nip:'', jabatan:'PK', status:'Aktif', wilayah_fokus:'', telepon:'', email:'', tanggal_masuk:'', catatan:'' };
     });
   }
-  return raw.map(p=>({
+  const list = raw.map(p=>({
     name: String(p.name || p.nama || '').trim(),
     nip: String(p.nip || '').trim(),
     jabatan: String(p.jabatan || 'PK').trim() || 'PK',
@@ -126,6 +149,8 @@ function normalizePkMaster(raw){
     tanggal_masuk: String(p.tanggal_masuk || '').trim(),
     catatan: String(p.catatan || '').trim()
   })).filter(p=>p.name);
+  // Cegah PK yang sama tampil berkali-kali di menu Data PK / dropdown / rekap
+  return dedupeByKey(list, p=>normKey(p.name));
 }
 
 let PK_MASTER = normalizePkMaster(JSON.parse(localStorage.getItem('CICL_PK')||'null'));
@@ -136,8 +161,8 @@ function syncPkListFromMaster(){
   PK_LIST = PK_MASTER.map(p=>p.name);
 }
 
-let allData = JSON.parse(localStorage.getItem('CICL_DATA')||'[]');
-let arsipData = JSON.parse(localStorage.getItem('CICL_ARSIP')||'[]');
+let allData = dedupeByKey(JSON.parse(localStorage.getItem('CICL_DATA')||'[]'), d=> d && d.id!=null ? String(d.id) : Symbol());
+let arsipData = dedupeByKey(JSON.parse(localStorage.getItem('CICL_ARSIP')||'[]'), d=> d && d.id!=null ? String(d.id) : Symbol());
 let gsheetUrl = localStorage.getItem('CICL_GAS_URL') || 'https://script.google.com/macros/s/AKfycbxtFxetSm7wc7poQF7bzxYRQ2wfl0buyAer3XvYqeahYhphkUZ7HqJzeN5SAJTSp5F1FA/exec';
 let geminiKey = localStorage.getItem('CICL_GEMINI_KEY') || '';
 const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
@@ -4768,7 +4793,7 @@ function normalizePasca(raw){
 }
 
 function mapLitmasRows(data){
-  return (data||[]).map(d=>{
+  const mapped = (data||[]).map(d=>{
     // --- Registrasi ---
     const rawNomor = d.nomor_registrasi ?? d.no_registrasi ?? d.no_reg ??
       d['no._registrasi'] ?? d.registrasi_nomor ??
@@ -4806,6 +4831,12 @@ function mapLitmasRows(data){
       pasca_adjudikasi: pasca
     };
   });
+  // Cegah baris litmas yang sama (id sama, misal karena baris dobel di
+  // Google Sheet) tampil berulang di semua menu — Permintaan, Registrasi,
+  // Tracking, Monitoring, Litmas Integrasi, Rekap, Statistik, dll. — dan
+  // pastikan data lain yang seharusnya terlihat tidak "tertutup" oleh
+  // duplikat saat dipaginasi.
+  return dedupeByKey(mapped, d=> d && d.id!=null ? String(d.id) : Symbol());
 }
 
 
